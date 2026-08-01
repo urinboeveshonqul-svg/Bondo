@@ -12,7 +12,22 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
-Nothing yet. Phase 2 (Database & Authorization) has not started.
+Phase 2 (Database & Authorization) has not started. The entries below are
+process and tooling only — no application code has changed since v0.1.0.
+
+### Added
+
+- Release policy — the nine mandatory steps every completed phase must end with,
+  in [CLAUDE.md § 10](CLAUDE.md#10-release-policy), together with the
+  Conventional Commits format the project uses
+- `npm run verify` (`check` + production build), so step 1 of that policy is one
+  command rather than a checklist that can be half-run. It gains a test step
+  when the first tests land in Phase 4
+
+### Changed
+
+- `ROADMAP.md § How phases work` now points at the release policy instead of
+  restating a partial version of it, so the two cannot drift apart
 
 ---
 

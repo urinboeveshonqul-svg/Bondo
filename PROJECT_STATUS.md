@@ -98,6 +98,9 @@ See [ROADMAP.md](ROADMAP.md) for what each phase contains.
 - ESLint 9 flat config, `eslint-config-prettier` last in the chain.
 - Prettier 3 with `prettier-plugin-tailwindcss` for canonical class ordering.
 - `npm run check` = typecheck + lint + format check. CI-ready.
+- `npm run verify` = `check` + production build. This is step 1 of the release
+  policy in [CLAUDE.md § 10](CLAUDE.md#10-release-policy); it gains a test step
+  when the first tests land in Phase 4.
 - `.gitattributes` pinning `eol=lf` so a clone is byte-identical on every
   platform and `npm run check` passes on a fresh checkout under Windows.
 

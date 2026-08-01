@@ -31,6 +31,11 @@ land.
   reviewed and signed off.
 - **Each phase ends with a review** in the style of the Phase 1 review: read the
   code critically, assume nothing is correct, fix what is found, then report.
+- **Each phase then closes out under the release policy** — the nine mandatory
+  steps in [CLAUDE.md § 10](CLAUDE.md#10-release-policy): verify, update the
+  three documents, commit conventionally, tag when instructed, push, verify the
+  remote, and do not start the next phase until GitHub is synchronised. That
+  section is authoritative; this list does not restate it.
 - **Each phase bumps the minor version** and gets a `CHANGELOG.md` entry.
 - **`PROJECT_STATUS.md` is updated after every completed task**, not just at the
   end of a phase.

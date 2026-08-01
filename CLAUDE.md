@@ -104,9 +104,12 @@ ADR. Do not silently contradict one.
 npm run check
 ```
 
-Then `npm run build` for anything touching config, routing or bundling. Do not
-report a task complete on the strength of having written the code. If a check
-fails, say so and show the output.
+Use `npm run verify` (adds the production build) for anything touching config,
+routing or bundling — and always when closing out a phase, where it is step 1 of
+the [release policy](#10-release-policy).
+
+Do not report a task complete on the strength of having written the code. If a
+check fails, say so and show the output.
 
 ---
 
@@ -169,12 +172,77 @@ If you discover an issue you are not fixing right now, write it down.
 
 ---
 
+## 10. Release policy
+
+**Every completed phase must end with all nine steps below.** Not some of them,
+and not in a different order. A phase is not finished until step 9 holds.
+
+| #   | Step                                                        | How                                                                       |
+| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------- |
+| 1   | Verify build, lint, typecheck and tests                     | `npm run verify` — see [note on tests](#tests-in-step-1)                  |
+| 2   | Update `PROJECT_STATUS.md`                                  | Phase status, progress, next task, known issues, technical debt, ADRs     |
+| 3   | Update `CHANGELOG.md`                                       | New version section; move items out of `[Unreleased]`                     |
+| 4   | Update `ROADMAP.md` **if needed**                           | Tick completed items; mark the phase complete; correct the estimate       |
+| 5   | Commit using Conventional Commits                           | See [format](#conventional-commits) below                                 |
+| 6   | Tag the release **when instructed**                         | `git tag -a vX.Y.0 -m "…"` — annotated, never lightweight                 |
+| 7   | Push commits and tags                                       | `git push origin main --follow-tags`                                      |
+| 8   | Verify the remote matches local                             | `git ls-remote origin` — compare against `git rev-parse HEAD` and the tag |
+| 9   | **Never start the next phase until GitHub is synchronised** | `git status` clean **and** `git log origin/main..HEAD` empty              |
+
+Step 6 is the only conditional one: tag only when the user says to. Steps 1–5
+and 7–9 are unconditional.
+
+Step 8 means reading the remote, not trusting local cached refs. `origin/main`
+is a local pointer and can be stale; `git ls-remote` asks the server.
+
+### Tests in step 1
+
+`npm run verify` runs typecheck, lint, format check and a production build. No
+test runner exists yet — the first tests land in Phase 4 (cart maths, tax and
+totals), and the `verify` script gains a `npm test` step at that point. Until
+then, "tests" in step 1 is satisfied by the build passing. Do not claim tests
+ran when none exist.
+
+A build needs `.env.local`; a `verify` that fails on missing environment
+variables is a misconfigured machine, not a failing phase.
+
+### Conventional commits
+
+```
+<type>(<optional scope>): <subject in the imperative, lowercase, no full stop>
+
+<body: what changed and why — wrap at 72 columns>
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+```
+
+| Type       | Use for                                               |
+| ---------- | ----------------------------------------------------- |
+| `feat`     | A user-visible capability                             |
+| `fix`      | A bug fix                                             |
+| `docs`     | Documentation only                                    |
+| `refactor` | Behaviour-preserving code change                      |
+| `perf`     | A measured performance improvement — quote the number |
+| `test`     | Adding or fixing tests                                |
+| `build`    | Dependencies, build config, tooling                   |
+| `ci`       | CI configuration                                      |
+| `chore`    | Anything else that does not touch `app/` behaviour    |
+
+Scope is the phase or the area: `feat(catalog):`, `fix(checkout):`,
+`docs(phase-2):`. A phase-closing commit uses the phase as its scope.
+
+Breaking changes get a `!` before the colon and a `BREAKING CHANGE:` footer.
+Before v1.0.0 this is informational — the minor version tracks the phase.
+
+---
+
 ## Commands
 
 ```bash
 npm run dev          # dev server (Turbopack)
 npm run build        # production build
 npm run check        # typecheck + lint + format check — run before every commit
+npm run verify       # check + build — step 1 of the release policy
 npm run db:start     # local Supabase stack (requires Docker)
 npm run db:reset     # drop and replay all migrations locally
 npm run db:types     # regenerate types/database.ts from the local database

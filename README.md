@@ -55,26 +55,29 @@ Open http://localhost:3000.
 
 ### Scripts
 
-| Script                      | What it does                                     |
-| --------------------------- | ------------------------------------------------ |
-| `npm run dev`               | Dev server with Turbopack                        |
-| `npm run build`             | Production build                                 |
-| `npm start`                 | Serve the production build                       |
-| `npm run lint`              | ESLint                                           |
-| `npm run lint:fix`          | ESLint with autofix                              |
-| `npm run typecheck`         | `tsc --noEmit`                                   |
-| `npm run format`            | Prettier write                                   |
-| `npm run format:check`      | Prettier check (use in CI)                       |
-| `npm run check`             | typecheck + lint + format check                  |
-| `npm run db:start`          | Start the local Supabase stack (needs Docker)    |
-| `npm run db:stop`           | Stop it                                          |
-| `npm run db:reset`          | Drop and replay all migrations locally           |
-| `npm run db:diff -- <name>` | Write a migration from local schema changes      |
-| `npm run db:push`           | Apply pending migrations to the linked project   |
-| `npm run db:types`          | Regenerate `types/database.ts` from the local DB |
-| `npm run db:types:remote`   | Regenerate it from the linked hosted project     |
+| Script                      | What it does                                           |
+| --------------------------- | ------------------------------------------------------ |
+| `npm run dev`               | Dev server with Turbopack                              |
+| `npm run build`             | Production build                                       |
+| `npm start`                 | Serve the production build                             |
+| `npm run lint`              | ESLint                                                 |
+| `npm run lint:fix`          | ESLint with autofix                                    |
+| `npm run typecheck`         | `tsc --noEmit`                                         |
+| `npm run format`            | Prettier write                                         |
+| `npm run format:check`      | Prettier check (use in CI)                             |
+| `npm run check`             | typecheck + lint + format check                        |
+| `npm run verify`            | `check` + production build — required before a release |
+| `npm run db:start`          | Start the local Supabase stack (needs Docker)          |
+| `npm run db:stop`           | Stop it                                                |
+| `npm run db:reset`          | Drop and replay all migrations locally                 |
+| `npm run db:diff -- <name>` | Write a migration from local schema changes            |
+| `npm run db:push`           | Apply pending migrations to the linked project         |
+| `npm run db:types`          | Regenerate `types/database.ts` from the local DB       |
+| `npm run db:types:remote`   | Regenerate it from the linked hosted project           |
 
-Run `npm run check` before every commit.
+Run `npm run check` before every commit, and `npm run verify` before closing out
+a phase. The full phase-completion checklist is
+[CLAUDE.md § 10 — Release policy](CLAUDE.md#10-release-policy).
 
 ---
 

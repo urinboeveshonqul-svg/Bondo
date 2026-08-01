@@ -19,7 +19,8 @@
     "db:diff": "supabase db diff -f",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --local --schema public > types/database.ts",
-    "db:types:remote": "supabase gen types typescript --linked --schema public > types/database.ts"
+    "db:types:remote": "supabase gen types typescript --linked --schema public > types/database.ts",
+    "verify": "npm run check && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
