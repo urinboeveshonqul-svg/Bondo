@@ -5,9 +5,25 @@
 > disagree, the code is right and this file is a bug — fix it immediately.
 
 **Last updated:** 2026-08-01
-**Version:** v0.1.0
+**Version:** v0.1.0 — ✅ **released**
 **Phase:** 1 of 9 — Foundation ✅ **Complete**
 **Overall progress:** ~8%
+
+### Release status
+
+| Item             | Value                                                        |
+| ---------------- | ------------------------------------------------------------ |
+| Current version  | **v0.1.0**                                                   |
+| Released         | 2026-08-01                                                   |
+| Release commit   | `7caf0ce090c88832c991f2728bf170acb9ac3501`                   |
+| Tag object       | `6e9aee54c50c36b92b6f4208489f6dcb4df1aaec` (annotated)       |
+| Branch           | `main`                                                       |
+| Remote           | `origin` → https://github.com/urinboeveshonqul-svg/Bondo     |
+| GitHub sync      | ✅ synchronised — `main` and `v0.1.0` both present on remote |
+| Unpushed commits | none                                                         |
+
+A GitHub _Release_ has not been created from the tag. The annotated tag message
+is written to serve as its body if one is wanted.
 
 ---
 

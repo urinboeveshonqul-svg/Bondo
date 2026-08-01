@@ -211,8 +211,7 @@ Tracked in [PROJECT_STATUS.md](PROJECT_STATUS.md#known-issues).
 
 ---
 
-> Note: `v0.1.0` is tagged locally. These links resolve once the tag is pushed
-> to the remote.
+> `v0.1.0` is tagged and pushed to `origin`.
 
 [Unreleased]: https://github.com/urinboeveshonqul-svg/Bondo/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/urinboeveshonqul-svg/Bondo/releases/tag/v0.1.0
