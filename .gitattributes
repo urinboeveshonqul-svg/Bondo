@@ -1,0 +1,26 @@
+# Normalise line endings to LF in the repository and in the working copy.
+#
+# Prettier is configured with `endOfLine: "lf"` and Git on Windows defaults to
+# `core.autocrlf=true`. Without this file a fresh clone on Windows checks out
+# CRLF, and `npm run check` then fails on every file — including for a CI job on
+# a Windows runner. Pinning `eol=lf` keeps the checked-out bytes identical on
+# every platform.
+* text=auto eol=lf
+
+# Binary files must never be converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+
+# Generated — collapse in review and exclude from language statistics.
+package-lock.json linguist-generated=true -diff
+types/database.ts linguist-generated=true

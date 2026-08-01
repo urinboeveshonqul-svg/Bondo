@@ -2,9 +2,22 @@
 
 A computer store — laptops, desktops, components and accessories.
 
-**Status: Phase 1 (foundation).** The toolchain, architecture and Supabase
-integration layer are in place. The only pages that exist are the home page and
-the 404. There is no schema, no product data and no checkout yet.
+**Status: Phase 1 (foundation), v0.1.0.** The toolchain, architecture and
+Supabase integration layer are in place. The only pages that exist are the home
+page and the 404. There is no schema, no product data and no checkout yet.
+
+### Project documentation
+
+This README explains **how the codebase works**. Four companion documents cover
+**where the project is** and **how to work on it**, and they take precedence
+over this file for anything about state:
+
+| Document                               | Answers                                               |
+| -------------------------------------- | ----------------------------------------------------- |
+| [PROJECT_STATUS.md](PROJECT_STATUS.md) | What exists right now, what is broken, what is next   |
+| [ROADMAP.md](ROADMAP.md)               | Every phase, what each contains, how far along we are |
+| [CHANGELOG.md](CHANGELOG.md)           | What changed, in which version                        |
+| [CLAUDE.md](CLAUDE.md)                 | Standing rules for AI-assisted work in this repo      |
 
 ---
 
