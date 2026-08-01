@@ -1,0 +1,15 @@
+# Build output and dependencies
+node_modules
+.next
+out
+build
+coverage
+
+# Generated
+next-env.d.ts
+types/database.ts
+package-lock.json
+
+# Supabase CLI working directories
+supabase/.temp
+supabase/.branches
