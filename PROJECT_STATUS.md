@@ -11,19 +11,19 @@
 
 ### Release status
 
-| Item             | Value                                                        |
-| ---------------- | ------------------------------------------------------------ |
-| Current version  | **v0.1.0**                                                   |
-| Released         | 2026-08-01                                                   |
-| Release commit   | `7caf0ce090c88832c991f2728bf170acb9ac3501`                   |
-| Tag object       | `6e9aee54c50c36b92b6f4208489f6dcb4df1aaec` (annotated)       |
-| Branch           | `main`                                                       |
-| Remote           | `origin` → https://github.com/urinboeveshonqul-svg/Bondo     |
-| GitHub sync      | ✅ synchronised — `main` and `v0.1.0` both present on remote |
-| Unpushed commits | none                                                         |
+| Item             | Value                                                    |
+| ---------------- | -------------------------------------------------------- |
+| Latest tag       | **v0.1.0** — `7caf0ce`, released 2026-08-01              |
+| Working version  | **v0.2.0**, Phase 2 — **not tagged**                     |
+| Phase 2 commit   | `c6c3e5b`                                                |
+| Branch           | `main`                                                   |
+| Remote           | `origin` → https://github.com/urinboeveshonqul-svg/Bondo |
+| GitHub sync      | ✅ synchronised                                          |
+| Unpushed commits | none                                                     |
 
-A GitHub _Release_ has not been created from the tag. The annotated tag message
-is written to serve as its body if one is wanted.
+v0.2.0 is written up in `CHANGELOG.md` but not tagged: step 6 of the release
+policy tags only when instructed. Tagging it before **K-3** is closed would
+publish a version whose generated types do not match its schema.
 
 ---
 
