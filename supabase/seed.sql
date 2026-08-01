@@ -1,0 +1,287 @@
+-- =============================================================================
+-- DEVELOPMENT SEED — NOT FOR PRODUCTION
+-- =============================================================================
+-- Run automatically by `supabase db reset` against the LOCAL stack only
+-- (`[db.seed]` in config.toml). It is never part of `supabase db push`, so it
+-- cannot reach a hosted project through the normal migration path.
+--
+-- That is a convention, and conventions get broken by tired people at 6pm, so
+-- the guard below is a mechanism: the script aborts if the database already
+-- holds products or admins. Pointing it at a live store fails loudly instead of
+-- injecting fixtures into a real catalog.
+--
+-- This file exists as a deliberate, recorded refinement of ADR-20 ("no fake or
+-- seeded data"). The original reasoning still stands for anything the
+-- storefront ships — empty states are where ecommerce UIs break, and shipped
+-- placeholder content hides them. A local fixture that never leaves a developer
+-- machine is a different thing, and Phase 2 has no UI for it to hide. See
+-- ADR-25.
+--
+-- The admin credential below is a LOCAL DEVELOPMENT credential. It is
+-- deliberately committed, deliberately weak, and works only against a database
+-- seeded by this file.
+--
+--   email:    admin@bondo.local
+--   password: bondo-dev-password
+--
+-- =============================================================================
+
+do $$
+begin
+  if exists (select 1 from public.products limit 1)
+     or exists (select 1 from public.admins limit 1) then
+    raise exception
+      'Refusing to seed: this database already contains products or admins.'
+      using hint = 'The development seed is only for an empty local database. Run `npm run db:reset` to start clean.';
+  end if;
+end;
+$$;
+
+-- -----------------------------------------------------------------------------
+-- Development admin account
+-- -----------------------------------------------------------------------------
+-- Written straight into auth.users because there is no local signup UI in this
+-- phase. The identities row is required for password sign-in to work; GoTrue
+-- looks the credential up there, not on the user row.
+insert into auth.users (
+  instance_id,
+  id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at,
+  confirmation_token,
+  email_change,
+  email_change_token_new,
+  recovery_token
+) values (
+  '00000000-0000-0000-0000-000000000000',
+  '00000000-0000-4000-8000-000000000001',
+  'authenticated',
+  'authenticated',
+  'admin@bondo.local',
+  extensions.crypt('bondo-dev-password', extensions.gen_salt('bf')),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"full_name":"Development Admin"}'::jsonb,
+  now(),
+  now(),
+  '', '', '', ''
+);
+
+insert into auth.identities (
+  provider_id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+) values (
+  '00000000-0000-4000-8000-000000000001',
+  '00000000-0000-4000-8000-000000000001',
+  '{"sub":"00000000-0000-4000-8000-000000000001","email":"admin@bondo.local","email_verified":true,"phone_verified":false}'::jsonb,
+  'email',
+  now(),
+  now(),
+  now()
+);
+
+-- The profile row arrives via the on_auth_user_created trigger. Promote the
+-- account to staff and give it every capability.
+insert into public.admins (user_id, job_title, is_active)
+values ('00000000-0000-4000-8000-000000000001', 'Development administrator', true);
+
+insert into public.user_roles (user_id, role_id)
+select '00000000-0000-4000-8000-000000000001', r.id
+from public.roles r
+where r.key = 'super_admin';
+
+-- -----------------------------------------------------------------------------
+-- Categories
+-- -----------------------------------------------------------------------------
+-- Three levels, to exercise the nesting trigger rather than to be a finished
+-- taxonomy. Ids are fixed so later inserts can reference them without lookups.
+insert into public.categories (id, parent_id, slug, name, description, display_order) values
+  ('a0000000-0000-4000-8000-000000000001', null, 'laptops',     'Laptops',     'Portable computers.', 1),
+  ('a0000000-0000-4000-8000-000000000002', null, 'desktops',    'Desktops',    'Tower and small-form-factor systems.', 2),
+  ('a0000000-0000-4000-8000-000000000003', null, 'components',  'Components',  'Parts for building and upgrading.', 3),
+  ('a0000000-0000-4000-8000-000000000004', null, 'peripherals', 'Peripherals', 'Everything you plug in.', 4);
+
+insert into public.categories (id, parent_id, slug, name, display_order) values
+  ('a0000000-0000-4000-8000-000000000011', 'a0000000-0000-4000-8000-000000000001', 'gaming-laptops',    'Gaming laptops', 1),
+  ('a0000000-0000-4000-8000-000000000012', 'a0000000-0000-4000-8000-000000000001', 'ultrabooks',        'Ultrabooks', 2),
+  ('a0000000-0000-4000-8000-000000000021', 'a0000000-0000-4000-8000-000000000003', 'graphics-cards',    'Graphics cards', 1),
+  ('a0000000-0000-4000-8000-000000000022', 'a0000000-0000-4000-8000-000000000003', 'processors',        'Processors', 2),
+  ('a0000000-0000-4000-8000-000000000023', 'a0000000-0000-4000-8000-000000000003', 'memory',            'Memory', 3),
+  ('a0000000-0000-4000-8000-000000000031', 'a0000000-0000-4000-8000-000000000004', 'keyboards',         'Keyboards', 1),
+  ('a0000000-0000-4000-8000-000000000032', 'a0000000-0000-4000-8000-000000000004', 'monitors',          'Monitors', 2);
+
+-- Third level, so `depth = 2` and the descendant rebuild are both exercised.
+insert into public.categories (id, parent_id, slug, name, display_order) values
+  ('a0000000-0000-4000-8000-000000000211', 'a0000000-0000-4000-8000-000000000021', 'nvidia-graphics-cards', 'NVIDIA', 1),
+  ('a0000000-0000-4000-8000-000000000212', 'a0000000-0000-4000-8000-000000000021', 'amd-graphics-cards',    'AMD', 2);
+
+-- -----------------------------------------------------------------------------
+-- Brands
+-- -----------------------------------------------------------------------------
+insert into public.brands (id, slug, name, description, website_url, is_featured) values
+  ('b0000000-0000-4000-8000-000000000001', 'nvidia',   'NVIDIA',   'Graphics processors.',            'https://www.nvidia.com', true),
+  ('b0000000-0000-4000-8000-000000000002', 'amd',      'AMD',      'Processors and graphics.',        'https://www.amd.com', true),
+  ('b0000000-0000-4000-8000-000000000003', 'intel',    'Intel',    'Processors.',                     'https://www.intel.com', false),
+  ('b0000000-0000-4000-8000-000000000004', 'corsair',  'Corsair',  'Memory and peripherals.',         'https://www.corsair.com', false),
+  ('b0000000-0000-4000-8000-000000000005', 'lenovo',   'Lenovo',   'Laptops and desktops.',           'https://www.lenovo.com', false);
+
+-- -----------------------------------------------------------------------------
+-- Sample products
+-- -----------------------------------------------------------------------------
+-- Deliberately few, and deliberately varied: one draft, one hidden, one
+-- scheduled for the future, one on sale. Uniform fixtures would make every RLS
+-- policy look like it works.
+insert into public.products (
+  id, sku, slug, name, short_description, description,
+  brand_id, category_id, status, visibility, is_featured,
+  price_cents, sale_price_cents, cost_price_cents,
+  weight_grams, length_mm, width_mm, height_mm, warranty_months,
+  search_keywords, published_at
+) values
+  (
+    'c0000000-0000-4000-8000-000000000001',
+    'GPU-RTX4090-FE', 'nvidia-geforce-rtx-4090-founders-edition',
+    'NVIDIA GeForce RTX 4090 Founders Edition',
+    'Flagship graphics card with 24GB of GDDR6X memory.',
+    'The RTX 4090 Founders Edition is built for 4K gaming and GPU compute workloads.',
+    'b0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000211',
+    'active', 'public', true,
+    159900, 149900, 120000,
+    2186, 304, 137, 61, 36,
+    array['rtx', '4090', 'nvidia', 'graphics card', 'gpu'],
+    now() - interval '30 days'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000002',
+    'CPU-R9-7950X', 'amd-ryzen-9-7950x',
+    'AMD Ryzen 9 7950X',
+    '16-core desktop processor on socket AM5.',
+    'Sixteen Zen 4 cores at up to 5.7GHz.',
+    'b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000022',
+    'active', 'public', true,
+    69900, null, 52000,
+    120, 40, 40, 7, 36,
+    array['ryzen', '7950x', 'amd', 'cpu', 'processor'],
+    now() - interval '14 days'
+  ),
+  (
+    'c0000000-0000-4000-8000-000000000003',
+    'MEM-CORS-32GB-DDR5', 'corsair-vengeance-32gb-ddr5-6000',
+    'Corsair Vengeance 32GB DDR5-6000',
+    'Two 16GB modules rated for 6000 MT/s.',
+    'DDR5 kit with on-die ECC and an aluminium heat spreader.',
+    'b0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000023',
+    'active', 'public', false,
+    14900, 12900, 9800,
+    96, 133, 34, 7, 60,
+    array['ddr5', 'corsair', 'memory', 'ram', '32gb'],
+    now() - interval '7 days'
+  ),
+  -- Draft: must be invisible to anonymous readers.
+  (
+    'c0000000-0000-4000-8000-000000000004',
+    'LAP-LEN-X1C-G12', 'lenovo-thinkpad-x1-carbon-gen-12',
+    'Lenovo ThinkPad X1 Carbon Gen 12',
+    'Fourteen-inch business ultrabook.',
+    'Still being photographed — not ready to publish.',
+    'b0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000012',
+    'draft', 'public', false,
+    189900, null, 150000,
+    1090, 313, 215, 15, 36,
+    array['thinkpad', 'x1 carbon', 'lenovo', 'ultrabook'],
+    null
+  ),
+  -- Active but hidden: exercises status and visibility being independent.
+  (
+    'c0000000-0000-4000-8000-000000000005',
+    'GPU-RX7900XTX', 'amd-radeon-rx-7900-xtx',
+    'AMD Radeon RX 7900 XTX',
+    'High-end graphics card with 24GB of GDDR6.',
+    'Temporarily hidden while the product photography is redone.',
+    'b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000212',
+    'active', 'hidden', false,
+    99900, null, 78000,
+    1960, 287, 135, 51, 24,
+    array['radeon', '7900 xtx', 'amd', 'gpu'],
+    now() - interval '3 days'
+  ),
+  -- Scheduled: published_at is in the future, so the read policy hides it until
+  -- that moment without any job needing to run.
+  (
+    'c0000000-0000-4000-8000-000000000006',
+    'KEY-CORS-K70', 'corsair-k70-rgb-mechanical-keyboard',
+    'Corsair K70 RGB Mechanical Keyboard',
+    'Mechanical keyboard with an aluminium frame.',
+    'Launches next week.',
+    'b0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000031',
+    'active', 'public', false,
+    16900, null, 11000,
+    1150, 444, 166, 40, 24,
+    array['corsair', 'k70', 'keyboard', 'mechanical'],
+    now() + interval '7 days'
+  );
+
+-- -----------------------------------------------------------------------------
+-- Specifications
+-- -----------------------------------------------------------------------------
+insert into public.product_specifications (product_id, spec_group, name, value, unit, display_order) values
+  ('c0000000-0000-4000-8000-000000000001', 'Memory',      'Capacity',       '24',    'GB',  1),
+  ('c0000000-0000-4000-8000-000000000001', 'Memory',      'Type',           'GDDR6X', null, 2),
+  ('c0000000-0000-4000-8000-000000000001', 'Power',       'Board power',    '450',   'W',   1),
+  ('c0000000-0000-4000-8000-000000000001', 'Connectivity','Display outputs','3x DisplayPort 1.4a, 1x HDMI 2.1', null, 1),
+  ('c0000000-0000-4000-8000-000000000002', 'Cores',       'Core count',     '16',    null,  1),
+  ('c0000000-0000-4000-8000-000000000002', 'Cores',       'Thread count',   '32',    null,  2),
+  ('c0000000-0000-4000-8000-000000000002', 'Clocks',      'Boost clock',    '5.7',   'GHz', 1),
+  ('c0000000-0000-4000-8000-000000000003', 'Memory',      'Capacity',       '32',    'GB',  1),
+  ('c0000000-0000-4000-8000-000000000003', 'Memory',      'Speed',          '6000',  'MT/s',2);
+
+-- -----------------------------------------------------------------------------
+-- Opening stock
+-- -----------------------------------------------------------------------------
+-- Through the ledger, because that is the only way stock can move. Writing to
+-- inventory.quantity_on_hand directly here would be rejected by the guard
+-- trigger — which is the point of having it.
+insert into public.inventory_movements (product_id, movement_type, quantity_delta, reason, reference) values
+  ('c0000000-0000-4000-8000-000000000001', 'purchase',   12, 'Opening stock', 'PO-DEV-0001'),
+  ('c0000000-0000-4000-8000-000000000002', 'purchase',   40, 'Opening stock', 'PO-DEV-0001'),
+  ('c0000000-0000-4000-8000-000000000003', 'purchase',  150, 'Opening stock', 'PO-DEV-0002'),
+  ('c0000000-0000-4000-8000-000000000005', 'purchase',    8, 'Opening stock', 'PO-DEV-0002'),
+  ('c0000000-0000-4000-8000-000000000006', 'purchase',   25, 'Pre-launch stock', 'PO-DEV-0003');
+
+-- A correction, so the ledger shows more than one movement type and the
+-- history view has something to display.
+insert into public.inventory_movements (product_id, movement_type, quantity_delta, reason) values
+  ('c0000000-0000-4000-8000-000000000001', 'correction', -2, 'Stock count: two units damaged in transit');
+
+-- Low-stock thresholds, so the reorder report returns something.
+update public.inventory set low_stock_threshold = 5
+where product_id in (
+  'c0000000-0000-4000-8000-000000000001',
+  'c0000000-0000-4000-8000-000000000005'
+);
+
+-- -----------------------------------------------------------------------------
+-- Settings
+-- -----------------------------------------------------------------------------
+-- The migration inserts the structural keys. Here only the local-only values
+-- are filled in.
+update public.settings set value = '"support@bondo.local"'::jsonb where key = 'store.support_email';
+update public.settings set value = '"stock@bondo.local"'::jsonb  where key = 'orders.low_stock_email';
+
+-- -----------------------------------------------------------------------------
+-- Banner
+-- -----------------------------------------------------------------------------
+insert into public.site_banners (title, subtitle, placement, link_url, is_active, display_order)
+values ('Development banner', 'Visible only in local development.', 'home_hero', '/products', true, 1);

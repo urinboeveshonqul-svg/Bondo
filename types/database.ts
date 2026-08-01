@@ -7,10 +7,19 @@
  *   npm run db:types          # against the local stack
  *   npm run db:types:remote   # against the linked hosted project
  *
- * The schema is empty until the first migration lands in Phase 2, so the shape
- * below is the empty-schema output the generator produces. It exists so that
- * `createClient<Database>()` is typed from day one and every table added later
- * flows through the same import.
+ * ⚠️  STALE AS OF PHASE 2. The schema below is the empty-schema shape, but
+ * `supabase/migrations/` now defines 18 tables. This file was NOT regenerated
+ * because `supabase gen types` runs its generator inside a container and the
+ * machine Phase 2 was built on has no Docker and no linked project — every mode
+ * of the command (`--local`, `--linked`, `--db-url`) needs one.
+ *
+ * It was deliberately left stale rather than hand-written. `Tables` being
+ * `Record<never, never>` means `supabase.from("products")` is a compile error,
+ * so the mistake surfaces at build time instead of becoming a set of plausible
+ * but subtly wrong types nobody checks. Hand-authoring it would also break the
+ * project's own rule that these types are generated output.
+ *
+ * **Run `npm run db:types` before writing any query.** Tracked as K-3.
  */
 
 export type Json =

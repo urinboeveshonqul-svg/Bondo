@@ -5,9 +5,9 @@
 > disagree, the code is right and this file is a bug — fix it immediately.
 
 **Last updated:** 2026-08-01
-**Version:** v0.1.0 — ✅ **released**
-**Phase:** 1 of 9 — Foundation ✅ **Complete**
-**Overall progress:** ~8%
+**Version:** v0.2.0 (unreleased) — v0.1.0 is the last tag
+**Phase:** 2 of 9 — Database Foundation ✅ **Complete** (one blocker: K-3)
+**Overall progress:** ~20%
 
 ### Release status
 
@@ -50,20 +50,28 @@ it has been tested against):
 
 ## Current phase
 
-**Phase 1 — Foundation.** Complete and reviewed.
+**Phase 2 — Database Foundation.** Complete, with one blocker carried forward.
 
-Phase 1 built the toolchain, the architectural boundaries and the Supabase
-integration layer. It deliberately shipped **no** product features. The
-storefront has a home page and a 404, and that is the whole of it.
+Phase 2 built the database platform every later feature depends on: 18 tables,
+a role/permission authorisation model, an append-only inventory ledger and audit
+log, 5 storage buckets, RLS on everything, and a guarded development seed. It
+deliberately shipped **no** UI — no admin pages, no storefront pages, no
+services. The application is byte-for-byte unchanged.
 
-Phase 1 underwent a full architectural review before sign-off. Fourteen issues
-were found and fixed — see [Changelog for this phase](#changelog-for-this-phase).
+Scope note: the ROADMAP's original Phase 2 also included the sign-in/sign-up
+flow and the first services. The Phase 2 brief excluded all UI, so those moved
+to Phase 3 and the roadmap was updated to match. **K-2 is therefore still
+open** — the middleware redirect still lands on a 404.
+
+The one thing not delivered is generated types (**K-3**), because
+`supabase gen types` needs Docker. See
+[Current database status](#current-database-status).
 
 ---
 
 ## Overall progress
 
-**~8%**
+**~20%**
 
 Nine phases, weighted by expected effort rather than counted equally — Phase 1
 is a small phase and checkout is a large one. The number is an estimate and will
@@ -71,8 +79,8 @@ be revised as phases land.
 
 ```
 Phase 1  Foundation                ████████████████████ 100%   ✅ complete
-Phase 2  Database & Authorization  ░░░░░░░░░░░░░░░░░░░░   0%   ← next
-Phase 3  Storefront Catalog        ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 2  Database Foundation       ████████████████████ 100%   ✅ complete (K-3 open)
+Phase 3  Storefront Catalog        ░░░░░░░░░░░░░░░░░░░░   0%   ← next
 Phase 4  Cart & Checkout           ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5  Customer Accounts         ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 6  Admin Dashboard           ░░░░░░░░░░░░░░░░░░░░   0%
@@ -265,7 +273,17 @@ supabase/               Supabase clients + the CLI project
   admin.ts              Service-role client (RLS BYPASSED, server-only)
   session.ts            Edge session refresh + protected-route redirect
   config.toml           Supabase CLI config
-  migrations/           SQL migrations (empty — Phase 2)
+  seed.sql              DEVELOPMENT ONLY. Aborts on a non-empty database.
+  migrations/
+    ..._extensions_and_conventions.sql   pg_trgm, updated_at/actor triggers, slug check
+    ..._identity_and_rbac.sql            profiles, roles, permissions, admins, authz helpers
+    ..._catalog.sql                      brands, categories, products, images, specs
+    ..._inventory.sql                    inventory + append-only movement ledger
+    ..._content_and_settings.sql         settings, site_banners
+    ..._audit_log.sql                    audit_logs (append-only)
+    ..._wishlists.sql                    wishlists, wishlist_items
+    ..._storage_buckets.sql              5 buckets + storage.objects policies
+    ..._grants.sql                       explicit least-privilege GRANTs
 
 styles/
   globals.css           Tailwind entry + design tokens
@@ -325,28 +343,66 @@ default and both are approved in the `allowScripts` field of `package.json`.
 
 ## Current database status
 
-🔴 **No schema exists.**
+🟢 **Schema complete.** ⚠️ **Types not yet generated (K-3).**
 
-| Item                 | Status                                                |
-| -------------------- | ----------------------------------------------------- |
-| Tables               | none                                                  |
-| Migrations           | none — `supabase/migrations/` is empty                |
-| RLS policies         | none                                                  |
-| Seed data            | none, and none planned — no fake data in this project |
-| Supabase CLI project | initialised (`supabase/config.toml` present)          |
-| `types/database.ts`  | hand-written empty-schema stub, **not yet generated** |
+| Item                 | Status                                                               |
+| -------------------- | -------------------------------------------------------------------- |
+| Tables               | 18, all with RLS enabled and explicit policies                       |
+| Migrations           | 9, in `supabase/migrations/`                                         |
+| RLS policies         | 45 on `public`, 10 on `storage.objects`                              |
+| Indexes              | 58 on `public`                                                       |
+| Storage buckets      | 5 (`products`, `brands`, `avatars`, `banners`, `site-assets`)        |
+| Seed data            | development only, `supabase/seed.sql`, guarded against non-empty DBs |
+| Supabase CLI project | initialised                                                          |
+| `types/database.ts`  | 🔴 **STALE** — still the empty-schema stub                           |
 
-`types/database.ts` currently contains the shape the generator produces for an
-empty schema. It exists so `createClient<Database>()` is typed from day one. It
-is marked generated and must be replaced by real generator output as soon as the
-first migration lands:
+### Tables
+
+| Domain    | Tables                                                                         |
+| --------- | ------------------------------------------------------------------------------ |
+| Identity  | `profiles`, `admins`                                                           |
+| RBAC      | `roles`, `permissions`, `role_permissions`, `user_roles`                       |
+| Catalog   | `brands`, `categories`, `products`, `product_images`, `product_specifications` |
+| Inventory | `inventory`, `inventory_movements`                                             |
+| Content   | `settings`, `site_banners`                                                     |
+| Audit     | `audit_logs`                                                                   |
+| Wishlists | `wishlists`, `wishlist_items`                                                  |
+
+### ⚠️ Generated types are stale — read before writing any query
+
+`types/database.ts` still describes an empty schema. It was **not** regenerated
+in Phase 2 because `supabase gen types` runs its generator inside a container,
+and the machine Phase 2 was built on has no Docker and no linked project. Every
+mode of the command — `--local`, `--linked`, `--db-url` — needs one.
+
+It was left stale rather than hand-written, deliberately. `Tables` is
+`Record<never, never>`, so `supabase.from("products")` is a **compile error**:
+the gap fails loudly at build time instead of becoming plausible-but-wrong types
+that nobody re-checks. Hand-authoring it would also break the project's own rule
+that this file is generated output.
+
+**Before any query is written, on a machine with Docker:**
 
 ```bash
-npm run db:types
+npm run db:start && npm run db:reset && npm run db:types
 ```
 
-**This stub has never been validated against real generator output.** The first
-migration in Phase 2 will prove or disprove it.
+Tracked as **K-3**, now a blocking prerequisite for Phase 3.
+
+### How the schema was verified without Docker
+
+`supabase db reset` could not run. Instead every migration and the seed were
+applied to a real Postgres engine — PGlite (PostgreSQL 18.3, WebAssembly) — and
+**116 assertions** were run against the result: structure, RLS behaviour under
+`anon` / customer / admin / deactivated-admin, every check constraint, the
+inventory ledger, the category tree, search, and the seed guard. All passed.
+
+That harness lives in the session scratchpad and is **not committed** — it is
+evidence for Phase 2's claims, not a substitute for `supabase db reset`. It
+stubs `auth` and `storage`, so three things remain unverified and are listed
+under [Known issues](#known-issues): the seed's `auth.users` / `auth.identities`
+inserts, `storage.objects` policy behaviour at runtime, and Supabase's own role
+grants. See **D-7** for committing it properly.
 
 ---
 
@@ -376,10 +432,29 @@ resolved in Phase 2.
 
 ## Admin dashboard status
 
-🔴 **Not started.**
+🟡 **No UI. Authorisation model complete.**
 
-Only `routes.admin.index` (`/admin`) is declared. No pages, no layout, no role
-model, no admin queries.
+Phase 2 built the model the dashboard will run on: a `roles` / `permissions` /
+`role_permissions` / `user_roles` graph, an `admins` register, and two helper
+functions — `public.is_admin()` and `public.has_permission(text)` — that every
+policy calls instead of re-deriving the logic inline.
+
+Five system roles ship with the schema and are protected from rename and
+deletion by a trigger, because application code branches on their keys:
+
+| Role                | Grants                                                    |
+| ------------------- | --------------------------------------------------------- |
+| `super_admin`       | all 20 permissions                                        |
+| `catalog_manager`   | products, categories, brands; reads inventory             |
+| `inventory_manager` | reads products; reads and adjusts inventory               |
+| `support_agent`     | read-only across catalog, inventory and customer profiles |
+| `content_editor`    | banners and settings                                      |
+
+Adding an administrator is one row in `admins` plus one in `user_roles`, which
+is what the 100+ administrator target requires. Verified: deactivating an admin
+(`is_active = false`) immediately drops them to anonymous visibility.
+
+No pages, no layout, no admin queries yet — those are Phase 6.
 
 > ⚠️ **`/admin` is in `protectedRoutePrefixes`, but that list is authentication
 > only.** Middleware proves a session exists; it does not check roles, because
@@ -420,24 +495,28 @@ link.
 
 ## Security status
 
-| Control                           | Status | Notes                                                                   |
-| --------------------------------- | ------ | ----------------------------------------------------------------------- |
-| `X-Content-Type-Options: nosniff` | ✅     | verified at runtime                                                     |
-| `X-Frame-Options: DENY`           | ✅     | verified at runtime                                                     |
-| `Referrer-Policy`                 | ✅     | `strict-origin-when-cross-origin`                                       |
-| `Permissions-Policy`              | ✅     | camera, mic, geolocation, browsing-topics all denied                    |
-| `Strict-Transport-Security`       | ✅     | 2 years, includeSubDomains, preload                                     |
-| `x-powered-by` suppressed         | ✅     | verified at runtime                                                     |
-| Content-Security-Policy           | ❌     | deferred — needs a per-request nonce in middleware                      |
-| Service-role key client-safe      | ✅     | `server-only` import; verified absent from chunks                       |
-| Env validated at boot             | ✅     | Zod, fails the build on missing/malformed values                        |
-| `next/image` host allow-list      | ✅     | Supabase Storage only; open allow-list would make this a free image CDN |
-| Server Action input validation    | ✅     | mandatory via `createAction()`                                          |
-| JWT validated, not trusted        | ✅     | `getUser()` everywhere, never `getSession()`                            |
-| Row Level Security                | ⬜     | nothing to secure yet — **mandatory in Phase 2**                        |
-| Role-based authorisation          | ❌     | see Admin dashboard status                                              |
-| Rate limiting                     | ❌     | Phase 9                                                                 |
-| Dependency audit in CI            | ❌     | Phase 9                                                                 |
+| Control                           | Status | Notes                                                                        |
+| --------------------------------- | ------ | ---------------------------------------------------------------------------- |
+| `X-Content-Type-Options: nosniff` | ✅     | verified at runtime                                                          |
+| `X-Frame-Options: DENY`           | ✅     | verified at runtime                                                          |
+| `Referrer-Policy`                 | ✅     | `strict-origin-when-cross-origin`                                            |
+| `Permissions-Policy`              | ✅     | camera, mic, geolocation, browsing-topics all denied                         |
+| `Strict-Transport-Security`       | ✅     | 2 years, includeSubDomains, preload                                          |
+| `x-powered-by` suppressed         | ✅     | verified at runtime                                                          |
+| Content-Security-Policy           | ❌     | deferred — needs a per-request nonce in middleware                           |
+| Service-role key client-safe      | ✅     | `server-only` import; verified absent from chunks                            |
+| Env validated at boot             | ✅     | Zod, fails the build on missing/malformed values                             |
+| `next/image` host allow-list      | ✅     | Supabase Storage only; open allow-list would make this a free image CDN      |
+| Server Action input validation    | ✅     | mandatory via `createAction()`                                               |
+| JWT validated, not trusted        | ✅     | `getUser()` everywhere, never `getSession()`                                 |
+| Row Level Security                | ✅     | enabled on all 18 tables; 45 policies. Verified against anon/customer/admin  |
+| Role-based authorisation          | ✅     | permission-gated policies; verified that a customer cannot self-grant a role |
+| SECURITY DEFINER search_path      | ✅     | all 7 definer functions pin `search_path = ''` — verified programmatically   |
+| Least-privilege GRANTs            | ✅     | `anon` granted SELECT only on the 7 tables with an anonymous read policy     |
+| Append-only audit + stock ledger  | ✅     | trigger-enforced for every role, service_role included                       |
+| Storage bucket isolation          | 🟡     | policies written; avatars owner-scoped. Runtime behaviour unverified (K-8)   |
+| Rate limiting                     | ❌     | Phase 9                                                                      |
+| Dependency audit in CI            | ❌     | Phase 9                                                                      |
 
 **Standing rule:** every table gets RLS enabled with explicit policies _before_
 it holds data. The anon key is public by design and is only safe because RLS is
@@ -448,28 +527,35 @@ replacement for it.
 
 ## Known issues
 
-| #   | Issue                                                                                                              | Severity      | Plan                                  |
-| --- | ------------------------------------------------------------------------------------------------------------------ | ------------- | ------------------------------------- |
-| K-1 | `/admin` is protected by authentication only; any signed-in customer passes middleware. No admin routes exist yet. | High (latent) | Phase 6, before the first admin route |
-| K-2 | Middleware redirects to `/sign-in`, which does not exist, so protected routes currently 404 after redirect.        | Low           | Phase 2                               |
-| K-3 | `types/database.ts` is a hand-written stub never validated against real generator output.                          | Medium        | Phase 2                               |
-| K-4 | No Content-Security-Policy.                                                                                        | Medium        | Phase 4                               |
-| K-5 | Middleware bundle is 162 kB (`@supabase/ssr` + `supabase-js`). Signed-in users pay Edge cold-start cost.           | Low           | Monitor                               |
-| K-6 | `allowScripts` in `package.json` is npm 11 syntax. A CI runner on npm 10 will not build `sharp`'s native binding.  | Low           | Phase 9                               |
-| K-7 | Header placeholder controls are `disabled`, so keyboard users find only the logo interactive in the header.        | Low           | Phase 3                               |
+| #    | Issue                                                                                                                                                                                                                     | Severity            | Plan                                                                |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------- |
+| K-1  | `/admin` is protected by authentication only; any signed-in customer passes middleware. No admin routes exist yet.                                                                                                        | High (latent)       | Phase 6, before the first admin route                               |
+| K-2  | Middleware redirects to `/sign-in`, which does not exist, so protected routes currently 404 after redirect.                                                                                                               | Low                 | Phase 2                                                             |
+| K-3  | **`types/database.ts` is stale.** The schema has 18 tables; the file still describes an empty one. `supabase gen types` needs Docker, which the Phase 2 machine lacks. Fails closed — every `from()` is a compile error.  | **High (blocking)** | Run `npm run db:types` on a machine with Docker, **before Phase 3** |
+| K-8  | Storage policies parse and are structurally correct, but `storage.objects` RLS was never exercised at runtime — the validation harness stubs the storage schema. Avatar folder-scoping in particular is unproven.         | Medium              | Verify on first real `supabase start`                               |
+| K-9  | The seed's `auth.users` / `auth.identities` inserts follow the documented Supabase shape but were never run against real GoTrue. If the column set has drifted, `db:reset` fails on the seed — noisily, and only locally. | Low                 | First real `npm run db:reset`                                       |
+| K-10 | Trigram search (`sku % 'text'`) resolves only because Supabase puts `extensions` on the role search_path. A service that schema-qualifies nothing will break if that default changes.                                     | Low                 | Phase 3 — schema-qualify or use `extensions.similarity()`           |
+| K-4  | No Content-Security-Policy.                                                                                                                                                                                               | Medium              | Phase 4                                                             |
+| K-5  | Middleware bundle is 162 kB (`@supabase/ssr` + `supabase-js`). Signed-in users pay Edge cold-start cost.                                                                                                                  | Low                 | Monitor                                                             |
+| K-6  | `allowScripts` in `package.json` is npm 11 syntax. A CI runner on npm 10 will not build `sharp`'s native binding.                                                                                                         | Low                 | Phase 9                                                             |
+| K-7  | Header placeholder controls are `disabled`, so keyboard users find only the logo interactive in the header.                                                                                                               | Low                 | Phase 3                                                             |
 
 ---
 
 ## Technical debt
 
-| #   | Item                                                                                                                                            | Interest rate                 | Pay down                                          |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ------------------------------------------------- |
-| D-1 | No tests of any kind, and no CI.                                                                                                                | High — grows with every phase | Phase 9, but add tests alongside Phase 2+ work    |
-| D-2 | `Paginated` / `PaginationParams` model offset pagination. Deep offsets and exact `COUNT(*)` do not hold at 50k products.                        | Medium                        | Phase 3 — keyset pagination for storefront browse |
-| D-3 | Zod re-enters the client bundle in Phase 3 when forms adopt `zodResolver`. Expected, but re-measure then.                                       | Low                           | Phase 3                                           |
-| D-4 | `components/ui/separator.tsx`, `skeleton.tsx` and both hooks are currently unimported.                                                          | Very low — zero bytes shipped | Naturally, as features land                       |
-| D-5 | No route groups yet. `app/(storefront)`, `(account)`, `(admin)` are planned but empty ones today would be indirection with nothing behind them. | Low                           | Phase 3                                           |
-| D-6 | No `robots.ts` or `sitemap.ts`. Correct for a one-page site; required before launch.                                                            | Low                           | Phase 3                                           |
+| #    | Item                                                                                                                                                                                                                                                 | Interest rate                                      | Pay down                                                                |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
+| D-1  | No tests of any kind, and no CI.                                                                                                                                                                                                                     | High — grows with every phase                      | Phase 9, but add tests alongside Phase 2+ work                          |
+| D-2  | `Paginated` / `PaginationParams` model offset pagination. Deep offsets and exact `COUNT(*)` do not hold at 50k products.                                                                                                                             | Medium                                             | Phase 3 — keyset pagination for storefront browse                       |
+| D-3  | Zod re-enters the client bundle in Phase 3 when forms adopt `zodResolver`. Expected, but re-measure then.                                                                                                                                            | Low                                                | Phase 3                                                                 |
+| D-4  | `components/ui/separator.tsx`, `skeleton.tsx` and both hooks are currently unimported.                                                                                                                                                               | Very low — zero bytes shipped                      | Naturally, as features land                                             |
+| D-5  | No route groups yet. `app/(storefront)`, `(account)`, `(admin)` are planned but empty ones today would be indirection with nothing behind them.                                                                                                      | Low                                                | Phase 3                                                                 |
+| D-6  | No `robots.ts` or `sitemap.ts`. Correct for a one-page site; required before launch.                                                                                                                                                                 | Low                                                | Phase 3                                                                 |
+| D-7  | Migration verification lives in a scratchpad PGlite harness that is not committed, so nobody can reproduce Phase 2's 116 assertions. Committing it means a devDependency and a harness that stubs `auth`/`storage` and can drift from real Supabase. | Medium — grows as the schema does                  | Decide when Docker is available; natural home is the Phase 9 test suite |
+| D-8  | No `product_variants` table. A single product carries one SKU, price and stock, so a laptop sold in 16GB and 32GB configurations needs two product rows. That is workable for a launch catalog and painful at scale.                                 | Medium — expensive after orders reference products | Before the catalog grows past a few thousand SKUs; revisit in Phase 3   |
+| D-9  | No `currency` column. Prices are integer minor units of one store-wide currency (`settings.store.currency`). Multi-currency is explicitly out of scope, but adding the column after orders exist means backfilling history.                          | Low — while out of scope                           | Only if multi-currency is ever adopted                                  |
+| D-10 | `inventory.quantity_reserved` is declared but nothing writes it. Phase 4 needs it for oversell prevention; until then `quantity_on_hand` alone describes availability.                                                                               | Low                                                | Phase 4                                                                 |
 
 ---
 
@@ -478,28 +564,38 @@ replacement for it.
 Decisions with lasting consequences. **Do not reverse one without recording the
 reversal here.**
 
-| ID     | Decision                                                                                                                                              | Rationale                                                                                                                                   |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| ADR-1  | One-directional flow: component → service → Supabase.                                                                                                 | A component that queries directly is a query the team cannot find later. This is the constraint the whole structure rests on.               |
-| ADR-2  | Money stored as **integer minor units** (cents).                                                                                                      | Floating point does not belong near a price. Enforced by `formatPrice()` taking minor units.                                                |
-| ADR-3  | Slugs persisted on the row, never derived on read.                                                                                                    | Deriving a slug on read means renaming a product silently breaks every existing link.                                                       |
-| ADR-4  | RLS is the authorisation boundary. Server checks are defence in depth.                                                                                | The anon key is public. Anything not enforced by RLS is not enforced.                                                                       |
-| ADR-5  | `getUser()` everywhere; `getSession()` never.                                                                                                         | `getSession()` trusts the cookie as-is and can be spoofed. `getUser()` validates the JWT against the Auth server.                           |
-| ADR-6  | Server Components by default; `"use client"` pushed as far down the tree as possible.                                                                 | Client JS is opt-in, not the default. This is what keeps First Load JS near the framework floor.                                            |
-| ADR-7  | `lib/env.ts` is the environment contract; only `next.config.ts` and `lib/logger.ts` read `process.env` directly, both documented at the point of use. | Fail fast at boot with a readable message, rather than `undefined` deep inside a request three weeks later.                                 |
-| ADR-8  | `lib/logger.ts` must not import `lib/env.ts`.                                                                                                         | It is imported by Client Components. The import chain put Zod and the env schema in the shared client bundle — 67 kB, measured.             |
-| ADR-9  | `types/` contains declarations only; runtime helpers live in `lib/`.                                                                                  | Importing from `types/` must be provably free. `ok()`/`err()` moved to `lib/result.ts` for this reason.                                     |
-| ADR-10 | `utils/` may not import env, Supabase or React.                                                                                                       | A formatter that drags Zod into the bundle every time a price renders is not a utility.                                                     |
-| ADR-11 | Middleware skips Supabase entirely for requests with no `sb-*-auth-token` cookie.                                                                     | Most storefront traffic is anonymous. Calling `getUser()` for them adds a round trip to Auth on every page view and burns auth quota.       |
-| ADR-12 | `createClient()` and `getCurrentUser()` memoised with React `cache()`.                                                                                | Per-request, not cross-request. Six components asking for the user cost one JWT validation, not six.                                        |
-| ADR-13 | `createAction()` calls `unstable_rethrow()` before handling any error.                                                                                | `redirect()` and `notFound()` signal by throwing. Catching them turns a redirect into "Something went wrong."                               |
-| ADR-14 | Middleware does authentication only, never authorisation.                                                                                             | Role checks need a database read. A query on the Edge in front of the whole site is not a trade worth making.                               |
-| ADR-15 | No canonical URL in the root layout.                                                                                                                  | A root canonical is inherited by every page that does not override it, telling crawlers the whole catalog duplicates one URL.               |
-| ADR-16 | `NEXT_PUBLIC_SITE_URL` optional, falling back to `NEXT_PUBLIC_VERCEL_URL` then localhost.                                                             | Preview deployments get a hostname that cannot be known in advance. Without the fallback every preview emits production URLs.               |
-| ADR-17 | `next.config.ts` throws when `NEXT_PUBLIC_SUPABASE_URL` is missing.                                                                                   | An empty `remotePatterns` list builds fine and 404s every product image in production — a failure that reaches customers before developers. |
-| ADR-18 | No root `app/loading.tsx`.                                                                                                                            | Both pages are static. A root loading file flashes a fallback on every navigation and buys nothing.                                         |
-| ADR-19 | `lib/utils.ts` stays where it is despite the `lib`/`utils` overlap.                                                                                   | `components.json` and every generated shadcn component import `cn` from `@/lib/utils`. Moving it fights the generator forever.              |
-| ADR-20 | No fake or seeded data, in any phase.                                                                                                                 | Placeholder data hides empty states, and empty states are where ecommerce UIs actually break.                                               |
+| ID     | Decision                                                                                                                                                                                                          | Rationale                                                                                                                                                                                                                                                      |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ADR-1  | One-directional flow: component → service → Supabase.                                                                                                                                                             | A component that queries directly is a query the team cannot find later. This is the constraint the whole structure rests on.                                                                                                                                  |
+| ADR-2  | Money stored as **integer minor units** (cents).                                                                                                                                                                  | Floating point does not belong near a price. Enforced by `formatPrice()` taking minor units.                                                                                                                                                                   |
+| ADR-3  | Slugs persisted on the row, never derived on read.                                                                                                                                                                | Deriving a slug on read means renaming a product silently breaks every existing link.                                                                                                                                                                          |
+| ADR-4  | RLS is the authorisation boundary. Server checks are defence in depth.                                                                                                                                            | The anon key is public. Anything not enforced by RLS is not enforced.                                                                                                                                                                                          |
+| ADR-5  | `getUser()` everywhere; `getSession()` never.                                                                                                                                                                     | `getSession()` trusts the cookie as-is and can be spoofed. `getUser()` validates the JWT against the Auth server.                                                                                                                                              |
+| ADR-6  | Server Components by default; `"use client"` pushed as far down the tree as possible.                                                                                                                             | Client JS is opt-in, not the default. This is what keeps First Load JS near the framework floor.                                                                                                                                                               |
+| ADR-7  | `lib/env.ts` is the environment contract; only `next.config.ts` and `lib/logger.ts` read `process.env` directly, both documented at the point of use.                                                             | Fail fast at boot with a readable message, rather than `undefined` deep inside a request three weeks later.                                                                                                                                                    |
+| ADR-8  | `lib/logger.ts` must not import `lib/env.ts`.                                                                                                                                                                     | It is imported by Client Components. The import chain put Zod and the env schema in the shared client bundle — 67 kB, measured.                                                                                                                                |
+| ADR-9  | `types/` contains declarations only; runtime helpers live in `lib/`.                                                                                                                                              | Importing from `types/` must be provably free. `ok()`/`err()` moved to `lib/result.ts` for this reason.                                                                                                                                                        |
+| ADR-10 | `utils/` may not import env, Supabase or React.                                                                                                                                                                   | A formatter that drags Zod into the bundle every time a price renders is not a utility.                                                                                                                                                                        |
+| ADR-11 | Middleware skips Supabase entirely for requests with no `sb-*-auth-token` cookie.                                                                                                                                 | Most storefront traffic is anonymous. Calling `getUser()` for them adds a round trip to Auth on every page view and burns auth quota.                                                                                                                          |
+| ADR-12 | `createClient()` and `getCurrentUser()` memoised with React `cache()`.                                                                                                                                            | Per-request, not cross-request. Six components asking for the user cost one JWT validation, not six.                                                                                                                                                           |
+| ADR-13 | `createAction()` calls `unstable_rethrow()` before handling any error.                                                                                                                                            | `redirect()` and `notFound()` signal by throwing. Catching them turns a redirect into "Something went wrong."                                                                                                                                                  |
+| ADR-14 | Middleware does authentication only, never authorisation.                                                                                                                                                         | Role checks need a database read. A query on the Edge in front of the whole site is not a trade worth making.                                                                                                                                                  |
+| ADR-15 | No canonical URL in the root layout.                                                                                                                                                                              | A root canonical is inherited by every page that does not override it, telling crawlers the whole catalog duplicates one URL.                                                                                                                                  |
+| ADR-16 | `NEXT_PUBLIC_SITE_URL` optional, falling back to `NEXT_PUBLIC_VERCEL_URL` then localhost.                                                                                                                         | Preview deployments get a hostname that cannot be known in advance. Without the fallback every preview emits production URLs.                                                                                                                                  |
+| ADR-17 | `next.config.ts` throws when `NEXT_PUBLIC_SUPABASE_URL` is missing.                                                                                                                                               | An empty `remotePatterns` list builds fine and 404s every product image in production — a failure that reaches customers before developers.                                                                                                                    |
+| ADR-18 | No root `app/loading.tsx`.                                                                                                                                                                                        | Both pages are static. A root loading file flashes a fallback on every navigation and buys nothing.                                                                                                                                                            |
+| ADR-19 | `lib/utils.ts` stays where it is despite the `lib`/`utils` overlap.                                                                                                                                               | `components.json` and every generated shadcn component import `cn` from `@/lib/utils`. Moving it fights the generator forever.                                                                                                                                 |
+| ADR-20 | No fake or seeded data, in any phase. **Refined by ADR-25.**                                                                                                                                                      | Placeholder data hides empty states, and empty states are where ecommerce UIs actually break.                                                                                                                                                                  |
+| ADR-21 | Permissions are never held by a user directly. Users hold roles; roles hold permissions.                                                                                                                          | At 100+ administrators, per-user grants become impossible to audit. Revoking a capability from everyone must be one DELETE, not a migration over users.                                                                                                        |
+| ADR-22 | Staff status lives in its own `admins` table, not an `is_admin` column on `profiles`.                                                                                                                             | `profiles` is the one table customers may UPDATE. A privilege flag on it is one mis-scoped policy away from self-service privilege escalation.                                                                                                                 |
+| ADR-23 | Every RLS helper is `SECURITY DEFINER` with `set search_path = ''` and fully schema-qualified references.                                                                                                         | DEFINER is required — a policy on `user_roles` that queries `user_roles` recurses forever. The pinned search_path stops a caller shadowing `public.admins` with their own table and having it read with elevated rights.                                       |
+| ADR-24 | Stock lives only in `inventory`. `products` has no stock column, and `inventory.quantity_on_hand` may change only through an `inventory_movements` insert — enforced by a trigger that rejects every other write. | Two writable copies of a quantity are two quantities. The guard makes "never overwrite inventory silently" a mechanism rather than a policy: a Studio edit raises an exception.                                                                                |
+| ADR-25 | **Refines ADR-20.** Development-only seed data is permitted in `supabase/seed.sql`, which runs on local `db reset` only and aborts if the database already holds products or admins.                              | ADR-20's reasoning was about content the storefront ships — placeholder products hiding empty states. A local fixture never reaches a user, and Phase 2 has no UI for it to hide. The abort guard is what keeps the distinction real rather than intended.     |
+| ADR-26 | Category nesting stores a trigger-maintained `path uuid[]` alongside `parent_id`, with a GIN index.                                                                                                               | `parent_id` alone needs a recursive CTE per page view. The path pays that cost once per write, and writes are rare. Cycles are rejected at the trigger, because a cycle in a category tree is an infinite loop in every breadcrumb.                            |
+| ADR-27 | `audit_logs` and `inventory_movements` are append-only, enforced by a trigger rather than by the absence of an RLS policy.                                                                                        | RLS does not constrain `service_role`. An audit log that anyone holding the service key can rewrite is not evidence of anything.                                                                                                                               |
+| ADR-28 | Anonymous read extends to visible categories, brands, published-product images/specs, public settings and live banners — not products alone.                                                                      | A product page must name its brand and the nav must list categories. Restricting these to `service_role` would move the whole storefront off RLS, which is the opposite of the intent. Recorded because the Phase 2 brief said "read published products only". |
+| ADR-29 | `types/database.ts` was left stale rather than hand-written when the generator could not run.                                                                                                                     | An empty `Tables` makes every `from()` a compile error, so the gap fails loudly. Fabricated types would be plausible, wrong, and unchecked — and would break the rule that this file is generated output.                                                      |
+| ADR-30 | GRANTs are written out explicitly instead of relying on Supabase's default privileges.                                                                                                                            | A privilege model that exists only as a platform default is one nobody can review. `anon` gets SELECT on exactly the seven tables with an anonymous read policy, so a mistaken policy still meets a closed second gate.                                        |
 
 ---
 
@@ -525,38 +621,67 @@ even on a laptop.
 
 ## Next task
 
-**Phase 2, task 1 — design and apply the initial database schema.**
+**Close K-3 — generate the database types.** This is a prerequisite for
+everything in Phase 3; no query can be written until it is done.
 
-In order:
+On a machine with Docker Desktop installed and running:
 
-1. Write the first migration: `products`, `categories`, `product_images`,
-   `profiles`, and the enums they need.
-2. **Enable RLS on every table in the same migration that creates it.** A table
-   must never exist without policies, not even briefly.
-3. Write explicit policies: public read for catalog tables, owner-scoped access
-   for `profiles`.
-4. Run `npm run db:reset`, then `npm run db:types`, and **replace the stub**
-   `types/database.ts` with real generator output. Verify the generated shape
-   against the stub's helper types (`Tables<>`, `TablesInsert<>`, ...) and fix
-   the helpers if they disagree — resolving K-3.
-5. Write the first service, `services/products.service.ts`, following the
-   contract in `services/README.md`.
-6. Update this file and `CHANGELOG.md`.
+```bash
+npm run db:start     # boots the local Supabase stack
+npm run db:reset     # replays all 9 migrations, then runs seed.sql
+npm run db:types     # overwrites types/database.ts with generator output
+npm run verify       # typecheck + lint + format + build
+```
 
-**Do not** build catalog pages in Phase 2. Schema, RLS, generated types and the
-service layer only.
+Then check three things the offline harness could not:
+
+1. `db:reset` completes — in particular the seed's `auth.users` and
+   `auth.identities` inserts (**K-9**).
+2. Sign in locally as `admin@bondo.local` / `bondo-dev-password`, and confirm an
+   avatar upload lands under `avatars/<user-id>/` and is not readable by a
+   second account (**K-8**).
+3. The regenerated `types/database.ts` agrees with the `Tables<>` /
+   `TablesInsert<>` / `TablesUpdate<>` / `Enums<>` helpers in the same file —
+   fix the helpers if the generator's shape differs.
+
+Commit the regenerated types. After that, Phase 3 may begin.
 
 ---
 
 ## Next phase
 
-**Phase 2 — Database & Authorization.** See [ROADMAP.md](ROADMAP.md#phase-2--database--authorization).
+**Phase 3 — Storefront Catalog.** See [ROADMAP.md](ROADMAP.md#phase-3--storefront-catalog).
+It now also carries the auth flow and the first services, which moved out of
+Phase 2 when that phase was scoped to the database only.
 
 ---
 
 ## Changelog for this phase
 
-Full detail in [CHANGELOG.md](CHANGELOG.md). Summary of v0.1.0:
+Full detail in [CHANGELOG.md](CHANGELOG.md). Summary of v0.2.0:
+
+**Added** — 9 migrations defining 18 tables with RLS on every one (45 policies,
+plus 10 on `storage.objects`); a roles/permissions authorisation model with 20
+permissions and 5 protected system roles; an append-only inventory ledger whose
+guard trigger rejects any other write to `quantity_on_hand`; an append-only
+audit log immutable even to `service_role`; a category tree of unlimited depth
+with cycle rejection; a weighted full-text search vector plus trigram SKU
+lookup; 58 indexes, each carrying its justification; 5 storage buckets; explicit
+least-privilege GRANTs; and a development seed that aborts on a non-empty
+database.
+
+**Verified** — 116 assertions against a real Postgres engine. Three bugs were
+caught and fixed during that process, two of which would have failed on
+production Supabase: a non-immutable generated column, an invalid append-only
+test, and missing explicit grants.
+
+**Not delivered** — generated types (**K-3**), because `supabase gen types`
+requires Docker. The stub was left stale on purpose so the gap is a compile
+error rather than a silent wrong answer.
+
+---
+
+Summary of v0.1.0:
 
 **Added** — Next.js 15 App Router foundation; TypeScript strict config; Tailwind
 4 + shadcn/ui; ESLint + Prettier; the full layer structure with written

@@ -12,22 +12,171 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
-Phase 2 (Database & Authorization) has not started. The entries below are
-process and tooling only — no application code has changed since v0.1.0.
+Nothing since v0.2.0.
+
+---
+
+## [0.2.0] — 2026-08-01
+
+**Phase 2 — Database Foundation.** The database platform every later feature
+depends on: 18 tables, a role/permission authorisation model, an append-only
+inventory ledger and audit log, 5 storage buckets, RLS on every table, and a
+guarded development seed.
+
+No UI, no services, no application code. `app/`, `components/`, `lib/`,
+`hooks/`, `utils/` and `actions/` are byte-for-byte unchanged; the only
+non-`supabase/` edit is a comment in `types/database.ts`.
+
+> **Scope change.** Phase 2 was planned as "Database & Authorization" and
+> included the sign-in/sign-up flow and the first services. The brief for this
+> phase excluded all UI, so those moved to Phase 3 and `ROADMAP.md` was updated.
+> **K-2 remains open.** `product_variants` was dropped from the schema — see
+> D-8.
 
 ### Added
 
+#### Schema — 9 migrations, 18 tables
+
+- `20260801000100_extensions_and_conventions.sql` — `pg_trgm` in the
+  `extensions` schema; `set_updated_at()`, `set_row_actor()` and
+  `is_valid_slug()` shared by every table that needs them
+- `20260801000200_identity_and_rbac.sql` — `profiles`, `roles`, `permissions`,
+  `role_permissions`, `user_roles`, `admins`; `is_admin()` and
+  `has_permission()`; profile creation trigger on `auth.users`; 20 permissions
+  and 5 system roles
+- `20260801000300_catalog.sql` — `brands`, `categories`, `products`,
+  `product_images`, `product_specifications`; `product_status` and
+  `product_visibility` enums
+- `20260801000400_inventory.sql` — `inventory`, `inventory_movements`,
+  `inventory_movement_type` enum
+- `20260801000500_content_and_settings.sql` — `settings`, `site_banners`,
+  `banner_placement` enum, six baseline settings
+- `20260801000600_audit_log.sql` — `audit_logs`
+- `20260801000700_wishlists.sql` — `wishlists`, `wishlist_items`
+- `20260801000800_storage_buckets.sql` — 5 buckets, 10 object policies
+- `20260801000900_grants.sql` — explicit least-privilege GRANTs
+
+#### Product model
+
+SKU, slug, brand, category, status, visibility, featured flag, list/sale/cost
+price in integer minor units (ADR-2), weight, three dimensions, warranty, SEO
+title and description, keyword array, unlimited images, unlimited grouped
+specifications, and a scheduled `published_at`. Stock is **not** a product
+column — see ADR-24.
+
+#### Authorisation
+
+Roles hold permissions; users hold roles (ADR-21). Staff status lives in its own
+`admins` table rather than a flag on the customer-writable `profiles` row
+(ADR-22). Five system roles — `super_admin`, `catalog_manager`,
+`inventory_manager`, `support_agent`, `content_editor` — are protected from
+rename and deletion by a trigger.
+
+#### Inventory integrity
+
+`inventory.quantity_on_hand` may change **only** through an
+`inventory_movements` insert. A guard trigger raises on any other write,
+including from Supabase Studio, so "never overwrite inventory silently" is a
+mechanism rather than a convention (ADR-24). Movements are append-only and
+stamp `quantity_after` themselves, ignoring whatever the client sent. The
+ledger takes a row lock so concurrent movements cannot lose an update.
+
+#### Search
+
+A generated `tsvector` weighted A→D across name/SKU, keywords, short
+description and description, with `simple` for identifiers and `english` for
+prose, plus a GIN index. A separate trigram index on `sku` backs fuzzy admin
+lookup, which `tsvector` cannot do.
+
+#### Row Level Security
+
+Enabled on all 18 tables in the migration that creates each. 45 policies on
+`public`, 10 on `storage.objects`. Anonymous users read published products,
+visible categories and brands, images and specs of published products, public
+settings, and live banners (ADR-28). Customers read and update only their own
+profile and own their wishlists. Admin access is permission-gated. Every
+`SECURITY DEFINER` helper pins `search_path = ''` (ADR-23).
+
+#### Storage
+
+`products`, `brands`, `banners` and `site-assets` are public-read with MIME
+allow-lists and size limits; `avatars` is private and scoped to
+`avatars/<user-id>/`. Writes are gated on the same permissions as the
+corresponding tables.
+
+#### Development seed
+
+`supabase/seed.sql` — 13 categories across 3 levels, 5 brands, 6 products
+deliberately varied (draft, hidden, future-scheduled, on-sale), specifications,
+opening stock through the ledger, and a development admin. Aborts if the
+database already holds products or admins, so it cannot be run against a live
+store (ADR-25, refining ADR-20).
+
+### Fixed
+
+Three defects were caught by validation before they shipped. Two would have
+failed on production Supabase:
+
+- **A generated column that Postgres rejects.** `array_to_string()` is STABLE,
+  not IMMUTABLE, so using it in the `search_vector` generated column fails with
+  "generation expression is not immutable". Confirmed against the engine's own
+  volatility catalog, not guessed. Replaced with `array_to_tsvector()`, which is
+  immutable; `to_tsvector` also needs its explicit two-argument `regconfig`
+  form.
+- **Missing explicit GRANTs.** The migrations relied on Supabase's default
+  privileges. Added `20260801000900_grants.sql` so the privilege model is
+  reviewable and the schema is portable (ADR-30).
+- **An invalid append-only test.** A `FOR EACH ROW` trigger cannot fire on an
+  empty table, so the audit-log immutability check passed vacuously. Corrected;
+  the guarantee now holds with rows present.
+
+### Verified
+
+`supabase db reset` could not run — the Phase 2 machine has no Docker, no local
+Postgres and no linked project. Every migration and the seed were instead
+applied to a real Postgres engine (PGlite, PostgreSQL 18.3) and **116
+assertions** run against the result.
+
+| Area          | Verified                                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Structure     | 18 tables, RLS on all, ≥1 policy each, all definer functions pin `search_path`                                                 |
+| Anonymous RLS | sees 3 of 6 seeded products — draft, hidden and future-scheduled all excluded                                                  |
+| Customer RLS  | own profile only; cannot read inventory/admins/audit; cannot self-grant a role                                                 |
+| Admin RLS     | all 6 products, inventory, admin register, all settings                                                                        |
+| Deactivation  | `is_active = false` drops an admin to anonymous visibility immediately                                                         |
+| Inventory     | ledger drives level (12 − 2 = 10); direct writes, zero deltas and negative stock rejected; client `quantity_after` overwritten |
+| Append-only   | UPDATE and DELETE rejected on both `inventory_movements` and `audit_logs`                                                      |
+| Category tree | 3-level nesting, subtree containment, cycle rejection, descendant path rebuild                                                 |
+| Constraints   | 14 invalid writes rejected; soft-deleted SKU/slug reusable                                                                     |
+| Search        | full-text and trigram both match                                                                                               |
+| Seed guard    | refuses to run against a non-empty database                                                                                    |
+
+The harness is not committed — see D-7. It stubs `auth` and `storage`, so three
+gaps remain and are tracked as K-8, K-9 and K-10.
+
+### Known limitations at this version
+
+- **K-3 (blocking)** — `types/database.ts` is stale. `supabase gen types` runs
+  its generator in a container and no container runtime was available. Left
+  stale rather than hand-written so the gap is a compile error, not a plausible
+  wrong answer (ADR-29). **Run `npm run db:types` before Phase 3.**
+- **K-8** — storage policies unexercised at runtime.
+- **K-9** — the seed's `auth.users` inserts unverified against real GoTrue.
+- **K-10** — trigram search depends on Supabase's default `search_path`.
+- No `product_variants` (D-8), no `currency` column (D-9),
+  `inventory.quantity_reserved` declared but unwritten until Phase 4 (D-10).
+
+### Process
+
+From the previous unreleased section, now shipped with this version:
+
 - Release policy — the nine mandatory steps every completed phase must end with,
-  in [CLAUDE.md § 10](CLAUDE.md#10-release-policy), together with the
-  Conventional Commits format the project uses
+  in [CLAUDE.md § 10](CLAUDE.md#10-release-policy), with the Conventional
+  Commits format the project uses
 - `npm run verify` (`check` + production build), so step 1 of that policy is one
-  command rather than a checklist that can be half-run. It gains a test step
-  when the first tests land in Phase 4
-
-### Changed
-
+  command rather than a checklist that can be half-run
 - `ROADMAP.md § How phases work` now points at the release policy instead of
-  restating a partial version of it, so the two cannot drift apart
+  restating a partial version of it
 
 ---
 
@@ -226,7 +375,9 @@ Tracked in [PROJECT_STATUS.md](PROJECT_STATUS.md#known-issues).
 
 ---
 
-> `v0.1.0` is tagged and pushed to `origin`.
+> `v0.1.0` is tagged and pushed to `origin`. `v0.2.0` is written up here but not
+> yet tagged — the release policy tags only when instructed.
 
-[Unreleased]: https://github.com/urinboeveshonqul-svg/Bondo/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/urinboeveshonqul-svg/Bondo/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/urinboeveshonqul-svg/Bondo/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/urinboeveshonqul-svg/Bondo/releases/tag/v0.1.0

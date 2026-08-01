@@ -4,13 +4,13 @@ Nine phases from foundation to launch. Current state always lives in
 [PROJECT_STATUS.md](PROJECT_STATUS.md) — this file is the plan, that file is the
 truth.
 
-**Current position:** Phase 1 complete. Phase 2 is next.
-**Overall progress:** ~8%
+**Current position:** Phase 2 complete. Phase 3 is next, gated on **K-3**.
+**Overall progress:** ~20%
 
 ```
 Phase 1  Foundation                ████████████████████ 100%   ✅ complete
-Phase 2  Database & Authorization  ░░░░░░░░░░░░░░░░░░░░   0%   ← next
-Phase 3  Storefront Catalog        ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 2  Database Foundation       ████████████████████ 100%   ✅ complete (K-3 open)
+Phase 3  Storefront Catalog        ░░░░░░░░░░░░░░░░░░░░   0%   ← next
 Phase 4  Cart & Checkout           ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5  Customer Accounts         ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 6  Admin Dashboard           ░░░░░░░░░░░░░░░░░░░░   0%
@@ -69,57 +69,86 @@ behaviour verified in a browser, First Load JS at 131 kB.
 
 ---
 
-## Phase 2 — Database & Authorization
+## Phase 2 — Database Foundation ✅
 
-**Status:** Next · **Target version:** v0.2.0
+**Status:** Complete · **Target version:** v0.2.0 · **Reviewed:** yes
 
-The schema and the authorisation model. Still no catalog pages.
+> **Scope changed during this phase.** It was planned as "Database &
+> Authorization" and included the sign-in/sign-up flow and the first services.
+> The Phase 2 brief scoped it to the database platform only — no UI, no
+> services. Those items moved to Phase 3 rather than being dropped, and **K-2
+> stays open** as a result. `product_variants` was also dropped from the
+> schema; see **D-8**.
 
 ### Schema
 
-- [ ] `categories` — hierarchical, slug-keyed
-- [ ] `products` — slug-keyed, integer minor-unit pricing (ADR-2)
-- [ ] `product_images` — Supabase Storage references
-- [ ] `product_variants` — SKU, attributes, per-variant price and stock
-- [ ] `profiles` — extends `auth.users`, carries the role column
-- [ ] Full-text search index on products (`tsvector`, GIN)
-- [ ] Indexes for the catalog access patterns: slug lookup, category filter,
-      price sort, keyset pagination on `(sort_key, id)`
+- [x] `profiles` — 1:1 with `auth.users`, created by trigger on signup
+- [x] `roles`, `permissions`, `role_permissions`, `user_roles`, `admins`
+- [x] `brands`, `categories` (unlimited depth, cycle-rejecting), `products`
+- [x] `product_images`, `product_specifications` — both unlimited per product
+- [x] `inventory` + `inventory_movements` — append-only ledger
+- [x] `settings`, `site_banners`, `audit_logs`, `wishlists`, `wishlist_items`
+- [x] UUID keys, `created_at`/`updated_at`, `created_by`/`updated_by`, soft
+      delete where a row is referenced by history
+- [x] Weighted `tsvector` generated column + GIN; trigram index for fuzzy SKU
+- [x] 58 indexes, each with a written justification
 
 ### Security
 
-- [ ] **RLS enabled on every table in the same migration that creates it**
-- [ ] Public read policies for catalog tables
-- [ ] Owner-scoped policies for `profiles`
-- [ ] Role model: `customer` | `admin`, stored on `profiles`
-- [ ] Storage bucket policies for product images
+- [x] RLS enabled on all 18 tables, in the migration that creates each
+- [x] 45 policies on `public`, 10 on `storage.objects`
+- [x] Anonymous: published products, visible catalog metadata, public settings
+- [x] Customers: own profile and own wishlists only
+- [x] Admins: permission-gated through `has_permission()`
+- [x] Every `SECURITY DEFINER` function pins `search_path` — verified
+- [x] Explicit least-privilege GRANTs rather than platform defaults
+- [x] Storage bucket policies; `avatars` private and owner-folder-scoped
 
-### Auth flow
+### Storage and data
 
-- [ ] Sign-in, sign-up, sign-out
-- [ ] `/auth/callback` route handler
-- [ ] Password reset
-- [ ] `profiles` row created on signup (trigger)
-- [ ] Resolves **K-2** (redirect currently lands on a 404)
+- [x] Buckets: `products`, `brands`, `avatars`, `banners`, `site-assets`
+- [x] Development seed that aborts on a non-empty database
+- [ ] **`npm run db:types` — blocked, needs Docker (K-3)**
 
-### Types and services
-
-- [ ] `npm run db:types` — replace the `types/database.ts` stub with real
-      generator output, verify the helper types against it (resolves **K-3**)
-- [ ] `services/products.service.ts`
-- [ ] `services/categories.service.ts`
-
-**Exit criteria:** every table has RLS with explicit policies; `db:reset`
-replays cleanly from zero; generated types committed; a user can sign up, sign
-in and sign out; `npm run check` and the build pass.
+**Exit criteria:** met except generated types. Every table has RLS with explicit
+policies; all 9 migrations plus the seed apply cleanly to a real Postgres engine
+under 116 assertions; `npm run verify` passes. `db:reset` against the official
+local stack has **not** been run — see K-3, K-8, K-9.
 
 ---
 
 ## Phase 3 — Storefront Catalog
 
-**Status:** Not started · **Target version:** v0.3.0
+**Status:** Next · **Target version:** v0.3.0
 
-The shopping experience, read-only.
+The shopping experience, read-only. Now also carries the auth flow and the first
+services, which moved out of Phase 2 when it was scoped to the database only.
+
+> **Blocked until K-3 is closed.** `types/database.ts` still describes an empty
+> schema, so `supabase.from("products")` will not compile. Run
+> `npm run db:start && npm run db:reset && npm run db:types` on a machine with
+> Docker and commit the result before starting.
+
+### Prerequisites
+
+- [ ] **K-3** — generate and commit `types/database.ts`
+- [ ] **K-8** — verify storage RLS at runtime, especially avatar folder scoping
+- [ ] **K-9** — confirm the seed's `auth.users` inserts work against real GoTrue
+
+### Auth flow (moved from Phase 2)
+
+- [ ] Sign-in, sign-up, sign-out
+- [ ] `/auth/callback` route handler
+- [ ] Password reset
+- [ ] Resolves **K-2** (redirect currently lands on a 404)
+
+### Services (moved from Phase 2)
+
+- [ ] `services/products.service.ts`, `services/categories.service.ts`,
+      `services/brands.service.ts` — per the contract in `services/README.md`
+- [ ] Schema-qualify trigram search or use `extensions.similarity()` (**K-10**)
+
+### Catalog
 
 - [ ] Route group `app/(storefront)/` (pays down **D-5**)
 - [ ] Product listing with filter, sort and pagination
