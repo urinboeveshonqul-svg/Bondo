@@ -30,6 +30,16 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
   build starts and reports every problem at once, so the failure names the
   variable and says how to set it (ADR-31). The build still fails — it stops
   misattributing the cause.
+- **Env validation accepted two values it should have rejected** (ADR-32). Both
+  `z.url()` and `URL.canParse()` accept any scheme, so
+  `postgresql://postgres:…@db.<ref>.supabase.co:5432/postgres` — the connection
+  string Supabase displays beside the project URL — validated and then failed at
+  the first query. Now checked with `z.httpUrl()` and an explicit scheme test.
+  A value carrying a trailing newline from a paste also passed every truthiness
+  and length check, leaving the credential quietly wrong at runtime; it is now
+  rejected rather than trimmed, so the mistake is fixed where it was entered.
+- The preflight failure now **leads with a status line per variable**, so a
+  truncated build log still answers "which one".
 
 ---
 

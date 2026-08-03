@@ -13,16 +13,41 @@ import { z } from "zod";
  * `lib/logger.ts` (imported by Client Components — see the note there).
  */
 
+/**
+ * A value pasted into a hosting provider's form can carry a trailing newline.
+ * It passes every truthiness and length check, so the build succeeds and the
+ * credential is quietly wrong at runtime — presenting later as an auth or RLS
+ * bug rather than as a configuration mistake. Rejected rather than trimmed:
+ * silently repairing input hides the error from the person who can fix it where
+ * it was actually entered.
+ */
+const noSurroundingWhitespace = (value: string) => value === value.trim();
+const whitespaceMessage = "must not have leading or trailing whitespace";
+
+/**
+ * `z.httpUrl()` rather than `z.url()`. The latter accepts any scheme, including
+ * `postgresql://postgres:...@db.<ref>.supabase.co:5432/postgres` — the database
+ * connection string, which Supabase's dashboard displays beside the project URL
+ * and which is a routine copy-paste mistake. It would otherwise validate here
+ * and then fail obscurely at the first query.
+ */
 const clientSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.url({
-    error: "NEXT_PUBLIC_SUPABASE_URL must be a valid URL",
-  }),
+  NEXT_PUBLIC_SUPABASE_URL: z
+    .httpUrl({
+      error:
+        "NEXT_PUBLIC_SUPABASE_URL must be an http(s) URL, e.g. https://<project-ref>.supabase.co",
+    })
+    .refine(noSurroundingWhitespace, whitespaceMessage),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z
     .string()
-    .min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required"),
-  NEXT_PUBLIC_SITE_URL: z.url({
-    error: "NEXT_PUBLIC_SITE_URL must be a valid URL",
-  }),
+    .min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required")
+    .refine(noSurroundingWhitespace, whitespaceMessage),
+  NEXT_PUBLIC_SITE_URL: z
+    .httpUrl({
+      error:
+        "NEXT_PUBLIC_SITE_URL must be an http(s) URL, e.g. https://your-domain.com",
+    })
+    .refine(noSurroundingWhitespace, whitespaceMessage),
 });
 
 const serverSchema = z.object({
