@@ -49,6 +49,16 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
   rejected rather than trimmed, so the mistake is fixed where it was entered.
 - The preflight failure now **leads with a status line per variable**, so a
   truncated build log still answers "which one".
+- **`The Edge Function "middleware" is referencing unsupported modules: @/supabase/session`**
+  (ADR-33). Vercel's Edge bundler expects `.next/server/middleware.js`.
+  `next build --turbopack` never emits that file — it emits three chunks, one
+  named `[root-of-the-server]__….js` — so Vercel could not assemble the function
+  and reported the alias as an unresolved bare module. The alias itself was
+  fine: a literal scan of all 195 emitted files found no occurrence of it.
+  The production build now uses webpack; `dev` keeps `--turbopack`, where the
+  speed matters and nothing is deployed. Measured side effect: **First Load JS
+  139 kB → 103 kB, middleware 162 kB → 109 kB.** Tracked as **K-12** so it is
+  retested rather than assumed permanent.
 - **`Error: Unhandled type: "ColonToken" :` on Vercel.** Latent since Phase 1 and
   only reachable once the build got far enough to be analysed. Vercel reads
   `middleware.ts` with `@vercel/static-config`, which pulls each property apart
