@@ -19,6 +19,26 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
   Written from schema introspection rather than from memory, and cross-checked
   against `pg_catalog` so the counts cannot drift from the database.
 
+### Investigated — no defect found
+
+- **`ReferenceError: __dirname is not defined`** was reported against
+  production. Audited all 138 text files by literal enumeration: `__dirname`
+  and `__filename` appear in exactly one source file, `eslint.config.mjs`,
+  where they are **local constants derived from `import.meta.url`** — the ESM
+  replacement for the CommonJS globals, not a use of them — in a file loaded by
+  ESLint alone and never deployed. The emitted Edge bundle contains **zero**
+  occurrences; the seven elsewhere in `.next/server/` are Next.js's own
+  ncc-bundled dependencies inside CommonJS chunks running in the Node runtime,
+  where `__dirname` is defined. A fresh production build served `/`, `/nope`,
+  `/account`, `/admin`, `/products`, `/cart`, `/sign-in` and an authenticated
+  request without a single `ReferenceError`.
+
+  No code changed, because nothing in this repository is wrong. The audit is
+  recorded in `PROJECT_STATUS.md` under Edge runtime constraints specifically so
+  that a future instruction to "remove every `__dirname`" does not delete the
+  `eslint.config.mjs` lines and break linting — `FlatCompat` requires a
+  `baseDirectory`.
+
 ### Fixed
 
 - **A missing public environment variable failed the build as

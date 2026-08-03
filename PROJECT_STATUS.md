@@ -218,6 +218,41 @@ static; a root loading file would add a Suspense boundary that flashes a
 fallback on every navigation and buys nothing. Loading UI belongs on the
 segments that actually fetch, using the `Skeleton` primitive.
 
+### Edge runtime constraints
+
+`middleware.ts` is the only Edge Function. Three rules apply to it and to
+everything reachable from it, and all three were learned from failed
+deployments rather than from the docs:
+
+| Rule                                              | Why                                               |
+| ------------------------------------------------- | ------------------------------------------------- |
+| Relative imports throughout the chain, never `@/` | ADR-34 — Vercel resolves this graph itself        |
+| No import of `lib/env.ts`                         | ADR-35 — a module-scope throw kills every request |
+| No `/** … */` inside `export const config`        | K-11 — Vercel's config parser mis-reads it        |
+
+**`__dirname` / `__filename` audit (2026-08-01).** Scanned all 138 text files
+by literal enumeration. They appear in exactly one source file:
+
+```js
+// eslint.config.mjs — CORRECT, do not "fix"
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const compat = new FlatCompat({ baseDirectory: __dirname });
+```
+
+Those are **local constants derived from `import.meta.url`** — already the ESM
+replacement for the CommonJS globals, not a use of them. The file is loaded by
+ESLint only; it is never imported by application code and never deployed.
+Deleting these lines does not make anything more Edge-safe, it breaks linting,
+because `FlatCompat` requires a `baseDirectory`.
+
+The emitted Edge bundle (`.next/server/middleware.js`) contains **zero**
+occurrences. The seven occurrences elsewhere in `.next/server/` are Next.js's
+own ncc-bundled vendored dependencies (`__nccwpck_require__.ab = __dirname + "/"`)
+inside CommonJS chunks that run in the Node.js server runtime, where `__dirname`
+is defined — `.next/package.json` declares `"type": "commonjs"` and the root
+`package.json` declares no `type`.
+
 ---
 
 ## Folder structure
