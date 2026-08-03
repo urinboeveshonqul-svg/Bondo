@@ -12,7 +12,24 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
-Nothing since v0.2.0.
+### Added
+
+- `docs/database/` — ERD, table relationships, permission graph, storage
+  architecture, inventory flow and the product model, as Mermaid diagrams.
+  Written from schema introspection rather than from memory, and cross-checked
+  against `pg_catalog` so the counts cannot drift from the database.
+
+### Fixed
+
+- **A missing public environment variable failed the build as
+  `Failed to collect page data for /_not-found`** — a message that names an
+  innocent file and never mentions environment variables. The throw actually
+  comes from `lib/env.ts`, imported by `app/layout.tsx` for `metadataBase`;
+  `/_not-found` is just the first route whose page data Next collects.
+  `next.config.ts` now preflights the whole required public env set before the
+  build starts and reports every problem at once, so the failure names the
+  variable and says how to set it (ADR-31). The build still fails — it stops
+  misattributing the cause.
 
 ---
 
