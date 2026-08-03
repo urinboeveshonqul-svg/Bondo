@@ -12,6 +12,65 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — Phase 3A, premium UI and storefront foundation
+
+The interface a customer sees, built end to end against mock data. No page
+touches Supabase.
+
+**Design system.** 16 shadcn primitives plus 12 project components —
+`ProductCard`, `ProductGrid`, `Price`, `DiscountBadge`, `Rating`,
+`StockIndicator`, `ProductImage`, `ProductCardSkeleton`, `EmptyState`,
+`Section`, `NewsletterForm`, `ThemeToggle`. Light and dark via `next-themes`
+with no flash on first paint. Colour is blue primary, neutral surfaces, one
+green for in-stock, and orange for price reductions only (**ADR-37**) — which
+cost the star rating and the low-stock label their accent, because an amber
+star beside an orange sale price makes a well-reviewed product look discounted.
+
+**Header.** Sticky, with search, a categories dropdown, wishlist, basket, theme
+toggle and a mobile panel. A Server Component composing client islands, so the
+shell ships as markup.
+
+**Footer.** Shop, support, company, social and newsletter.
+
+**Home page.** Ten sections: hero, featured, brand strip, four category rails,
+today's deals, why buy from Bondo, reviews, newsletter.
+
+**Catalog pages.** `/products` with category and search filtering and a real
+empty state; `/products/[slug]` with a grouped specifications table, breadcrumb
+and related products, 12 routes prerendered. These exist because the home page
+links to them — the project does not ship links to routes that 404.
+
+**Controls without destinations open panels, not 404s.** Basket and wishlist
+each open a sheet showing a genuine empty state; account is a disabled button
+until sign-in exists (**K-2**).
+
+### Changed
+
+- `lib/routes.ts` gains `catalog.byCategory(slug)`. A category is a filtered
+  listing rather than a separate template, so sorting, pagination and empty
+  states are implemented once.
+- The Phase 1 header and footer placeholders are replaced. Both were explicitly
+  marked provisional in `PROJECT_STATUS.md`.
+- Roadmap Phase 3 split into **3A** (this, mock data) and **3B** (services,
+  auth, database), because the original bundled both and was blocked on K-3.
+- Footer column headings are `h2`, not `h3`, and the catalog listing carries a
+  screen-reader-only "Products" heading above the grid. Both close heading-level
+  skips found by auditing the served HTML: the listing's only headings were the
+  page `h1` and the cards' `h3`.
+
+### Deliberate exemptions
+
+- **ADR-36 refines ADR-20** to permit mock catalog data in `mocks/`, scoped so
+  it cannot leak past `app/` and `components/`, with the empty states ADR-20
+  protects built and reachable today. Tracked as **D-11** — the phase's main
+  debt, deleted the moment services land.
+- **No product photography.** A convincing fake photo of a real product is the
+  one piece of mock data that could be mistaken for finished work, so products
+  render a monogram tile instead. Consequence: `next/image` is unexercised
+  (**D-12**).
+- **No manufacturer or social logos.** Trademarked marks are not approximated;
+  brands show a monogram and social channels are text.
+
 ### Added
 
 - `docs/database/` — ERD, table relationships, permission graph, storage

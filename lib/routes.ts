@@ -12,6 +12,15 @@ export const routes = {
   catalog: {
     index: "/products",
     detail: (slug: string) => `/products/${slug}`,
+    /**
+     * A category is a filtered listing, not a separate page. One template means
+     * one place where sorting, pagination and empty states are implemented, and
+     * a shopper narrowing by category keeps whatever else they had set.
+     * `category(slug)` remains for a future dedicated landing page with its own
+     * copy and metadata; nothing links to it yet.
+     */
+    byCategory: (slug: string) =>
+      `/products?category=${encodeURIComponent(slug)}`,
     category: (slug: string) => `/categories/${slug}`,
     search: "/search",
   },

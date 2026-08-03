@@ -4,10 +4,10 @@
 > It is updated at the end of every completed task. If this file and the code
 > disagree, the code is right and this file is a bug — fix it immediately.
 
-**Last updated:** 2026-08-01
-**Version:** v0.2.0 (unreleased) — v0.1.0 is the last tag
-**Phase:** 2 of 9 — Database Foundation ✅ **Complete** (one blocker: K-3)
-**Overall progress:** ~20%
+**Last updated:** 2026-08-03
+**Version:** v0.3.0 (unreleased) — v0.1.0 is the last tag
+**Phase:** 3A of 9 — Premium UI & Storefront Foundation ✅ **Complete**
+**Overall progress:** ~32%
 
 ### Release status
 
@@ -50,28 +50,33 @@ it has been tested against):
 
 ## Current phase
 
-**Phase 2 — Database Foundation.** Complete, with one blocker carried forward.
+**Phase 3A — Premium UI & Storefront Foundation.** Complete.
 
-Phase 2 built the database platform every later feature depends on: 18 tables,
-a role/permission authorisation model, an append-only inventory ledger and audit
-log, 5 storage buckets, RLS on everything, and a guarded development seed. It
-deliberately shipped **no** UI — no admin pages, no storefront pages, no
-services. The application is byte-for-byte unchanged.
+The interface a customer sees, built end to end against mock data: a design
+system in light and dark, a real header and footer, a ten-section landing page,
+a catalog listing and a product detail page. No page touches Supabase.
 
-Scope note: the ROADMAP's original Phase 2 also included the sign-in/sign-up
-flow and the first services. The Phase 2 brief excluded all UI, so those moved
-to Phase 3 and the roadmap was updated to match. **K-2 is therefore still
-open** — the middleware redirect still lands on a 404.
+**Phase 3 was split.** The roadmap's Phase 3 bundled the interface with auth,
+services and database wiring, and was blocked on **K-3**. The brief for this
+phase excluded the database explicitly, so the interface became **3A** and the
+data work **3B**. That unblocks the UI without pretending K-3 is closed.
 
-The one thing not delivered is generated types (**K-3**), because
-`supabase gen types` needs Docker. See
-[Current database status](#current-database-status).
+Two standing rules were overridden by the brief, both deliberately and both
+recorded rather than quietly broken:
+
+- **ADR-36** permits mock catalog data in `mocks/`, refining ADR-20. Scoped so
+  it cannot leak past `app/` and `components/`, and tracked as **D-11**.
+- **ADR-37** fixes orange to price reductions only, which cost the star rating
+  and the low-stock label their accent colour.
+
+Still open from earlier phases: **K-3** (types not generated) blocks 3B, and
+**K-2** (no `/sign-in` page) is why the account control is a disabled button.
 
 ---
 
 ## Overall progress
 
-**~20%**
+**~32%**
 
 Nine phases, weighted by expected effort rather than counted equally — Phase 1
 is a small phase and checkout is a large one. The number is an estimate and will
@@ -80,7 +85,8 @@ be revised as phases land.
 ```
 Phase 1  Foundation                ████████████████████ 100%   ✅ complete
 Phase 2  Database Foundation       ████████████████████ 100%   ✅ complete (K-3 open)
-Phase 3  Storefront Catalog        ░░░░░░░░░░░░░░░░░░░░   0%   ← next
+Phase 3A Premium UI (mock data)    ████████████████████ 100%   ✅ complete
+Phase 3B Storefront Data Wiring    ░░░░░░░░░░░░░░░░░░░░   0%   ← next (needs K-3)
 Phase 4  Cart & Checkout           ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5  Customer Accounts         ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 6  Admin Dashboard           ░░░░░░░░░░░░░░░░░░░░   0%
@@ -135,10 +141,22 @@ See [ROADMAP.md](ROADMAP.md) for what each phase contains.
 - Middleware session refresh with an anonymous short-circuit.
 - Supabase CLI project initialised (`supabase/config.toml`, `migrations/`).
 
+### Design system (Phase 3A)
+
+- 16 shadcn primitives; `button` kept the Phase 1 version rather than being
+  overwritten by the generator.
+- 12 project components: `ProductCard`, `ProductGrid`, `Price`,
+  `DiscountBadge`, `Rating`, `StockIndicator`, `ProductImage`,
+  `ProductCardSkeleton`, `EmptyState`, `Section`, `Container`, `ThemeToggle`.
+- Colour: blue primary, neutral surfaces, orange for price cuts only (ADR-37),
+  one green for in-stock. Semantic tokens (`--discount`, `--success`) defined
+  for both themes rather than hard-coded per component.
+- Light and dark via `next-themes`, class strategy, no flash on first paint.
+
 ### Pages
 
-Home, 404, root layout, route error boundary, root-layout error boundary, plus
-header and footer placeholders. Nothing else.
+Home (10 sections), `/products` listing, `/products/[slug]` detail with 12
+prerendered routes, 404, and both error boundaries.
 
 ### Verified
 
@@ -146,15 +164,33 @@ header and footer placeholders. Nothing else.
 | -------------------------------------- | -------------------------------- |
 | `npm run check`                        | passes                           |
 | `npm run build`                        | passes                           |
-| First Load JS                          | **103 kB** (139 kB on Turbopack) |
+| First Load JS — home                   | **129 kB**                       |
+| First Load JS — listing / detail       | 107 kB / 117 kB                  |
 | Shared JS                              | 103 kB                           |
 | Middleware bundle                      | **93 kB** (109 kB before ADR-35) |
-| Static prerendered routes              | 2 (`/`, `/_not-found`)           |
+| Static prerendered routes              | 17                               |
+| `<h1>` per page                        | exactly 1 on all 7 routes        |
+| Heading levels                         | no skipped level on any route    |
+| Dead links (`href="#"` or absent)      | 0                                |
+| Internal link targets                  | 18, all resolve — 0 are 4xx      |
+| Buttons without an accessible name     | 0                                |
+| `<img>` without `alt`                  | 0                                |
+| Accent colour outside discounts        | 0 of 32 uses                     |
 | Security headers present at runtime    | yes, confirmed in browser        |
 | `x-powered-by` suppressed              | yes                              |
 | Anonymous → `/account/orders` redirect | yes, confirmed in browser        |
 | Fonts resolve to Geist                 | yes, confirmed in browser        |
 | Env/Zod absent from client chunks      | yes, confirmed by grep           |
+
+The accessibility and link rows are asserted against the **HTML the server
+sends** for `/`, `/products`, three filtered listings, a product page and a 404
+— not against a hydrated DOM. That is the stronger claim: it is what a crawler,
+a screen reader on a slow connection and a client with JS disabled all receive.
+
+**Not yet verified:** client-side behaviour — the theme toggle, the basket and
+wishlist sheets, and the mobile navigation panel. They typecheck and build, and
+their server markup is correct, but no interaction has been driven against a
+real browser in this environment. Tracked as **D-13**.
 
 ---
 
@@ -526,26 +562,33 @@ No pages, no layout, no admin queries yet — those are Phase 6.
 
 ## Storefront status
 
-🟡 **Shell only.**
+🟢 **Interface complete on mock data.** 🔴 **Not connected to the database.**
 
-| Item             | Status                                           |
-| ---------------- | ------------------------------------------------ |
-| Root layout      | ✅ fonts, metadata, skip link, header, footer    |
-| Home page        | ✅ static, no data, no outbound links            |
-| 404 page         | ✅                                               |
-| Error boundaries | ✅ route + root-layout                           |
-| Header           | 🟡 placeholder — controls are inert and disabled |
-| Footer           | 🟡 placeholder — name, tagline, copyright only   |
-| Product listing  | ❌                                               |
-| Product detail   | ❌                                               |
-| Search           | ❌                                               |
-| Categories       | ❌                                               |
-| Cart             | ❌                                               |
-| Checkout         | ❌                                               |
+| Item             | Status                                                              |
+| ---------------- | ------------------------------------------------------------------- |
+| Design system    | ✅ 16 shadcn primitives + 12 project components, light and dark     |
+| Root layout      | ✅ fonts, metadata, skip link, theme provider, toaster              |
+| Home page        | ✅ 10 sections — hero, rails, brands, deals, value, reviews, signup |
+| Product listing  | ✅ `/products`, filter by category and search term, empty state     |
+| Product detail   | ✅ `/products/[slug]`, 12 prerendered, specs table, related rail    |
+| 404 page         | ✅                                                                  |
+| Error boundaries | ✅ route + root-layout                                              |
+| Header           | ✅ sticky, search, categories menu, wishlist, basket, theme, mobile |
+| Footer           | ✅ shop, support, company, social, newsletter                       |
+| Search           | 🟡 submits to `?q=`, filters in memory; needs the search service    |
+| Cart             | 🟡 panel with a real empty state; no cart service yet               |
+| Wishlist         | 🟡 panel with a real empty state; no wishlist service yet           |
+| Account / auth   | ❌ control is disabled — sign-in does not exist                     |
+| Checkout         | ❌                                                                  |
 
-The home page links nowhere on purpose. The catalog routes are declared in
-`lib/routes.ts` but their pages do not exist, and a dead link is worse than no
-link.
+**Every product on the site comes from `mocks/catalog.ts` (ADR-36).** No page
+touches Supabase. `types/catalog.ts` is the contract between the two, so wiring
+services in changes the data source and nothing else.
+
+No dead links: `/products` and `/products/[slug]` exist because the home page
+links to them. Controls whose destination does not exist yet — basket, wishlist
+— open a panel showing a real empty state rather than navigating, and account is
+a disabled button rather than a link to a 404.
 
 ---
 
@@ -604,18 +647,21 @@ replacement for it.
 
 ## Technical debt
 
-| #    | Item                                                                                                                                                                                                                                                 | Interest rate                                      | Pay down                                                                |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
-| D-1  | No tests of any kind, and no CI.                                                                                                                                                                                                                     | High — grows with every phase                      | Phase 9, but add tests alongside Phase 2+ work                          |
-| D-2  | `Paginated` / `PaginationParams` model offset pagination. Deep offsets and exact `COUNT(*)` do not hold at 50k products.                                                                                                                             | Medium                                             | Phase 3 — keyset pagination for storefront browse                       |
-| D-3  | Zod re-enters the client bundle in Phase 3 when forms adopt `zodResolver`. Expected, but re-measure then.                                                                                                                                            | Low                                                | Phase 3                                                                 |
-| D-4  | `components/ui/separator.tsx`, `skeleton.tsx` and both hooks are currently unimported.                                                                                                                                                               | Very low — zero bytes shipped                      | Naturally, as features land                                             |
-| D-5  | No route groups yet. `app/(storefront)`, `(account)`, `(admin)` are planned but empty ones today would be indirection with nothing behind them.                                                                                                      | Low                                                | Phase 3                                                                 |
-| D-6  | No `robots.ts` or `sitemap.ts`. Correct for a one-page site; required before launch.                                                                                                                                                                 | Low                                                | Phase 3                                                                 |
-| D-7  | Migration verification lives in a scratchpad PGlite harness that is not committed, so nobody can reproduce Phase 2's 116 assertions. Committing it means a devDependency and a harness that stubs `auth`/`storage` and can drift from real Supabase. | Medium — grows as the schema does                  | Decide when Docker is available; natural home is the Phase 9 test suite |
-| D-8  | No `product_variants` table. A single product carries one SKU, price and stock, so a laptop sold in 16GB and 32GB configurations needs two product rows. That is workable for a launch catalog and painful at scale.                                 | Medium — expensive after orders reference products | Before the catalog grows past a few thousand SKUs; revisit in Phase 3   |
-| D-9  | No `currency` column. Prices are integer minor units of one store-wide currency (`settings.store.currency`). Multi-currency is explicitly out of scope, but adding the column after orders exist means backfilling history.                          | Low — while out of scope                           | Only if multi-currency is ever adopted                                  |
-| D-10 | `inventory.quantity_reserved` is declared but nothing writes it. Phase 4 needs it for oversell prevention; until then `quantity_on_hand` alone describes availability.                                                                               | Low                                                | Phase 4                                                                 |
+| #    | Item                                                                                                                                                                                                                                                                                                                    | Interest rate                                      | Pay down                                                                                              |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| D-1  | No tests of any kind, and no CI.                                                                                                                                                                                                                                                                                        | High — grows with every phase                      | Phase 9, but add tests alongside Phase 2+ work                                                        |
+| D-2  | `Paginated` / `PaginationParams` model offset pagination. Deep offsets and exact `COUNT(*)` do not hold at 50k products.                                                                                                                                                                                                | Medium                                             | Phase 3 — keyset pagination for storefront browse                                                     |
+| D-3  | Zod re-enters the client bundle in Phase 3 when forms adopt `zodResolver`. Expected, but re-measure then.                                                                                                                                                                                                               | Low                                                | Phase 3                                                                                               |
+| D-4  | `components/ui/separator.tsx`, `skeleton.tsx` and both hooks are currently unimported.                                                                                                                                                                                                                                  | Very low — zero bytes shipped                      | Naturally, as features land                                                                           |
+| D-5  | No route groups yet. `app/(storefront)`, `(account)`, `(admin)` are planned but empty ones today would be indirection with nothing behind them.                                                                                                                                                                         | Low                                                | Phase 3                                                                                               |
+| D-6  | No `robots.ts` or `sitemap.ts`. Correct for a one-page site; required before launch.                                                                                                                                                                                                                                    | Low                                                | Phase 3                                                                                               |
+| D-7  | Migration verification lives in a scratchpad PGlite harness that is not committed, so nobody can reproduce Phase 2's 116 assertions. Committing it means a devDependency and a harness that stubs `auth`/`storage` and can drift from real Supabase.                                                                    | Medium — grows as the schema does                  | Decide when Docker is available; natural home is the Phase 9 test suite                               |
+| D-8  | No `product_variants` table. A single product carries one SKU, price and stock, so a laptop sold in 16GB and 32GB configurations needs two product rows. That is workable for a launch catalog and painful at scale.                                                                                                    | Medium — expensive after orders reference products | Before the catalog grows past a few thousand SKUs; revisit in Phase 3                                 |
+| D-9  | No `currency` column. Prices are integer minor units of one store-wide currency (`settings.store.currency`). Multi-currency is explicitly out of scope, but adding the column after orders exist means backfilling history.                                                                                             | Low — while out of scope                           | Only if multi-currency is ever adopted                                                                |
+| D-11 | `mocks/catalog.ts` is the storefront's data source (ADR-36). Every day it stays, the chance grows that a component quietly depends on a shape the database does not produce.                                                                                                                                            | **High — this is the phase's main debt**           | Delete it the moment `services/products.service.ts` lands; `npm run check` then finds every call site |
+| D-12 | No product photography, so `next/image` is not yet used anywhere. Image optimisation, `sizes`, and priority hints are therefore unexercised — the first real image will be the first test of them.                                                                                                                      | Medium                                             | With Storage-backed imagery                                                                           |
+| D-10 | `inventory.quantity_reserved` is declared but nothing writes it. Phase 4 needs it for oversell prevention; until then `quantity_on_hand` alone describes availability.                                                                                                                                                  | Low                                                | Phase 4                                                                                               |
+| D-13 | No client-side behaviour has been driven against a real browser. The theme toggle, basket and wishlist sheets and mobile nav are verified only by typecheck, build and server markup. The preview pane injects the document via `innerHTML`, so the streamed inline scripts never run and the app never hydrates in it. | Medium — every added interaction widens the gap    | Phase 9's test suite; sooner if a real browser becomes available                                      |
 
 ---
 
@@ -656,6 +702,8 @@ reversal here.**
 | ADR-28 | Anonymous read extends to visible categories, brands, published-product images/specs, public settings and live banners — not products alone.                                                                                       | A product page must name its brand and the nav must list categories. Restricting these to `service_role` would move the whole storefront off RLS, which is the opposite of the intent. Recorded because the Phase 2 brief said "read published products only".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ADR-29 | `types/database.ts` was left stale rather than hand-written when the generator could not run.                                                                                                                                      | An empty `Tables` makes every `from()` a compile error, so the gap fails loudly. Fabricated types would be plausible, wrong, and unchecked — and would break the rule that this file is generated output.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ADR-30 | GRANTs are written out explicitly instead of relying on Supabase's default privileges.                                                                                                                                             | A privilege model that exists only as a platform default is one nobody can review. `anon` gets SELECT on exactly the seven tables with an anonymous read policy, so a mistaken policy still meets a closed second gate.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ADR-37 | Orange is used for **price reductions only** — the sale price, the discount badge. Star ratings are monochrome and low stock is emphasised with weight, not hue.                                                                   | An accent that means two things means neither. An amber star next to an orange sale price makes a well-reviewed product look discounted at a glance, which is the one misreading a storefront cannot afford. Verified in the rendered page: zero accent-coloured stars, 36 accent elements and all of them a price cut.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ADR-36 | **Refines ADR-20.** Mock catalog data is permitted in `mocks/`, imported only by `app/` and `components/`, for the interface phase only.                                                                                           | ADR-20 forbids fake data because it hides empty states. The Phase 3A brief requires building the interface before the schema is wired, so the exemption is scoped: nothing in `services/`, `actions/` or `lib/` may import it, the shapes are `types/catalog.ts` so services drop in without touching components, and the empty states ADR-20 protects are built and reachable today — an empty basket, an empty wishlist, a filter matching nothing. Tracked as **D-11** so the folder is deleted rather than forgotten.                                                                                                                                                                                                                                                        |
 | ADR-35 | **The middleware chain does not import `lib/env.ts`.** `supabase/session.ts` reads its two `NEXT_PUBLIC_*` values from `process.env` directly. Same shape as ADR-8 for `lib/logger.ts`, applied to the Edge bundle.                | `lib/env.ts` validates the whole public contract with Zod **at module scope and throws**. In an Edge Function module scope runs once per isolate, so a throw there fails _every_ request and Vercel surfaces it only as `MIDDLEWARE_INVOCATION_FAILED` — no file, no line, no variable. It also validated `NEXT_PUBLIC_SITE_URL`, which nothing in this chain uses, and which is **not inlined when unset at build**: it stayed a runtime `process.env` read whose value the build never checked, and `next.config.ts` does not run inside the Edge Function. Measured: middleware bundle 383 kB → 325 kB, Zod removed entirely.                                                                                                                                                 |
 | ADR-34 | **Every module reachable from `middleware.ts` imports by relative path, not the `@/` alias.** The rest of the codebase keeps the alias.                                                                                            | Vercel resolves the middleware import graph itself when packaging the Edge Function — from source, transitively, without applying tsconfig `paths`. Anything it cannot resolve fails the deployment with `The Edge Function "middleware" is referencing unsupported modules`. Proven by converting only the entry file: the error moved one level down, from `middleware.js: @/supabase/session` to `supabase/session.js: @/lib/env, @/lib/routes`. Type-only imports are erased before resolution and were never named, but are converted too, since one edit turning one into a value import would break the deploy for a reason nobody would connect to that line. Chain today: `middleware.ts` → `supabase/session.ts` → `lib/env.ts`, `lib/routes.ts`, `types/database.ts`. |
 | ADR-33 | The production build uses **webpack**; `--turbopack` is kept on `dev` only.                                                                                                                                                        | Vercel's Edge bundler expects `.next/server/middleware.js`. Turbopack emits no such file — it emits three chunks, one named `[root-of-the-server]__….js`, and Vercel then fails with `The Edge Function "middleware" is referencing unsupported modules: @/supabase/session`. Webpack also measured smaller here: First Load JS 139 kB → 103 kB, middleware 162 kB → 109 kB. `dev` keeps Turbopack, where the speed matters and nothing is deployed. Revisit per **K-12**.                                                                                                                                                                                                                                                                                                       |

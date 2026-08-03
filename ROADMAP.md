@@ -4,13 +4,14 @@ Nine phases from foundation to launch. Current state always lives in
 [PROJECT_STATUS.md](PROJECT_STATUS.md) — this file is the plan, that file is the
 truth.
 
-**Current position:** Phase 2 complete. Phase 3 is next, gated on **K-3**.
-**Overall progress:** ~20%
+**Current position:** Phase 3A complete. Phase 3B is next, gated on **K-3**.
+**Overall progress:** ~32%
 
 ```
 Phase 1  Foundation                ████████████████████ 100%   ✅ complete
 Phase 2  Database Foundation       ████████████████████ 100%   ✅ complete (K-3 open)
-Phase 3  Storefront Catalog        ░░░░░░░░░░░░░░░░░░░░   0%   ← next
+Phase 3A Premium UI (mock data)    ████████████████████ 100%   ✅ complete
+Phase 3B Storefront Data Wiring    ░░░░░░░░░░░░░░░░░░░░   0%   ← next (needs K-3)
 Phase 4  Cart & Checkout           ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5  Customer Accounts         ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 6  Admin Dashboard           ░░░░░░░░░░░░░░░░░░░░   0%
@@ -117,9 +118,37 @@ local stack has **not** been run — see K-3, K-8, K-9.
 
 ---
 
-## Phase 3 — Storefront Catalog
+## Phase 3A — Premium UI & Storefront Foundation ✅
 
-**Status:** Next · **Target version:** v0.3.0
+**Status:** Complete · **Target version:** v0.3.0 · **Data:** mock only
+
+> **Phase 3 was split.** It originally bundled the interface with auth,
+> services and database wiring, and was blocked on **K-3**. The brief for this
+> phase excluded the database explicitly, so the interface shipped first as 3A
+> against `mocks/` (ADR-36) and everything needing Supabase became 3B below.
+> Splitting it let the UI proceed without pretending K-3 was closed.
+
+- [x] Design system: 16 shadcn primitives, 12 project components
+- [x] Colour system — blue primary, neutral, orange for discounts only (ADR-37)
+- [x] Light and dark mode via `next-themes`, no flash on first paint
+- [x] Header — sticky, search, categories menu, wishlist, basket, mobile nav
+- [x] Footer — shop, support, company, social, newsletter
+- [x] Home page — 10 sections
+- [x] Product cards with discount, stock, rating, quick actions, hover states
+- [x] `/products` listing with category filter, search filter, empty state
+- [x] `/products/[slug]` detail — 12 prerendered, specs table, related rail
+- [x] Skeletons, empty states, toast notifications
+- [x] Responsive from 375px to desktop; keyboard and ARIA verified in the DOM
+
+**Exit criteria met:** `npm run verify` passes, 17 routes prerender, one
+`<h1>` per page, zero dead links, zero unnamed controls, accent colour used
+only for price reductions.
+
+---
+
+## Phase 3B — Storefront Data Wiring
+
+**Status:** Next · **Target version:** v0.4.0
 
 The shopping experience, read-only. Now also carries the auth flow and the first
 services, which moved out of Phase 2 when it was scoped to the database only.
@@ -134,6 +163,21 @@ services, which moved out of Phase 2 when it was scoped to the database only.
 - [ ] **K-3** — generate and commit `types/database.ts`
 - [ ] **K-8** — verify storage RLS at runtime, especially avatar folder scoping
 - [ ] **K-9** — confirm the seed's `auth.users` inserts work against real GoTrue
+
+### Replacing the mock layer (D-11)
+
+The interface is finished and typed against `types/catalog.ts`. Wiring it is
+therefore a swap, not a rebuild:
+
+- [ ] `services/products.service.ts` maps `Tables<"products">` onto
+      `ProductSummary` / `Product` — the same shapes the components already take
+- [ ] Point `app/page.tsx`, `/products` and `/products/[slug]` at the services
+- [ ] **Delete `mocks/`.** `npm run check` then reports every remaining
+      reference as a compile error
+- [ ] Move filtering and search into the query — the listing filters in memory
+      today, which does not survive 50k products (**D-2**)
+- [ ] Product photography into the `products` bucket; `ProductImage` becomes
+      `next/image` behind the same wrapper (**D-12**)
 
 ### Auth flow (moved from Phase 2)
 
