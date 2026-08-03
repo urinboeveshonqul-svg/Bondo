@@ -15,13 +15,40 @@ import { createServerClient } from "@supabase/ssr";
 // relative path.** It applies transitively — fixing only the entry moved the
 // error one level down to exactly this file.
 //
-// `@/types/database` was not named in that error because `import type` is
-// erased before anything resolves it. It is converted anyway: the distinction
-// is invisible at a glance, and one edit turning it into a value import would
-// break the deployment for a reason nobody would connect to this line.
-import { env } from "../lib/env";
+// `../types/database` is a type-only import and is erased before anything
+// resolves it, so it was never named in that error. It follows the same rule
+// anyway: the distinction is invisible at a glance, and one edit turning it into
+// a value import would break the deployment for a reason nobody would connect to
+// this line.
 import { isProtectedRoute, routes } from "../lib/routes";
 import type { Database } from "../types/database";
+
+/**
+ * Read directly from `process.env` instead of importing `lib/env.ts` — ADR-35,
+ * the same reasoning as ADR-8 for `lib/logger.ts`, applied to the Edge bundle.
+ *
+ * `lib/env.ts` validates the whole public contract with Zod **at module scope
+ * and throws on failure**. Importing it here has three consequences, all bad for
+ * middleware:
+ *
+ *  1. Middleware validates `NEXT_PUBLIC_SITE_URL`, which nothing in this chain
+ *     uses. Worse, that variable is *not* inlined into the Edge bundle when it
+ *     is unset at build time — it stays a runtime `process.env` read, so its
+ *     value can differ between build and runtime.
+ *  2. A throw at module scope in an Edge Function is not one failed request. The
+ *     module is evaluated once per isolate, so it fails *every* request, and
+ *     Vercel surfaces it only as `MIDDLEWARE_INVOCATION_FAILED`.
+ *  3. Zod ships in the Edge bundle, paying for a parser on every cold start.
+ *
+ * These two variables are the only ones this chain needs, and both are inlined
+ * as literals at build time — verified by grepping the emitted bundle — so
+ * there is nothing left to validate at runtime. `next.config.ts` already
+ * preflights their presence before the build starts.
+ *
+ * `lib/env.ts` remains the contract for every other consumer.
+ */
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 /**
  * Supabase stores its session in cookies named `sb-<project-ref>-auth-token`,
@@ -72,9 +99,23 @@ export async function updateSession(request: NextRequest) {
 
   let response = NextResponse.next({ request });
 
+  // Checked here rather than at module scope: a module-scope throw in an Edge
+  // Function fails every request for the life of the isolate, which is the
+  // failure this file was refactored to make impossible. Unreachable in
+  // practice — both values are inlined at build and preflighted by
+  // `next.config.ts` — but if it ever fires, one request fails loudly with a
+  // message that names the cause instead of the whole deployment going dark.
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(
+      "Supabase environment is missing in the Edge runtime: " +
+        `NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL ? "set" : "MISSING"}, ` +
+        `NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY ? "set" : "MISSING"}.`,
+    );
+  }
+
   const supabase = createServerClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {

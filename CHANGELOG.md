@@ -49,6 +49,29 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
   rejected rather than trimmed, so the mistake is fixed where it was entered.
 - The preflight failure now **leads with a status line per variable**, so a
   truncated build log still answers "which one".
+- **`500 MIDDLEWARE_INVOCATION_FAILED` on every request after a successful
+  deploy** (ADR-35). `middleware.ts` reached `lib/env.ts`, which validates the
+  entire public environment contract with Zod **at module scope and throws on
+  failure**. In an Edge Function module scope is evaluated once per isolate, so
+  a throw there takes down every request for the life of that isolate, and
+  Vercel reports it only as `MIDDLEWARE_INVOCATION_FAILED` — no file, no line,
+  no variable named.
+
+  Two things made that reachable. `lib/env.ts` validated
+  `NEXT_PUBLIC_SITE_URL`, which nothing in the middleware chain uses; and that
+  variable was **unset at build**, so Next.js left it as a runtime
+  `process.env` read rather than inlining it — a value the build never
+  validated, since `next.config.ts` does not execute inside the Edge Function
+  (**K-14**).
+
+  `supabase/session.ts` now reads its two `NEXT_PUBLIC_*` values from
+  `process.env` directly; both **are** inlined at build, so nothing is left to
+  validate at runtime. The missing-value guard moved inside the request
+  handler, where a failure costs one request instead of the isolate. Measured
+  on the emitted bundle: **383 kB → 325 kB, Zod gone, the module-scope throw
+  gone, and the `NEXT_PUBLIC_SITE_URL` runtime read gone.** `lib/env.ts`
+  remains the contract for every other consumer.
+
 - **`The Edge Function "middleware" is referencing unsupported modules`**
   (ADR-34). Vercel resolves the middleware import graph itself when packaging
   the Edge Function — from source, transitively, and **without applying tsconfig
