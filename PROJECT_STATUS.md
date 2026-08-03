@@ -14,16 +14,17 @@
 | Item             | Value                                                    |
 | ---------------- | -------------------------------------------------------- |
 | Latest tag       | **v0.1.0** — `7caf0ce`, released 2026-08-01              |
-| Working version  | **v0.2.0**, Phase 2 — **not tagged**                     |
+| Working version  | **v0.3.0**, Phase 3A — **not tagged**                    |
 | Phase 2 commit   | `c6c3e5b`                                                |
+| Phase 3A commit  | `e1ee841`                                                |
 | Branch           | `main`                                                   |
 | Remote           | `origin` → https://github.com/urinboeveshonqul-svg/Bondo |
 | GitHub sync      | ✅ synchronised                                          |
 | Unpushed commits | none                                                     |
 
-v0.2.0 is written up in `CHANGELOG.md` but not tagged: step 6 of the release
-policy tags only when instructed. Tagging it before **K-3** is closed would
-publish a version whose generated types do not match its schema.
+Neither v0.2.0 nor Phase 3A is tagged: step 6 of the release policy tags only
+when instructed. Tagging v0.2.0 before **K-3** is closed would publish a version
+whose generated types do not match its schema.
 
 ---
 
