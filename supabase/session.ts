@@ -1,9 +1,27 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-import { env } from "@/lib/env";
-import { isProtectedRoute, routes } from "@/lib/routes";
-import type { Database } from "@/types/database";
+// Relative, not the `@/` alias used everywhere else — see ADR-34.
+//
+// This file is reachable from `middleware.ts`, and Vercel resolves the whole
+// middleware import graph itself when packaging the Edge Function, from source,
+// without applying tsconfig `paths`. Anything it cannot resolve is reported as
+// a missing module and fails the deployment:
+//
+//     The Edge Function "middleware" is referencing unsupported modules:
+//     - supabase/session.js: @/lib/env, @/lib/routes
+//
+// The rule is therefore: **every module reachable from middleware.ts imports by
+// relative path.** It applies transitively — fixing only the entry moved the
+// error one level down to exactly this file.
+//
+// `@/types/database` was not named in that error because `import type` is
+// erased before anything resolves it. It is converted anyway: the distinction
+// is invisible at a glance, and one edit turning it into a value import would
+// break the deployment for a reason nobody would connect to this line.
+import { env } from "../lib/env";
+import { isProtectedRoute, routes } from "../lib/routes";
+import type { Database } from "../types/database";
 
 /**
  * Supabase stores its session in cookies named `sb-<project-ref>-auth-token`,

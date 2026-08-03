@@ -49,8 +49,19 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
   rejected rather than trimmed, so the mistake is fixed where it was entered.
 - The preflight failure now **leads with a status line per variable**, so a
   truncated build log still answers "which one".
-- **`The Edge Function "middleware" is referencing unsupported modules: @/supabase/session`**
-  (ADR-33). Vercel's Edge bundler expects `.next/server/middleware.js`.
+- **`The Edge Function "middleware" is referencing unsupported modules`**
+  (ADR-34). Vercel resolves the middleware import graph itself when packaging
+  the Edge Function — from source, transitively, and **without applying tsconfig
+  `paths`** — so every `@/` import reachable from `middleware.ts` was reported
+  as a missing module. Every module in that chain now imports by relative path.
+  Proven rather than assumed: converting only the entry moved the error one
+  level down, from `middleware.js: @/supabase/session` to
+  `supabase/session.js: @/lib/env, @/lib/routes`. The full graph was then walked
+  — 5 modules, zero aliased imports remaining, only npm specifiers left. Two
+  earlier hypotheses were tested and **disproved** first: Turbopack's output
+  shape, and a missing tsconfig `baseUrl`.
+- Diagnostics from the earlier attempt, kept because they were correct on their
+  own terms (ADR-33). Vercel's Edge bundler expects `.next/server/middleware.js`.
   `next build --turbopack` never emits that file — it emits three chunks, one
   named `[root-of-the-server]__….js` — so Vercel could not assemble the function
   and reported the alias as an unresolved bare module. The alias itself was
