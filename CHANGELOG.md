@@ -34,7 +34,16 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
   `z.url()` and `URL.canParse()` accept any scheme, so
   `postgresql://postgres:…@db.<ref>.supabase.co:5432/postgres` — the connection
   string Supabase displays beside the project URL — validated and then failed at
-  the first query. Now checked with `z.httpUrl()` and an explicit scheme test.
+  the first query. Now checked with `z.url({ protocol: /^https?$/ })` and an
+  explicit scheme test in the preflight.
+- **Regression, introduced and fixed within this same unreleased section:** the
+  first attempt at the above used `z.httpUrl()`, which restricts the host as
+  well as the scheme. That rejected `http://localhost:3000` — the fallback in
+  `resolveSiteUrl()` — and `http://127.0.0.1:54321`, the local Supabase URL
+  `.env.example` prescribes, so any build without `NEXT_PUBLIC_SITE_URL` and
+  every local stack broke. Caught by testing the post-fix environment shapes
+  rather than only the failing one. The scheme needed restricting; the host did
+  not.
   A value carrying a trailing newline from a paste also passed every truthiness
   and length check, leaving the credential quietly wrong at runtime; it is now
   rejected rather than trimmed, so the mistake is fixed where it was entered.

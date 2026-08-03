@@ -25,29 +25,41 @@ const noSurroundingWhitespace = (value: string) => value === value.trim();
 const whitespaceMessage = "must not have leading or trailing whitespace";
 
 /**
- * `z.httpUrl()` rather than `z.url()`. The latter accepts any scheme, including
+ * Restricts the scheme without restricting the host.
+ *
+ * Plain `z.url()` accepts any scheme, including
  * `postgresql://postgres:...@db.<ref>.supabase.co:5432/postgres` — the database
  * connection string, which Supabase's dashboard displays beside the project URL
  * and which is a routine copy-paste mistake. It would otherwise validate here
- * and then fail obscurely at the first query.
+ * and fail obscurely at the first query.
+ *
+ * `z.httpUrl()` fixes the scheme but also demands a public-looking domain, so it
+ * rejects `http://localhost:3000` — the fallback in `resolveSiteUrl()` below —
+ * and `http://127.0.0.1:54321`, the local Supabase URL `.env.example` tells
+ * developers to use. Using it here broke every local build until it was caught;
+ * the scheme was never the part that needed a domain rule.
  */
-const clientSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z
-    .httpUrl({
-      error:
-        "NEXT_PUBLIC_SUPABASE_URL must be an http(s) URL, e.g. https://<project-ref>.supabase.co",
+const httpUrl = (variable: string, example: string) =>
+  z
+    .url({
+      protocol: /^https?$/,
+      error: `${variable} must be an http(s) URL, e.g. ${example}. Note this is the REST URL, not a postgresql:// connection string.`,
     })
-    .refine(noSurroundingWhitespace, whitespaceMessage),
+    .refine(noSurroundingWhitespace, whitespaceMessage);
+
+const clientSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: httpUrl(
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "https://<project-ref>.supabase.co",
+  ),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z
     .string()
     .min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required")
     .refine(noSurroundingWhitespace, whitespaceMessage),
-  NEXT_PUBLIC_SITE_URL: z
-    .httpUrl({
-      error:
-        "NEXT_PUBLIC_SITE_URL must be an http(s) URL, e.g. https://your-domain.com",
-    })
-    .refine(noSurroundingWhitespace, whitespaceMessage),
+  NEXT_PUBLIC_SITE_URL: httpUrl(
+    "NEXT_PUBLIC_SITE_URL",
+    "https://your-domain.com",
+  ),
 });
 
 const serverSchema = z.object({
