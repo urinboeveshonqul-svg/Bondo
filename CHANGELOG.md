@@ -49,6 +49,16 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
   rejected rather than trimmed, so the mistake is fixed where it was entered.
 - The preflight failure now **leads with a status line per variable**, so a
   truncated build log still answers "which one".
+- **`Error: Unhandled type: "ColonToken" :` on Vercel.** Latent since Phase 1 and
+  only reachable once the build got far enough to be analysed. Vercel reads
+  `middleware.ts` with `@vercel/static-config`, which pulls each property apart
+  positionally — `const [nameNode, _colon, valueNode] = prop.getChildren()`. A
+  JSDoc block attached to a property becomes an extra leading child, so those
+  names land on `[JSDoc, name, colon]` and the parser receives the colon as the
+  value. The `/** … */` comment above `matcher:` moved outside the object
+  literal; the reasoning it carried is preserved, with the constraint recorded
+  at the site so it is not reintroduced. Reproduced against the real parser
+  before and after the change.
 
 ---
 
