@@ -12,6 +12,56 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Changed — the application talks to a real Supabase project
+
+A hosted project exists and is linked: **`pgxqnezwrwfgrmamlxhs`**, `ap-southeast-1`,
+Postgres 17.6.1.155 / PostgREST 14.15 / GoTrue 2.195.0 / Storage 1.67.26. All
+**11 migrations are applied**, local and remote in lockstep, including
+`20260805001000_social_metadata.sql`.
+
+`.env.local` held a local-stack placeholder — `http://127.0.0.1:54321` with the
+published `supabase-demo` anon key — written while no project existed. It now
+carries the project's real URL and anon key. The file is git-ignored; nothing
+about it is committed.
+
+**`SUPABASE_SERVICE_ROLE_KEY` is deliberately still unset.** Nothing imports
+`supabase/admin.ts` — verified, the only references to it are comments — so the
+key that bypasses RLS has no consumer. It is added when a webhook or job needs
+one, not before.
+
+### Verified — against the live project, as the anonymous role
+
+- **No schema drift.** `db:types:remote` compared structurally against the
+  committed file: **26 type entries, 103 columns, 19 enum values — identical.**
+  The only textual differences were formatting and an added
+  `__InternalSupabase.PostgrestVersion`, so the committed file was kept (**D-17**).
+- **The services' real queries execute.** `categories`, `brands` and `products`
+  all return 200 with every column and embedded select resolving —
+  `brands`, `categories`, `inventory` and all three `*_translations` embeds. A
+  wrong column name would have been a `42703` here and was not (**D-18**,
+  partially paid).
+- **RLS is active and filtering**, not merely permissive: `settings` returns 4 of
+  its 6 rows to `anon`, and `inventory`, `audit_logs`, `profiles` and `admins`
+  are refused at the GRANT layer before RLS is even reached.
+- **All five storage buckets** exist with their intended size and MIME limits;
+  `avatars` is private (**K-8** — the object policies are still unproven, because
+  an empty bucket answers `200 []` whether the policy is right or wrong).
+- **Every route renders** in development against the project: `/` → `/uz`,
+  `/uz`, `/ru`, `/en`, `/products` → `/uz/products`. Zero fixture fallbacks
+  fired, which is the proof the reads succeeded rather than degraded, and zero
+  requests to `127.0.0.1:54321`.
+- `npm run verify` passes: 76 schema assertions, 749 translation keys per locale,
+  production build clean.
+
+### Known state — the catalog is empty
+
+0 products, categories, brands, content pages, banners, admins and profiles. The
+6 settings, 5 roles, 20 permissions and 41 grants that _are_ present come from
+`INSERT`s inside the migrations. `supabase db push` does not run
+`supabase/seed.sql`, which is development fixture data guarded against non-empty
+databases (ADR-25) — so this is the designed outcome of deploying a schema, not a
+failure. The storefront renders it correctly as an empty shop.
+
 ### Fixed — every route returned 500 in production (K-18)
 
 **One query in a layout took down the entire site.**
