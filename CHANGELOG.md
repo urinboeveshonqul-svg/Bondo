@@ -12,6 +12,85 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — internationalization (Uzbek, Russian, English)
+
+The storefront is multilingual, with the locale in the URL: `/uz` (default),
+`/ru`, `/en`. Built on next-intl with `[locale]` as the routing segment
+(**ADR-38**).
+
+**Every user-facing string is translatable.** 8 namespaces × 3 locales, 169 keys
+each, split by feature — `common`, `header`, `footer`, `home`, `catalog`,
+`product`, `newsletter`, `errors`. Components read them with `useTranslations`,
+which works in Server Components, so a grid of sixty product cards still ships no
+JavaScript for its text.
+
+**Catalog copy lives on the record, not in `messages/`** (**ADR-39**). Product
+descriptions, category names and image alt text carry all three languages as
+`LocalizedText`, because they are per-row content written by merchandisers and in
+Phase 3B they come from the database. Making the type a required record of every
+locale means a product cannot be added in one language — TypeScript rejects it.
+
+**Locale-aware formatting.** Prices, ratings and counts go through `Intl` with
+the locale's BCP 47 tag: `$529.00`, `529,00 $`, `529,00 US$` — same amount, same
+currency, three sets of conventions. The listing count uses ICU plurals because
+Russian needs `few` and `many`, which a ternary cannot express.
+
+**SEO.** Every page emits a self-referential canonical plus `hreflang` for all
+three locales and `x-default`, generated from one unprefixed path so an alternate
+can never point at the wrong page. `og:locale` and `og:locale:alternate` are set
+per locale, and `<html lang>` carries the full tag.
+
+**Persistence.** The choice is stored in `NEXT_LOCALE` for a year and outranks
+`Accept-Language`; a first-time visitor with no cookie is negotiated from the
+header, falling back to Uzbek (**ADR-40**).
+
+**Enforced, not just documented.** `npm run check` now runs
+`scripts/check-translations.mjs`, which fails on a missing namespace, a key
+missing in either direction, an empty value, or an ICU placeholder renamed in one
+language. ESLint blocks `next/link` and the locale-unaware `next/navigation`
+helpers in favour of `@/i18n/navigation`.
+
+### Fixed
+
+- **An unknown product slug returned HTTP 200 with an empty body.**
+  `products/loading.tsx` opens a Suspense boundary above the route, so the
+  response shell flushed with 200 before `notFound()` ran — a soft 404 that
+  invites dead URLs into the search index. Fixed with `dynamicParams = false`
+  (**ADR-41**). Pre-existing; found while checking the 404 path in three
+  languages.
+- **An unmatched URL fell through to the framework's built-in English 404**,
+  with no `<html lang>` and outside the app shell. A `not-found.tsx` inside a
+  segment only catches `notFound()` from a route that matched, and without a root
+  `app/layout.tsx` the convention was ignored altogether. Fixed with a
+  `[...rest]` catch-all and a passthrough root layout (**ADR-42**).
+- **Section heading ids collapsed to one value in Russian.** `Section` derived
+  its `id` from the title with `replace(/[^a-z0-9]+/g, "-")`, which maps any
+  Cyrillic heading to `section--`, so every `aria-labelledby` on the page
+  resolved to the same element. `id` is now a required, language-independent
+  prop.
+- Category labels on the product page came from the slug
+  (`"gaming-pcs"` → `"gaming pcs"`), which is English-shaped and identical in all
+  three languages. They now come from the category record.
+
+### Changed
+
+- `lib/routes.ts` paths carry no locale prefix; `<Link>` from
+  `@/i18n/navigation` adds it. Route constants stay comparable and adding a
+  locale never touches the table.
+- `utils/format.ts` takes a required `locale` argument. A default would have made
+  wrong output the quiet outcome at every call site that forgot to pass one.
+- `lib/site-config.ts` holds the locale table. It is the one module `utils/`,
+  `i18n/` and the Edge middleware chain may all import, so anywhere else would
+  have meant duplicating the list.
+- Middleware composes locale routing with Supabase session refresh. Anonymous
+  requests — most traffic — get next-intl's response unchanged; authenticated
+  ones transplant the rewrite, the `hreflang` header and the locale cookie onto
+  the session response rather than copying headers blindly, which would clobber
+  Next.js's private request-header channel and drop the rotated auth cookie.
+- The Geist subsets now include `cyrillic`. A missing subset does not fail — it
+  silently falls back to a system font, so the Russian site would have rendered
+  in a different typeface with nothing to report it.
+
 ### Added — Phase 3A, premium UI and storefront foundation
 
 The interface a customer sees, built end to end against mock data. No page

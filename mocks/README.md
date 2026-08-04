@@ -23,6 +23,23 @@ Three rules keep the override from becoming permanent damage:
    matches nothing — not simulated with a flag. The failure mode ADR-20 warns
    about is designed around rather than deferred.
 
+## Translated content
+
+Every content field — `imageAlt`, `shortDescription`, `description`, category
+names, review text — is a `LocalizedText`: a **required** record of all three
+locales. Specification `group` and `name` are translation keys into the `product`
+namespace instead, because they are a small vocabulary reused across the catalog.
+
+This is **ADR-39**, and it is deliberately the shape the database will need. The
+type makes a one-language product a compile error, and it keeps catalog copy out
+of `messages/`, which holds interface chrome written by developers rather than
+per-row content written by merchandisers.
+
+The consequence for Phase 3B: the migration has to reproduce this, most likely as
+a `product_translations` table. `ROADMAP.md` § "Translated content in the
+database" lists what must be decided, including the `search_vector` problem —
+one `tsvector` cannot serve three languages.
+
 ## What is deliberately not faked
 
 - **No lorem ipsum.** Every string is real product prose or real copy.

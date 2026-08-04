@@ -47,7 +47,51 @@ const eslintConfig = [
       // Application code logs through `lib/logger.ts` so output stays
       // structured and parseable by a log drain.
       "no-console": ["warn", { allow: ["warn", "error"] }],
+
+      /**
+       * Locale-unaware navigation is the single easiest way to break i18n, and
+       * it fails silently: `next/link` compiles, renders and looks correct, then
+       * drops a Russian visitor onto `/products` — where middleware sends them
+       * to Uzbek. Nothing throws and no test catches it, so it is enforced here
+       * rather than left to review.
+       *
+       * `redirect`, `permanentRedirect`, `useRouter` and `usePathname` have the
+       * same problem and the same replacements. `notFound`, `useParams` and the
+       * rest of `next/navigation` are locale-agnostic and stay importable.
+       */
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "next/link",
+              message:
+                "Import { Link } from '@/i18n/navigation' so hrefs keep the active locale.",
+            },
+            {
+              name: "next/navigation",
+              importNames: [
+                "redirect",
+                "permanentRedirect",
+                "useRouter",
+                "usePathname",
+              ],
+              message:
+                "Import these from '@/i18n/navigation' so navigation keeps the active locale.",
+            },
+          ],
+        },
+      ],
     },
+  },
+
+  {
+    /**
+     * The navigation helpers are generated *from* the Next.js primitives, and
+     * the middleware chain runs before any locale exists to preserve.
+     */
+    files: ["i18n/navigation.ts", "middleware.ts", "supabase/session.ts"],
+    rules: { "no-restricted-imports": "off" },
   },
 
   {

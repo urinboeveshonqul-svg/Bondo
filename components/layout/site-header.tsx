@@ -1,6 +1,7 @@
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { User } from "lucide-react";
 
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { BasketSheet, WishlistSheet } from "@/components/layout/basket-sheet";
 import { CategoriesMenu } from "@/components/layout/categories-menu";
 import { Container } from "@/components/layout/container";
@@ -8,6 +9,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { SearchBar } from "@/components/layout/search-bar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
 import { siteConfig } from "@/lib/site-config";
 import { categories } from "@/mocks/catalog";
@@ -16,8 +18,8 @@ import { categories } from "@/mocks/catalog";
  * Site header.
  *
  * A Server Component that composes Client Components for the parts that need
- * interactivity — the menu, search, basket and theme toggle each carry their
- * own `"use client"`, and the shell around them does not (ADR-6).
+ * interactivity — the menu, search, basket, language and theme toggles each
+ * carry their own `"use client"`, and the shell around them does not (ADR-6).
  *
  * Sticky, with `backdrop-blur`, so the catalog stays reachable while scrolling
  * a long listing. `z-50` puts it above page content but below the sheet
@@ -27,6 +29,9 @@ import { categories } from "@/mocks/catalog";
  * until the auth phase, and the project does not ship links to routes that 404.
  */
 export function SiteHeader() {
+  const t = useTranslations("header");
+  const tCommon = useTranslations("common");
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <Container>
@@ -40,10 +45,13 @@ export function SiteHeader() {
             {siteConfig.name}
           </Link>
 
-          <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
+          <nav
+            aria-label={t("mainNav")}
+            className="hidden items-center gap-1 lg:flex"
+          >
             <CategoriesMenu categories={categories} />
             <Button variant="ghost" size="sm" asChild>
-              <Link href={routes.catalog.index}>All products</Link>
+              <Link href={routes.catalog.index}>{tCommon("allProducts")}</Link>
             </Button>
           </nav>
 
@@ -54,9 +62,15 @@ export function SiteHeader() {
           </div>
 
           <div className="ms-auto flex items-center gap-0.5 lg:ms-0">
+            <LanguageSwitcher />
             <ThemeToggle />
             <WishlistSheet />
-            <Button variant="ghost" size="icon" aria-label="Account" disabled>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t("account")}
+              disabled
+            >
               <User />
             </Button>
             <BasketSheet />

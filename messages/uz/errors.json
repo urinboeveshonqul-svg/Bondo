@@ -1,0 +1,14 @@
+{
+  "notFound": {
+    "code": "404",
+    "title": "Bunday sahifa mavjud emas",
+    "description": "Siz qidirayotgan sahifa ko'chirilgan yoki o'chirilgan bo'lishi mumkin.",
+    "backHome": "Bosh sahifaga qaytish"
+  },
+  "route": {
+    "title": "Xatolik yuz berdi",
+    "description": "Kutilmagan xatolik yuz berdi. Ko'pincha qayta urinish yordam beradi.",
+    "reference": "Xatolik kodi: {digest}",
+    "tryAgain": "Qayta urinish"
+  }
+}

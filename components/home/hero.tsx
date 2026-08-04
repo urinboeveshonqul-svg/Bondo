@@ -1,9 +1,12 @@
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowRight, ShieldCheck, Truck, Wrench } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
+import type { Locale } from "@/lib/site-config";
+import { formatPrice } from "@/utils/format";
 
 /**
  * Hero.
@@ -17,53 +20,62 @@ import { routes } from "@/lib/routes";
  * every count that matters here.
  */
 
+/** Icons paired with their translation key; the copy lives in `home.json`. */
 const ASSURANCES = [
-  { icon: Wrench, label: "Built and tested in-house" },
-  { icon: ShieldCheck, label: "Three-year warranty" },
-  { icon: Truck, label: "Free delivery over $150" },
+  { icon: Wrench, key: "built" },
+  { icon: ShieldCheck, key: "warranty" },
+  { icon: Truck, key: "delivery" },
 ] as const;
 
+/** Free-delivery threshold, in integer minor units like every other amount. */
+const FREE_DELIVERY_THRESHOLD_CENTS = 15000;
+
 export function Hero() {
+  const t = useTranslations("home.hero");
+  const locale = useLocale() as Locale;
+
+  // Formatted, not interpolated as a bare "$150": the threshold is a monetary
+  // amount and has to follow the same locale rules as every price on the page.
+  const threshold = formatPrice(FREE_DELIVERY_THRESHOLD_CENTS, locale);
+
   return (
     <section className="border-b">
       <Container className="grid gap-10 py-16 sm:py-24 lg:grid-cols-2 lg:items-center">
         <div className="space-y-6">
           <p className="text-sm font-semibold tracking-wide text-primary uppercase">
-            Built for people who read the spec sheet
+            {t("eyebrow")}
           </p>
 
           <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-            Components chosen on merit, not margin
+            {t("title")}
           </h1>
 
           <p className="max-w-xl text-lg text-pretty text-muted-foreground">
-            Every system we build is assembled, cable-managed and burned in for
-            24 hours before it ships — and leaves with its own test results
-            attached, not the model&rsquo;s.
+            {t("body")}
           </p>
 
           <div className="flex flex-wrap gap-3">
             <Button size="lg" asChild>
               <Link href={routes.catalog.index}>
-                Browse the catalog
+                {t("browseCatalog")}
                 <ArrowRight aria-hidden="true" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <Link href={routes.catalog.byCategory("gaming-pcs")}>
-                Prebuilt systems
+                {t("prebuilt")}
               </Link>
             </Button>
           </div>
 
           <ul className="grid gap-3 pt-2 text-sm text-muted-foreground sm:grid-cols-3">
-            {ASSURANCES.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2">
+            {ASSURANCES.map(({ icon: Icon, key }) => (
+              <li key={key} className="flex items-center gap-2">
                 <Icon
                   className="size-4 shrink-0 text-primary"
                   aria-hidden="true"
                 />
-                {label}
+                {t(`assurances.${key}`, { amount: threshold })}
               </li>
             ))}
           </ul>
@@ -74,11 +86,10 @@ export function Hero() {
         <div className="relative hidden aspect-4/3 items-center justify-center rounded-2xl border bg-muted/60 lg:flex">
           <div className="space-y-2 text-center">
             <p className="text-6xl font-semibold tracking-tight text-muted-foreground/50">
-              24h
+              {t("panelValue")}
             </p>
             <p className="max-w-xs px-8 text-sm text-pretty text-muted-foreground">
-              Every build runs a full day of thermal and stability testing
-              before it is boxed.
+              {t("panelBody")}
             </p>
           </div>
         </div>

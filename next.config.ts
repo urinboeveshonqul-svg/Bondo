@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 // =============================================================================
 // Environment preflight
@@ -216,4 +217,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Wires `i18n/request.ts` into the App Router so Server Components can resolve
+ * the active locale and its messages without every page threading them down by
+ * hand. The path is passed explicitly rather than relying on the convention,
+ * because the default lookup is silent when it misses and the resulting failure
+ * ("no locale was returned from `getRequestConfig`") names neither file.
+ */
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+
+export default withNextIntl(nextConfig);

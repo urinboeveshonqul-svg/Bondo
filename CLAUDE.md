@@ -70,6 +70,9 @@ Server Component / Server Action  →  service  →  Supabase
 | `lib/logger.ts` never imports `lib/env.ts`                            | ADR-8 — this exact chain shipped 67 kB of Zod to every client |
 | Only `next.config.ts` and `lib/logger.ts` read `process.env` directly | Everything else goes through `lib/env.ts`                     |
 | Every URL comes from `lib/routes.ts`                                  | Hard-coded paths drift silently                               |
+| `lib/routes.ts` paths carry **no** locale prefix                      | `<Link>` from `@/i18n/navigation` adds it — one concern each  |
+| `Link` is imported from `@/i18n/navigation`, never `next/link`        | ESLint-enforced; the wrong one silently resets the locale     |
+| No user-facing string is hardcoded in a component                     | § 11 — a literal ships in one language and no tool sees it    |
 | Money is integer minor units                                          | ADR-2                                                         |
 | RLS before data                                                       | A table never exists without policies, not even briefly       |
 
@@ -236,12 +239,61 @@ Before v1.0.0 this is informational — the minor version tracks the phase.
 
 ---
 
+## 11. Internationalization policy
+
+Bondo is a multilingual application. **Uzbek (default), Russian, English.**
+Localization is part of the Definition of Done, not a follow-up task.
+
+### The rules
+
+| Rule                                                                       | Why                                                                              |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Every user-facing string is translatable — no hardcoded text in components | A literal in a component is invisible to translators and ships in one language   |
+| Every new feature ships all three languages                                | A feature is not complete in one; `npm run check` fails if a key is missing      |
+| Dates, numbers, prices and currency use locale-aware formatting            | `$1,499.00` and `1 499,00 $` are the same amount; only one is readable to a user |
+| Import `Link` and navigation from `@/i18n/navigation`, never `next/link`   | `next/link` compiles, renders, and silently drops the visitor's locale           |
+| Every localized page sets its own canonical and `hreflang`                 | An inherited canonical tells crawlers the whole catalog duplicates one URL       |
+| UI chrome lives in `messages/`; catalog copy lives on the record           | ADR-39 — different authors, different lifecycles, different storage              |
+| Never machine-translate. Write it or have it written                       | A wrong register reads as carelessness in the reader's own language              |
+
+### Where things live
+
+```
+i18n/routing.ts       locales, default, URL strategy — shared with middleware
+i18n/request.ts       per-request config: messages, time zone, shared formats
+i18n/navigation.ts    locale-aware Link, redirect, useRouter, usePathname
+i18n/metadata.ts      canonical + hreflang for a route
+messages/{uz,ru,en}/  one JSON file per namespace per locale
+lib/site-config.ts    the locale table (URL code, BCP 47 tag, native label)
+```
+
+### Adding a string
+
+1. Put it in the namespace that matches the feature, in **all three** locales.
+2. Read it with `useTranslations("namespace")` — this works in Server _and_
+   Client Components, so no component needs a client boundary just to translate.
+3. Use ICU for anything with a count: `{n, plural, one {…} other {…}}`. Russian
+   needs `few` and `many`; a ternary cannot express its rules.
+4. Run `npm run check`. `scripts/check-translations.mjs` fails the build on a
+   missing file, a missing key, an empty value, or a placeholder renamed in one
+   language.
+
+### Adding a locale
+
+Add it to `locales` and `localeConfig` in `lib/site-config.ts`, create
+`messages/<code>/` with every namespace, and add the locale's script to the font
+subsets in `app/[locale]/layout.tsx`. Nothing else hardcodes the list — routing,
+`hreflang`, the switcher and the checker all derive from it.
+
+---
+
 ## Commands
 
 ```bash
 npm run dev          # dev server (Turbopack)
 npm run build        # production build
-npm run check        # typecheck + lint + format check — run before every commit
+npm run check        # typecheck + lint + format + translations — before every commit
+npm run i18n:check   # translation parity across uz/ru/en on its own
 npm run verify       # check + build — step 1 of the release policy
 npm run db:start     # local Supabase stack (requires Docker)
 npm run db:reset     # drop and replay all migrations locally

@@ -1,0 +1,18 @@
+{
+  "title": "Все товары",
+  "metaDescription": "Все товары Bondo — готовые системы, комплектующие и аксессуары.",
+  "resultsHeading": "Товары",
+  "count": "{count, plural, one {# товар} few {# товара} many {# товаров} other {# товара}}",
+  "showingResultsFor": "Результаты по запросу «{query}»",
+  "filterByCategory": "Фильтр по категории",
+  "all": "Все",
+  "clearFilters": "Сбросить фильтры",
+  "empty": {
+    "noMatchTitle": "По запросу «{query}» ничего не найдено",
+    "noMatchDescription": "Попробуйте более короткий запрос или поиск по бренду либо артикулу.",
+    "categoryTitle": "Здесь пока нет товаров",
+    "categoryDescription": "В этой категории сейчас нет товаров.",
+    "defaultTitle": "Товары не найдены",
+    "defaultDescription": "Снимите один из фильтров или сформулируйте запрос шире."
+  }
+}

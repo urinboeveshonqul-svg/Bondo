@@ -1,0 +1,14 @@
+{
+  "notFound": {
+    "code": "404",
+    "title": "This page doesn't exist",
+    "description": "The page you are looking for may have been moved or removed.",
+    "backHome": "Back to home"
+  },
+  "route": {
+    "title": "Something went wrong",
+    "description": "We hit an unexpected error. Trying again often resolves it.",
+    "reference": "Reference: {digest}",
+    "tryAgain": "Try again"
+  }
+}

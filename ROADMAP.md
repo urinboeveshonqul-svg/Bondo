@@ -4,13 +4,21 @@ Nine phases from foundation to launch. Current state always lives in
 [PROJECT_STATUS.md](PROJECT_STATUS.md) — this file is the plan, that file is the
 truth.
 
-**Current position:** Phase 3A complete. Phase 3B is next, gated on **K-3**.
-**Overall progress:** ~32%
+**Current position:** Phase 3A complete, plus internationalization (uz/ru/en)
+delivered as a cross-cutting change. Phase 3B is next, gated on **K-3**.
+
+**Internationalization is not a phase.** It moved out of "explicitly out of
+scope" and into every phase: from now on a feature is not complete until Uzbek,
+Russian and English all exist for it, enforced by `npm run check`. See
+[CLAUDE.md § 11](CLAUDE.md#11-internationalization-policy).
+
+**Overall progress:** ~35%
 
 ```
 Phase 1  Foundation                ████████████████████ 100%   ✅ complete
 Phase 2  Database Foundation       ████████████████████ 100%   ✅ complete (K-3 open)
 Phase 3A Premium UI (mock data)    ████████████████████ 100%   ✅ complete
+         Internationalization      ████████████████████ 100%   ✅ complete (uz/ru/en)
 Phase 3B Storefront Data Wiring    ░░░░░░░░░░░░░░░░░░░░   0%   ← next (needs K-3)
 Phase 4  Cart & Checkout           ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5  Customer Accounts         ░░░░░░░░░░░░░░░░░░░░   0%
@@ -146,6 +154,30 @@ only for price reductions.
 
 ---
 
+## Internationalization ✅
+
+**Status:** Complete · Delivered after 3A closed, as a cross-cutting change
+rather than a phase — it touches every phase from here on.
+
+- [x] Uzbek (default), Russian, English; locale in the URL (`/uz`, `/ru`, `/en`)
+- [x] next-intl with `[locale]` routing (ADR-38), always-prefixed (ADR-40)
+- [x] 8 namespaces × 3 locales, split by feature; no hardcoded user-facing text
+- [x] Catalog copy localized on the record, not in `messages/` (ADR-39)
+- [x] Locale-aware prices, numbers and ICU plurals
+- [x] Canonical + `hreflang` + `og:locale` per page and per locale
+- [x] Language switcher preserving route and query; `NEXT_LOCALE` persistence
+- [x] `npm run check` fails on translation drift; ESLint blocks `next/link`
+- [x] Fixed two silent Next.js 404 defects found while verifying (ADR-41, ADR-42)
+
+**Exit criteria met:** `npm run verify` passes, 45 routes prerender across three
+locales, and a 51-check runtime audit passes — routing, persistence,
+negotiation, `hreflang`, formatting, plurals, heading ids, link prefixes and 404
+status in all three languages.
+
+**Not verified:** native-speaker review of the Uzbek and Russian copy (**D-14**).
+
+---
+
 ## Phase 3B — Storefront Data Wiring
 
 **Status:** Next · **Target version:** v0.4.0
@@ -176,6 +208,24 @@ therefore a swap, not a rebuild:
       reference as a compile error
 - [ ] Move filtering and search into the query — the listing filters in memory
       today, which does not survive 50k products (**D-2**)
+
+### Translated content in the database (ADR-39)
+
+The mock catalog carries `LocalizedText` on every content field, which is the
+shape the schema has to reproduce. Decide and record before writing the
+migration:
+
+- [ ] Per-locale columns, a `product_translations` table, or a `jsonb` column —
+      a translations table is the usual answer, and the one that lets a
+      merchandiser add Russian without a schema change
+- [ ] `search_vector` is currently one `tsvector` with a `simple` config. Three
+      languages need either three columns or a per-locale index; searching
+      Russian text against an Uzbek dictionary silently returns nothing
+- [ ] Specification labels are a shared vocabulary keyed into `messages/`
+      today — in the database they want a `spec_definitions` table with
+      per-locale labels rather than free text on every row
+- [ ] Reviews are **not** translated. They carry the locale they were written
+      in, and the UI labels that rather than rewriting the customer's words
 - [ ] Product photography into the `products` bucket; `ProductImage` becomes
       `next/image` behind the same wrapper (**D-12**)
 
@@ -357,8 +407,10 @@ restore drill passed; v1.0.0 tagged.
 Not planned. Revisit only with a recorded decision.
 
 - Multi-tenancy or multi-store
-- Internationalisation and multi-currency (the architecture allows it —
-  `formatPrice` takes a locale and currency — but no phase delivers it)
+- **Multi-currency.** Prices are integer minor units of one store-wide currency
+  (ADR-2); a second currency needs a `currency` column on every priced row
+  (**D-9**). Locale changes how an amount is _formatted_, never which currency it
+  is in.
 - Native mobile apps
 - A headless API for third-party consumers
 - Marketplace or multi-vendor selling

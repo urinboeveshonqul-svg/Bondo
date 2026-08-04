@@ -4,10 +4,11 @@
 > It is updated at the end of every completed task. If this file and the code
 > disagree, the code is right and this file is a bug — fix it immediately.
 
-**Last updated:** 2026-08-03
+**Last updated:** 2026-08-04
 **Version:** v0.3.0 (unreleased) — v0.1.0 is the last tag
-**Phase:** 3A of 9 — Premium UI & Storefront Foundation ✅ **Complete**
-**Overall progress:** ~32%
+**Phase:** 3A of 9 — Premium UI & Storefront Foundation ✅ **Complete**, plus
+internationalization (uz/ru/en) ✅ **Complete**
+**Overall progress:** ~35%
 
 ### Release status
 
@@ -72,6 +73,29 @@ recorded rather than quietly broken:
 
 Still open from earlier phases: **K-3** (types not generated) blocks 3B, and
 **K-2** (no `/sign-in` page) is why the account control is a disabled button.
+
+### Internationalization
+
+Added after 3A closed, as a cross-cutting requirement rather than a phase:
+**Uzbek (default), Russian, English**, with the locale in the URL (`/uz`, `/ru`,
+`/en`).
+
+Every string a visitor can read comes from `messages/<locale>/<namespace>.json`
+— 8 namespaces × 3 locales, 169 keys each — except catalog copy, which carries
+its three languages on the record itself (**ADR-39**). Prices, ratings and counts
+are formatted per locale, and the listing count uses ICU plurals because Russian
+needs three forms.
+
+The policy is enforced, not documented: `npm run check` runs
+`scripts/check-translations.mjs`, which fails on a missing namespace, a missing
+key in either direction, an empty value, or a placeholder renamed in one
+language. ESLint blocks `next/link`, because the locale-unaware version compiles,
+renders, and silently resets the visitor's language on click.
+
+Two Next.js routing defects were found and fixed while verifying this, both of
+which failed **silently** — see **ADR-41** and **ADR-42**. Neither was specific
+to i18n; both were pre-existing and only became visible because the 404 path was
+being checked in three languages.
 
 ---
 
@@ -161,27 +185,30 @@ prerendered routes, 404, and both error boundaries.
 
 ### Verified
 
-| Check                                  | Result                           |
-| -------------------------------------- | -------------------------------- |
-| `npm run check`                        | passes                           |
-| `npm run build`                        | passes                           |
-| First Load JS — home                   | **129 kB**                       |
-| First Load JS — listing / detail       | 107 kB / 117 kB                  |
-| Shared JS                              | 103 kB                           |
-| Middleware bundle                      | **93 kB** (109 kB before ADR-35) |
-| Static prerendered routes              | 17                               |
-| `<h1>` per page                        | exactly 1 on all 7 routes        |
-| Heading levels                         | no skipped level on any route    |
-| Dead links (`href="#"` or absent)      | 0                                |
-| Internal link targets                  | 18, all resolve — 0 are 4xx      |
-| Buttons without an accessible name     | 0                                |
-| `<img>` without `alt`                  | 0                                |
-| Accent colour outside discounts        | 0 of 32 uses                     |
-| Security headers present at runtime    | yes, confirmed in browser        |
-| `x-powered-by` suppressed              | yes                              |
-| Anonymous → `/account/orders` redirect | yes, confirmed in browser        |
-| Fonts resolve to Geist                 | yes, confirmed in browser        |
-| Env/Zod absent from client chunks      | yes, confirmed by grep           |
+| Check                                  | Result                                     |
+| -------------------------------------- | ------------------------------------------ |
+| `npm run check`                        | passes (incl. translation parity)          |
+| `npm run build`                        | passes                                     |
+| Translations                           | 8 namespaces × 3 locales, 169 keys each    |
+| First Load JS — home                   | **143 kB** (129 kB before i18n)            |
+| First Load JS — listing / detail       | 120 kB / 131 kB                            |
+| Shared JS                              | 103 kB                                     |
+| Middleware bundle                      | **105 kB** (93 kB before i18n)             |
+| Static prerendered routes              | 45 — 15 routes × 3 locales                 |
+| i18n runtime audit                     | 51/51 checks pass                          |
+| 404 status and copy                    | 404 + localized, all 3 locales, both paths |
+| `<h1>` per page                        | exactly 1 on all 7 routes                  |
+| Heading levels                         | no skipped level on any route              |
+| Dead links (`href="#"` or absent)      | 0                                          |
+| Internal link targets                  | 18, all resolve — 0 are 4xx                |
+| Buttons without an accessible name     | 0                                          |
+| `<img>` without `alt`                  | 0                                          |
+| Accent colour outside discounts        | 0 of 32 uses                               |
+| Security headers present at runtime    | yes, confirmed in browser                  |
+| `x-powered-by` suppressed              | yes                                        |
+| Anonymous → `/account/orders` redirect | yes, confirmed in browser                  |
+| Fonts resolve to Geist                 | yes, confirmed in browser                  |
+| Env/Zod absent from client chunks      | yes, confirmed by grep                     |
 
 The accessibility and link rows are asserted against the **HTML the server
 sends** for `/`, `/products`, three filtered listings, a product page and a 404
@@ -209,14 +236,15 @@ problem as the catalog grows.
 
 ### Layer rules
 
-| Layer       | May import                                   | Must never import               |
-| ----------- | -------------------------------------------- | ------------------------------- |
-| `utils/`    | other `utils/`, `lib/site-config.ts`         | env, Supabase, React, `lib/*`   |
-| `types/`    | other `types/`                               | anything emitting runtime code  |
-| `lib/`      | `utils/`, `types/`                           | `services/`, `actions/`, `app/` |
-| `services/` | `lib/`, `types/`, `utils/`, Supabase clients | React, `actions/`, `app/`       |
-| `actions/`  | `services/`, `lib/`, `types/`, `utils/`      | `app/`                          |
-| `app/`      | everything                                   | —                               |
+| Layer       | May import                                                 | Must never import                                 |
+| ----------- | ---------------------------------------------------------- | ------------------------------------------------- |
+| `utils/`    | other `utils/`, `lib/site-config.ts`                       | env, Supabase, React, `lib/*`                     |
+| `types/`    | other `types/`, `Locale` (type-only)                       | anything emitting runtime code                    |
+| `lib/`      | `utils/`, `types/`                                         | `services/`, `actions/`, `app/`                   |
+| `i18n/`     | `lib/site-config.ts`, `lib/routes.ts`, `types/`, next-intl | `services/`, `actions/`, `app/`, React components |
+| `services/` | `lib/`, `types/`, `utils/`, Supabase clients               | React, `actions/`, `app/`                         |
+| `actions/`  | `services/`, `lib/`, `types/`, `utils/`                    | `app/`                                            |
+| `app/`      | everything                                                 | —                                                 |
 
 The `lib` / `utils` / `types` split is by **dependency weight**:
 
@@ -224,6 +252,17 @@ The `lib` / `utils` / `types` split is by **dependency weight**:
   into a bundle.
 - `lib/` is infrastructure that is allowed to have dependencies.
 - `types/` emits no runtime code at all, so importing from it costs zero bytes.
+  Its one import — `Locale` from `lib/site-config.ts` — is `import type` and
+  erases completely.
+- `i18n/` is the localization contract. It sits beside `lib/` rather than inside
+  it because the middleware reaches it, so it inherits the Edge constraints:
+  relative imports, and nothing that throws at module scope. `i18n/request.ts`
+  is loaded by the framework and must not be imported by application code.
+
+The locale table lives in `lib/site-config.ts` specifically because that file has
+no imports. It is the only module all three of `utils/`, `i18n/` and the Edge
+middleware chain are allowed to depend on, so putting the locale list anywhere
+else would have meant duplicating it.
 
 ### Error handling
 
@@ -648,21 +687,22 @@ replacement for it.
 
 ## Technical debt
 
-| #    | Item                                                                                                                                                                                                                                                                                                                    | Interest rate                                      | Pay down                                                                                              |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| D-1  | No tests of any kind, and no CI.                                                                                                                                                                                                                                                                                        | High — grows with every phase                      | Phase 9, but add tests alongside Phase 2+ work                                                        |
-| D-2  | `Paginated` / `PaginationParams` model offset pagination. Deep offsets and exact `COUNT(*)` do not hold at 50k products.                                                                                                                                                                                                | Medium                                             | Phase 3 — keyset pagination for storefront browse                                                     |
-| D-3  | Zod re-enters the client bundle in Phase 3 when forms adopt `zodResolver`. Expected, but re-measure then.                                                                                                                                                                                                               | Low                                                | Phase 3                                                                                               |
-| D-4  | `components/ui/separator.tsx`, `skeleton.tsx` and both hooks are currently unimported.                                                                                                                                                                                                                                  | Very low — zero bytes shipped                      | Naturally, as features land                                                                           |
-| D-5  | No route groups yet. `app/(storefront)`, `(account)`, `(admin)` are planned but empty ones today would be indirection with nothing behind them.                                                                                                                                                                         | Low                                                | Phase 3                                                                                               |
-| D-6  | No `robots.ts` or `sitemap.ts`. Correct for a one-page site; required before launch.                                                                                                                                                                                                                                    | Low                                                | Phase 3                                                                                               |
-| D-7  | Migration verification lives in a scratchpad PGlite harness that is not committed, so nobody can reproduce Phase 2's 116 assertions. Committing it means a devDependency and a harness that stubs `auth`/`storage` and can drift from real Supabase.                                                                    | Medium — grows as the schema does                  | Decide when Docker is available; natural home is the Phase 9 test suite                               |
-| D-8  | No `product_variants` table. A single product carries one SKU, price and stock, so a laptop sold in 16GB and 32GB configurations needs two product rows. That is workable for a launch catalog and painful at scale.                                                                                                    | Medium — expensive after orders reference products | Before the catalog grows past a few thousand SKUs; revisit in Phase 3                                 |
-| D-9  | No `currency` column. Prices are integer minor units of one store-wide currency (`settings.store.currency`). Multi-currency is explicitly out of scope, but adding the column after orders exist means backfilling history.                                                                                             | Low — while out of scope                           | Only if multi-currency is ever adopted                                                                |
-| D-11 | `mocks/catalog.ts` is the storefront's data source (ADR-36). Every day it stays, the chance grows that a component quietly depends on a shape the database does not produce.                                                                                                                                            | **High — this is the phase's main debt**           | Delete it the moment `services/products.service.ts` lands; `npm run check` then finds every call site |
-| D-12 | No product photography, so `next/image` is not yet used anywhere. Image optimisation, `sizes`, and priority hints are therefore unexercised — the first real image will be the first test of them.                                                                                                                      | Medium                                             | With Storage-backed imagery                                                                           |
-| D-10 | `inventory.quantity_reserved` is declared but nothing writes it. Phase 4 needs it for oversell prevention; until then `quantity_on_hand` alone describes availability.                                                                                                                                                  | Low                                                | Phase 4                                                                                               |
-| D-13 | No client-side behaviour has been driven against a real browser. The theme toggle, basket and wishlist sheets and mobile nav are verified only by typecheck, build and server markup. The preview pane injects the document via `innerHTML`, so the streamed inline scripts never run and the app never hydrates in it. | Medium — every added interaction widens the gap    | Phase 9's test suite; sooner if a real browser becomes available                                      |
+| #    | Item                                                                                                                                                                                                                                                                                                                    | Interest rate                                                                                      | Pay down                                                                                                                                        |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| D-1  | No tests of any kind, and no CI.                                                                                                                                                                                                                                                                                        | High — grows with every phase                                                                      | Phase 9, but add tests alongside Phase 2+ work                                                                                                  |
+| D-2  | `Paginated` / `PaginationParams` model offset pagination. Deep offsets and exact `COUNT(*)` do not hold at 50k products.                                                                                                                                                                                                | Medium                                                                                             | Phase 3 — keyset pagination for storefront browse                                                                                               |
+| D-3  | Zod re-enters the client bundle in Phase 3 when forms adopt `zodResolver`. Expected, but re-measure then.                                                                                                                                                                                                               | Low                                                                                                | Phase 3                                                                                                                                         |
+| D-4  | `components/ui/separator.tsx`, `skeleton.tsx` and both hooks are currently unimported.                                                                                                                                                                                                                                  | Very low — zero bytes shipped                                                                      | Naturally, as features land                                                                                                                     |
+| D-5  | No route groups yet. `app/(storefront)`, `(account)`, `(admin)` are planned but empty ones today would be indirection with nothing behind them.                                                                                                                                                                         | Low                                                                                                | Phase 3                                                                                                                                         |
+| D-6  | No `robots.ts` or `sitemap.ts`. Correct for a one-page site; required before launch.                                                                                                                                                                                                                                    | Low                                                                                                | Phase 3                                                                                                                                         |
+| D-7  | Migration verification lives in a scratchpad PGlite harness that is not committed, so nobody can reproduce Phase 2's 116 assertions. Committing it means a devDependency and a harness that stubs `auth`/`storage` and can drift from real Supabase.                                                                    | Medium — grows as the schema does                                                                  | Decide when Docker is available; natural home is the Phase 9 test suite                                                                         |
+| D-8  | No `product_variants` table. A single product carries one SKU, price and stock, so a laptop sold in 16GB and 32GB configurations needs two product rows. That is workable for a launch catalog and painful at scale.                                                                                                    | Medium — expensive after orders reference products                                                 | Before the catalog grows past a few thousand SKUs; revisit in Phase 3                                                                           |
+| D-9  | No `currency` column. Prices are integer minor units of one store-wide currency (`settings.store.currency`). Multi-currency is explicitly out of scope, but adding the column after orders exist means backfilling history.                                                                                             | Low — while out of scope                                                                           | Only if multi-currency is ever adopted                                                                                                          |
+| D-11 | `mocks/catalog.ts` is the storefront's data source (ADR-36). Every day it stays, the chance grows that a component quietly depends on a shape the database does not produce.                                                                                                                                            | **High — this is the phase's main debt**                                                           | Delete it the moment `services/products.service.ts` lands; `npm run check` then finds every call site                                           |
+| D-12 | No product photography, so `next/image` is not yet used anywhere. Image optimisation, `sizes`, and priority hints are therefore unexercised — the first real image will be the first test of them.                                                                                                                      | Medium                                                                                             | With Storage-backed imagery                                                                                                                     |
+| D-10 | `inventory.quantity_reserved` is declared but nothing writes it. Phase 4 needs it for oversell prevention; until then `quantity_on_hand` alone describes availability.                                                                                                                                                  | Low                                                                                                | Phase 4                                                                                                                                         |
+| D-14 | The three languages are one author's work with no native review. The Uzbek and Russian copy is written, not machine-translated, but nobody who speaks them professionally has read it — register and terminology are unverified.                                                                                        | Medium — every new string compounds it, and wrong register is invisible to the person who wrote it | A native reviewer before any public launch; the strings are isolated in `messages/` and on catalog records so a review is a self-contained pass |
+| D-13 | No client-side behaviour has been driven against a real browser. The theme toggle, basket and wishlist sheets and mobile nav are verified only by typecheck, build and server markup. The preview pane injects the document via `innerHTML`, so the streamed inline scripts never run and the app never hydrates in it. | Medium — every added interaction widens the gap                                                    | Phase 9's test suite; sooner if a real browser becomes available                                                                                |
 
 ---
 
@@ -704,6 +744,11 @@ reversal here.**
 | ADR-29 | `types/database.ts` was left stale rather than hand-written when the generator could not run.                                                                                                                                      | An empty `Tables` makes every `from()` a compile error, so the gap fails loudly. Fabricated types would be plausible, wrong, and unchecked — and would break the rule that this file is generated output.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ADR-30 | GRANTs are written out explicitly instead of relying on Supabase's default privileges.                                                                                                                                             | A privilege model that exists only as a platform default is one nobody can review. `anon` gets SELECT on exactly the seven tables with an anonymous read policy, so a mistaken policy still meets a closed second gate.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ADR-37 | Orange is used for **price reductions only** — the sale price, the discount badge. Star ratings are monochrome and low stock is emphasised with weight, not hue.                                                                   | An accent that means two things means neither. An amber star next to an orange sale price makes a well-reviewed product look discounted at a glance, which is the one misreading a storefront cannot afford. Verified in the rendered page: zero accent-coloured stars, 36 accent elements and all of them a price cut.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ADR-42 | An unmatched URL under a locale is caught by `app/[locale]/[...rest]/page.tsx`, which calls `notFound()`; `app/layout.tsx` exists as a passthrough that renders no markup.                                                         | Two separate Next.js facts, both discovered by observation rather than from the docs. A `not-found.tsx` inside a segment only catches `notFound()` raised by a route that **matched** — an unknown path matches nothing, so it fell through to the framework's built-in English 404 with no `<html lang>`. And with no root `app/layout.tsx`, the `not-found` convention has no root to resolve against and `app/[locale]/not-found.tsx` is ignored entirely: an unknown product slug returned **200 with an empty body**, silently, with nothing logged in dev or production.                                                                                                                                                                                                   |
+| ADR-41 | `dynamicParams = false` on `app/[locale]/products/[slug]`.                                                                                                                                                                         | Correctness, not caching. `products/loading.tsx` puts a Suspense boundary above the route, so the response shell flushes with **200** before the page body runs and the `notFound()` inside it can no longer change the status — a soft 404 that invites dead product URLs into the search index. Refusing unknown params up front makes Next.js answer 404 before streaming starts. Revisit when the catalog outgrows build-time prerendering: ISR needs `true`, and the soft 404 must then be solved by moving `loading.tsx` off this route.                                                                                                                                                                                                                                   |
+| ADR-40 | Locale is **always** in the URL, including the default: Uzbek lives at `/uz`, never at `/`. Persisted in `NEXT_LOCALE`, negotiated from `Accept-Language` only when no cookie exists.                                              | An unprefixed default gives every Uzbek page two addresses, which costs a canonical tag on every route to stop crawlers treating the site as duplicated, and makes `hreflang` a special case for one locale out of three. One shape for all three is worth one redirect from `/`. Cookie before `Accept-Language` because an explicit choice must outrank a browser default — verified: a `NEXT_LOCALE=uz` cookie beats an `en-GB` header.                                                                                                                                                                                                                                                                                                                                       |
+| ADR-39 | **Interface chrome lives in `messages/`; catalog copy lives on the record** as `LocalizedText` (`Record<Locale, string>`). Specification labels are the exception — a shared vocabulary keyed into the `product` namespace.        | They are different things with different authors and different lifecycles. "Add to basket" is written once by a developer, is identical on every page, and changes with a deploy. A product description is written per row by a merchandiser and in Phase 3B comes from the database — putting it in a message file would build the wrong pattern and then require unpicking. Making `LocalizedText` a **required** record of every locale means a product cannot be added in one language: TypeScript rejects it, which is the compile-time half of the policy in CLAUDE.md § 11. Spec labels go the other way because "Capacity" appears on memory, storage and batteries alike — three translations beat the same three on every row.                                         |
+| ADR-38 | next-intl, with `[locale]` as the routing segment, rather than a hand-rolled context or a heavier framework.                                                                                                                       | It is the only option that gives ICU plurals, Server-Component-native translation (`useTranslations` works without a client boundary, so a grid of sixty product cards still ships zero JavaScript for its text), and locale-aware `Intl` formatting from one contract. A hand-rolled system reaches the same place eventually and arrives without plural rules — Russian needs `few` and `many`, which a ternary cannot express. Cost: the middleware bundle grew 93 kB → 105 kB.                                                                                                                                                                                                                                                                                               |
 | ADR-36 | **Refines ADR-20.** Mock catalog data is permitted in `mocks/`, imported only by `app/` and `components/`, for the interface phase only.                                                                                           | ADR-20 forbids fake data because it hides empty states. The Phase 3A brief requires building the interface before the schema is wired, so the exemption is scoped: nothing in `services/`, `actions/` or `lib/` may import it, the shapes are `types/catalog.ts` so services drop in without touching components, and the empty states ADR-20 protects are built and reachable today — an empty basket, an empty wishlist, a filter matching nothing. Tracked as **D-11** so the folder is deleted rather than forgotten.                                                                                                                                                                                                                                                        |
 | ADR-35 | **The middleware chain does not import `lib/env.ts`.** `supabase/session.ts` reads its two `NEXT_PUBLIC_*` values from `process.env` directly. Same shape as ADR-8 for `lib/logger.ts`, applied to the Edge bundle.                | `lib/env.ts` validates the whole public contract with Zod **at module scope and throws**. In an Edge Function module scope runs once per isolate, so a throw there fails _every_ request and Vercel surfaces it only as `MIDDLEWARE_INVOCATION_FAILED` — no file, no line, no variable. It also validated `NEXT_PUBLIC_SITE_URL`, which nothing in this chain uses, and which is **not inlined when unset at build**: it stayed a runtime `process.env` read whose value the build never checked, and `next.config.ts` does not run inside the Edge Function. Measured: middleware bundle 383 kB → 325 kB, Zod removed entirely.                                                                                                                                                 |
 | ADR-34 | **Every module reachable from `middleware.ts` imports by relative path, not the `@/` alias.** The rest of the codebase keeps the alias.                                                                                            | Vercel resolves the middleware import graph itself when packaging the Edge Function — from source, transitively, without applying tsconfig `paths`. Anything it cannot resolve fails the deployment with `The Edge Function "middleware" is referencing unsupported modules`. Proven by converting only the entry file: the error moved one level down, from `middleware.js: @/supabase/session` to `supabase/session.js: @/lib/env, @/lib/routes`. Type-only imports are erased before resolution and were never named, but are converted too, since one edit turning one into a value import would break the deploy for a reason nobody would connect to that line. Chain today: `middleware.ts` → `supabase/session.ts` → `lib/env.ts`, `lib/routes.ts`, `types/database.ts`. |

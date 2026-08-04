@@ -1,6 +1,8 @@
+import { useLocale, useTranslations } from "next-intl";
 import { Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import type { Locale } from "@/lib/site-config";
 import { formatNumber } from "@/utils/format";
 
 /**
@@ -12,6 +14,10 @@ import { formatNumber } from "@/utils/format";
  *
  * Partial fill is done with a clipped overlay rather than half-star glyphs, so
  * 4.3 reads as 4.3 rather than rounding to 4.5 and overstating the product.
+ *
+ * The visible number is formatted for the locale — 4.8 in English, 4,8 in
+ * Russian and Uzbek — because a decimal point where a reader expects a comma
+ * reads as a thousands separator.
  */
 export function Rating({
   rating,
@@ -24,8 +30,12 @@ export function Rating({
   size?: "small" | "default";
   className?: string;
 }) {
+  const t = useTranslations("common.rating");
+  const locale = useLocale() as Locale;
+
   const clamped = Math.max(0, Math.min(5, rating));
   const starSize = size === "small" ? "size-3.5" : "size-4";
+  const displayed = formatNumber(Math.round(clamped * 10) / 10, locale);
 
   return (
     <span className={cn("flex items-center gap-1.5", className)}>
@@ -67,15 +77,16 @@ export function Rating({
           size === "small" ? "text-xs" : "text-sm",
         )}
       >
-        {clamped.toFixed(1)}
-        {reviewCount !== undefined ? (
-          <span className="sr-only">
-            {" "}
-            out of 5, from {formatNumber(reviewCount)} reviews
-          </span>
-        ) : (
-          <span className="sr-only"> out of 5</span>
-        )}
+        {displayed}
+        <span className="sr-only">
+          {" "}
+          {reviewCount === undefined
+            ? t("outOf5", { rating: displayed })
+            : t("outOf5WithReviews", {
+                rating: displayed,
+                count: formatNumber(reviewCount, locale),
+              })}
+        </span>
       </span>
 
       {reviewCount !== undefined ? (
@@ -86,7 +97,7 @@ export function Rating({
             size === "small" ? "text-xs" : "text-sm",
           )}
         >
-          ({formatNumber(reviewCount)})
+          ({formatNumber(reviewCount, locale)})
         </span>
       ) : null}
     </span>

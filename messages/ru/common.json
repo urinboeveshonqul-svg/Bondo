@@ -1,0 +1,39 @@
+{
+  "skipToContent": "Перейти к содержимому",
+  "allProducts": "Все товары",
+  "browseProducts": "Перейти в каталог",
+  "viewAllProducts": "Смотреть все товары",
+  "addToBasket": "В корзину",
+  "outOfStock": "Нет в наличии",
+  "save": "В избранное",
+  "stock": {
+    "inStock": "В наличии",
+    "low": "Осталось {count} шт.",
+    "outOfStock": "Нет в наличии"
+  },
+  "badges": {
+    "new": "Новинка",
+    "bestseller": "Хит продаж",
+    "low-stock": "Заканчивается"
+  },
+  "price": {
+    "was": "Было",
+    "discount": "−{percent}%"
+  },
+  "rating": {
+    "outOf5": "{rating} из 5",
+    "outOf5WithReviews": "{rating} из 5, на основе {count} отзывов"
+  },
+  "card": {
+    "saveToWishlist": "Добавить «{name}» в избранное",
+    "addToBasket": "Добавить «{name}» в корзину"
+  },
+  "theme": {
+    "toLight": "Переключить на светлую тему",
+    "toDark": "Переключить на тёмную тему"
+  },
+  "language": {
+    "label": "Язык",
+    "change": "Сменить язык"
+  }
+}

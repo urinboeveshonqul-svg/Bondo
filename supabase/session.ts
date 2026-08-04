@@ -20,7 +20,12 @@ import { createServerClient } from "@supabase/ssr";
 // anyway: the distinction is invisible at a glance, and one edit turning it into
 // a value import would break the deployment for a reason nobody would connect to
 // this line.
-import { isProtectedRoute, routes } from "../lib/routes";
+import {
+  isProtectedRoute,
+  localizePath,
+  routes,
+  splitLocale,
+} from "../lib/routes";
 import type { Database } from "../types/database";
 
 /**
@@ -66,12 +71,58 @@ function hasAuthCookie(request: NextRequest): boolean {
 function redirectToSignIn(request: NextRequest) {
   const signInUrl = request.nextUrl.clone();
   const { pathname, search } = request.nextUrl;
+  const { locale } = splitLocale(pathname);
 
-  signInUrl.pathname = routes.auth.signIn;
+  // Sent to the sign-in page *in the language they were already reading*.
+  // `routes.auth.signIn` is unprefixed, so without this the gate would drop a
+  // Russian shopper onto the Uzbek sign-in form. `redirectTo` keeps its prefix
+  // so the round trip returns them to the same localized page.
+  signInUrl.pathname = localizePath(locale, routes.auth.signIn);
   signInUrl.search = "";
   signInUrl.searchParams.set("redirectTo", `${pathname}${search}`);
 
   return NextResponse.redirect(signInUrl);
+}
+
+/**
+ * Transplants the locale routing decision onto a response built by this module.
+ *
+ * Two middlewares both want to own the outgoing response: next-intl decides
+ * *which page renders* (a rewrite to `/[locale]/…`) and this module decides
+ * *which cookies go back* (a rotated auth token). Returning either one alone
+ * loses the other's work — the visitor either gets no locale or gets logged out.
+ *
+ * The base is deliberately this module's `NextResponse.next({ request })`, not
+ * next-intl's response, because only that form carries the request-header
+ * overrides that let the *current* request's Server Components see the refreshed
+ * cookies. So the three things next-intl actually produces are copied across
+ * explicitly, and its request-header overrides are dropped rather than allowed
+ * to clobber Supabase's:
+ *
+ *  - `x-middleware-rewrite`, the internal rewrite to the locale segment;
+ *  - `link`, the `hreflang` alternates next-intl emits as a header;
+ *  - cookies, which is where `NEXT_LOCALE` is persisted.
+ *
+ * A blanket header copy is what this avoids. `x-middleware-override-headers`
+ * and `x-middleware-request-*` are Next.js's private channel for the mutated
+ * request, and overwriting them with next-intl's copy drops the rotated auth
+ * cookie — a random-logout bug with no stack trace.
+ */
+function inheritLocaleRouting(
+  response: NextResponse,
+  i18n: NextResponse,
+): NextResponse {
+  const rewrite = i18n.headers.get("x-middleware-rewrite");
+  if (rewrite) response.headers.set("x-middleware-rewrite", rewrite);
+
+  const link = i18n.headers.get("link");
+  if (link) response.headers.set("link", link);
+
+  for (const cookie of i18n.cookies.getAll()) {
+    response.cookies.set(cookie);
+  }
+
+  return response;
 }
 
 /**
@@ -88,16 +139,21 @@ function redirectToSignIn(request: NextRequest) {
  * anyway would add a network round trip to Supabase Auth on every page view,
  * which is both the dominant latency cost in middleware and a per-request
  * charge against the project's auth quota.
+ *
+ * @param i18n the response next-intl produced for this request. It already
+ * carries the locale rewrite and the `NEXT_LOCALE` cookie; anonymous requests
+ * are handed it back unchanged, which is both the cheapest path and the one that
+ * cannot get the merge wrong.
  */
-export async function updateSession(request: NextRequest) {
+export async function updateSession(request: NextRequest, i18n: NextResponse) {
   const { pathname } = request.nextUrl;
 
   if (!hasAuthCookie(request)) {
     if (isProtectedRoute(pathname)) return redirectToSignIn(request);
-    return NextResponse.next({ request });
+    return i18n;
   }
 
-  let response = NextResponse.next({ request });
+  let response = inheritLocaleRouting(NextResponse.next({ request }), i18n);
 
   // Checked here rather than at module scope: a module-scope throw in an Edge
   // Function fails every request for the life of the isolate, which is the
@@ -126,7 +182,10 @@ export async function updateSession(request: NextRequest) {
             request.cookies.set(name, value);
           }
 
-          response = NextResponse.next({ request });
+          // Rebuilt so the mutated request cookies reach this request's Server
+          // Components — and re-inherited, because rebuilding drops the locale
+          // rewrite that was transplanted onto the previous instance.
+          response = inheritLocaleRouting(NextResponse.next({ request }), i18n);
 
           for (const { name, value, options } of cookiesToSet) {
             response.cookies.set(name, value, options);

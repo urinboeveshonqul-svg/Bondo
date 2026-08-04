@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Heart, ShoppingCart } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
@@ -13,6 +13,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Link } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
 
 /**
@@ -29,27 +30,32 @@ import { routes } from "@/lib/routes";
  * catalog is populated with fake rows.
  */
 export function BasketSheet() {
+  const t = useTranslations("header.basket");
+  const tCommon = useTranslations("common");
+
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Open basket">
+        <Button variant="ghost" size="icon" aria-label={t("open")}>
           <ShoppingCart />
         </Button>
       </SheetTrigger>
       <SheetContent className="flex w-full flex-col sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Your basket</SheetTitle>
-          <SheetDescription>Items you are ready to buy.</SheetDescription>
+          <SheetTitle>{t("title")}</SheetTitle>
+          <SheetDescription>{t("description")}</SheetDescription>
         </SheetHeader>
 
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             icon={ShoppingCart}
-            title="Your basket is empty"
-            description="Browse the catalog and add something to get started."
+            title={t("emptyTitle")}
+            description={t("emptyDescription")}
             action={
               <Button asChild>
-                <Link href={routes.catalog.index}>Browse products</Link>
+                <Link href={routes.catalog.index}>
+                  {tCommon("browseProducts")}
+                </Link>
               </Button>
             }
           />
@@ -60,29 +66,32 @@ export function BasketSheet() {
 }
 
 export function WishlistSheet() {
+  const t = useTranslations("header.wishlist");
+  const tCommon = useTranslations("common");
+
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Open wishlist">
+        <Button variant="ghost" size="icon" aria-label={t("open")}>
           <Heart />
         </Button>
       </SheetTrigger>
       <SheetContent className="flex w-full flex-col sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Your wishlist</SheetTitle>
-          <SheetDescription>
-            Products you have saved for later.
-          </SheetDescription>
+          <SheetTitle>{t("title")}</SheetTitle>
+          <SheetDescription>{t("description")}</SheetDescription>
         </SheetHeader>
 
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             icon={Heart}
-            title="Nothing saved yet"
-            description="Save products from any card to compare them side by side later."
+            title={t("emptyTitle")}
+            description={t("emptyDescription")}
             action={
               <Button asChild variant="outline">
-                <Link href={routes.catalog.index}>Browse products</Link>
+                <Link href={routes.catalog.index}>
+                  {tCommon("browseProducts")}
+                </Link>
               </Button>
             }
           />

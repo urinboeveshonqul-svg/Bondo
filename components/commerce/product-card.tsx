@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { Heart, ShoppingCart } from "lucide-react";
 
 import { DiscountBadge, Price } from "@/components/commerce/price";
@@ -7,16 +7,12 @@ import { Rating } from "@/components/commerce/rating";
 import { StockIndicator } from "@/components/commerce/stock-indicator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
+import type { Locale } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 import type { ProductSummary } from "@/types/catalog";
 import { getStockLevel } from "@/utils/catalog";
-
-const BADGE_LABEL: Record<ProductSummary["badges"][number], string> = {
-  new: "New",
-  bestseller: "Bestseller",
-  "low-stock": "Selling fast",
-};
 
 /**
  * Product card.
@@ -38,6 +34,8 @@ export function ProductCard({
   product: ProductSummary;
   className?: string;
 }) {
+  const t = useTranslations("common");
+  const locale = useLocale() as Locale;
   const isOutOfStock = getStockLevel(product.stock) === "out-of-stock";
 
   return (
@@ -51,7 +49,7 @@ export function ProductCard({
     >
       <div className="relative">
         <ProductImage
-          name={product.name}
+          name={product.imageAlt[locale]}
           brand={product.brand}
           className="transition-transform duration-300 group-hover:scale-[1.03]"
         />
@@ -60,7 +58,7 @@ export function ProductCard({
           <DiscountBadge product={product} />
           {product.badges.map((badge) => (
             <Badge key={badge} variant="secondary">
-              {BADGE_LABEL[badge]}
+              {t(`badges.${badge}`)}
             </Badge>
           ))}
         </div>
@@ -79,7 +77,7 @@ export function ProductCard({
           <Button
             variant="secondary"
             size="icon-sm"
-            aria-label={`Save ${product.name} to wishlist`}
+            aria-label={t("card.saveToWishlist", { name: product.name })}
             disabled
           >
             <Heart />
@@ -87,7 +85,7 @@ export function ProductCard({
           <Button
             variant="secondary"
             size="icon-sm"
-            aria-label={`Add ${product.name} to basket`}
+            aria-label={t("card.addToBasket", { name: product.name })}
             disabled={isOutOfStock}
           >
             <ShoppingCart />

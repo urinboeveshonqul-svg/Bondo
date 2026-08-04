@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 /**
@@ -14,8 +14,16 @@ import { cn } from "@/lib/utils";
  * The heading level is fixed at `h2`: the page has one `h1` in the hero, and
  * every section below it is a peer. Letting callers choose would let the
  * document outline drift.
+ *
+ * `id` is a required prop rather than a slug derived from `title`. It used to be
+ * generated with `title.toLowerCase().replace(/[^a-z0-9]+/g, "-")`, which is
+ * fine for "Today's deals" and produces `"section--"` for "Акции дня" — every
+ * Russian section would share one id, so `aria-labelledby` on all of them would
+ * resolve to whichever heading happened to be first. A caller-supplied,
+ * language-independent id cannot drift with the copy.
  */
 export function Section({
+  id,
   title,
   description,
   href,
@@ -24,6 +32,7 @@ export function Section({
   children,
   className,
 }: {
+  id: string;
   title: string;
   description?: string;
   href?: string;
@@ -32,7 +41,7 @@ export function Section({
   children: React.ReactNode;
   className?: string;
 }) {
-  const headingId = `section-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  const headingId = `section-${id}`;
 
   return (
     <section

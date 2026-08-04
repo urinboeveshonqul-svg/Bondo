@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Mail } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
@@ -11,6 +12,8 @@ import { NewsletterForm } from "@/components/layout/newsletter-form";
  * wrapper only supplies the surrounding layout and copy.
  */
 export function NewsletterSection() {
+  const t = useTranslations("home.newsletter");
+
   return (
     <section
       aria-labelledby="newsletter-heading"
@@ -26,19 +29,16 @@ export function NewsletterSection() {
             id="newsletter-heading"
             className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl"
           >
-            Restock alerts, without the marketing
+            {t("title")}
           </h2>
 
           <p className="max-w-xl text-pretty text-primary-foreground/80">
-            Tell us once what you are waiting for and we will email when it is
-            back. Twice a month at most, and nothing else.
+            {t("body")}
           </p>
 
           <NewsletterForm className="max-w-md justify-center" />
 
-          <p className="text-xs text-primary-foreground/70">
-            Unsubscribe in one click. We never share your address.
-          </p>
+          <p className="text-xs text-primary-foreground/70">{t("note")}</p>
         </div>
       </Container>
     </section>

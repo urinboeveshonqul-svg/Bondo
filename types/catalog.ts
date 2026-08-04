@@ -12,15 +12,53 @@
  * the schema, so `formatPrice()` works on these unchanged.
  *
  * Declarations only — the derived helpers live in `utils/catalog.ts` (ADR-9).
+ * The `Locale` import is type-only and erases completely, so this module still
+ * emits zero runtime code.
  */
+
+import type { Locale } from "@/lib/site-config";
+
+/**
+ * Catalog copy, held per locale on the record itself.
+ *
+ * This is the deliberate counterpart to `messages/` (ADR-39). Interface chrome —
+ * "Add to basket", "Out of stock" — is the same sentence on every page and lives
+ * in a message file. Catalog copy is different for every row, is written by
+ * merchandisers rather than developers, and changes without a deploy: it belongs
+ * to the product, not to the build.
+ *
+ * Making it a required record of every locale means a product cannot be added in
+ * one language only. TypeScript rejects it, which is the compile-time half of
+ * "a feature is not done until all three languages exist".
+ */
+export type LocalizedText = Record<Locale, string>;
 
 export type ProductBadge = "new" | "bestseller" | "low-stock";
 
-/** Mirrors `public.product_specifications` minus the ordering columns. */
+/**
+ * Mirrors `public.product_specifications` minus the ordering columns.
+ *
+ * `group` and `name` are translation keys into the `product` namespace
+ * (`specs.groups.*`, `specs.names.*`), not free text. Specification labels are a
+ * small controlled vocabulary reused across the whole catalog — "Capacity"
+ * appears on memory, storage and batteries — so translating them once is both
+ * less work and more consistent than carrying the same three translations on
+ * every row.
+ *
+ * `value` is a union because specification values are genuinely two different
+ * kinds of thing. "24", "GDDR6X", "AM5" and "3840 x 2160" are identifiers and
+ * measurements that are the same string in every language — translating them
+ * would be wrong, and storing three identical copies is noise. "Linear
+ * mechanical" and "Brushed aluminium" are prose and must be translated. The
+ * union lets each value be whichever it actually is, and the renderer resolves
+ * one shape or the other.
+ *
+ * `unit` stays literal: SI symbols are not translated.
+ */
 export type ProductSpec = {
   group: string | null;
   name: string;
-  value: string;
+  value: string | LocalizedText;
   unit: string | null;
 };
 
@@ -33,7 +71,8 @@ export type ProductSummary = {
   category: string;
   /** Storage path today; a real Supabase Storage key once wired. */
   image: string;
-  imageAlt: string;
+  /** Alt text is content, not chrome — it describes this product specifically. */
+  imageAlt: LocalizedText;
   priceCents: number;
   /** Present only while a promotion is running, and always below `priceCents`. */
   salePriceCents: number | null;
@@ -44,12 +83,17 @@ export type ProductSummary = {
 };
 
 export type Product = ProductSummary & {
-  shortDescription: string;
-  description: string;
+  shortDescription: LocalizedText;
+  description: LocalizedText;
   specs: ProductSpec[];
   warrantyMonths: number;
 };
 
+/**
+ * `name` is not localized: a brand name is a trademark and renders identically
+ * in every language. Transliterating "NVIDIA" into Cyrillic would make it
+ * unsearchable and is not what the manufacturer's own Russian site does.
+ */
 export type Brand = {
   slug: string;
   name: string;
@@ -60,18 +104,25 @@ export type Brand = {
 
 export type Category = {
   slug: string;
-  name: string;
-  description: string;
+  name: LocalizedText;
+  description: LocalizedText;
   productCount: number;
 };
 
+/**
+ * Review text is localized here because these three are marketing copy standing
+ * in for real reviews (ADR-36). **Real reviews are never translated** — they are
+ * written by one customer in one language, and a translated review is no longer
+ * that customer's words. When reviews come from the database they carry the
+ * locale they were written in, and the UI labels that rather than rewriting it.
+ */
 export type Review = {
   id: string;
   author: string;
   initials: string;
   rating: number;
-  title: string;
-  body: string;
+  title: LocalizedText;
+  body: LocalizedText;
   productName: string;
   verified: boolean;
 };

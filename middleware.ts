@@ -16,10 +16,33 @@ import type { NextRequest } from "next/server";
 // This is the only file in the project exempt from the `@/` convention, and the
 // only one a third-party bundler parses directly — the same property that made
 // a JSDoc comment in `export const config` break deploys (K-11).
+import createIntlMiddleware from "next-intl/middleware";
+
+import { routing } from "./i18n/routing";
 import { updateSession } from "./supabase/session";
 
+const handleI18n = createIntlMiddleware(routing);
+
+/**
+ * Two concerns share this one Edge entry point: deciding the visitor's language
+ * and refreshing their Supabase session.
+ *
+ * Locale runs first, because its answer can end the request. A visit to `/` or
+ * to a path with no locale prefix is answered with a redirect to `/uz`, `/ru` or
+ * `/en`, and there is no reason to spend a Supabase round trip refreshing a
+ * session for a response that renders nothing. The redirect re-enters this
+ * middleware at the prefixed URL, where the session is refreshed normally.
+ *
+ * Everything else is handed to `updateSession`, which owns the merge — see
+ * `inheritLocaleRouting` there for why the two responses cannot simply be
+ * concatenated.
+ */
 export async function middleware(request: NextRequest) {
-  return updateSession(request);
+  const i18n = handleI18n(request);
+
+  if (i18n.headers.has("location")) return i18n;
+
+  return updateSession(request, i18n);
 }
 
 /**

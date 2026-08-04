@@ -11,7 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
  * filtering now, a database query shortly — so it is the first that earns one.
  *
  * The block sizes mirror the real page's heading, filter row and grid, so the
- * layout does not move when content replaces this.
+ * layout does not move when content replaces this. It carries no text, which is
+ * why it needs no translations: the skeleton is the same in every language.
  */
 export default function ProductsLoading() {
   return (

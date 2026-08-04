@@ -1,0 +1,26 @@
+{
+  "mainNav": "Asosiy",
+  "categories": "Kategoriyalar",
+  "categoriesNav": "Kategoriyalar",
+  "openMenu": "Menyuni ochish",
+  "shopByCategory": "Kategoriya bo'yicha",
+  "account": "Hisob",
+  "search": {
+    "label": "Mahsulotlarni qidirish",
+    "placeholder": "Videokarta, noutbuk, komplektuvchi qidiring…"
+  },
+  "basket": {
+    "open": "Savatni ochish",
+    "title": "Savatingiz",
+    "description": "Xarid qilishga tayyor mahsulotlar.",
+    "emptyTitle": "Savatingiz bo'sh",
+    "emptyDescription": "Katalogni ko'rib chiqing va biror mahsulot qo'shing."
+  },
+  "wishlist": {
+    "open": "Sevimlilarni ochish",
+    "title": "Sevimlilar",
+    "description": "Keyinroq uchun saqlab qo'ygan mahsulotlaringiz.",
+    "emptyTitle": "Hali hech narsa saqlanmagan",
+    "emptyDescription": "Istalgan mahsulotni saqlab qo'ying va keyin ularni yonma-yon solishtiring."
+  }
+}

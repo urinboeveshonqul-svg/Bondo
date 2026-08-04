@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { Container } from "@/components/layout/container";
 import type { Brand } from "@/types/catalog";
 
@@ -13,6 +15,8 @@ import type { Brand } from "@/types/catalog";
  * anyone reading it and needs a pause control to meet WCAG 2.2.2.
  */
 export function BrandStrip({ brands }: { brands: Brand[] }) {
+  const t = useTranslations("home.brands");
+
   return (
     <section aria-labelledby="brands-heading" className="border-y py-10">
       <Container>
@@ -20,7 +24,7 @@ export function BrandStrip({ brands }: { brands: Brand[] }) {
           id="brands-heading"
           className="mb-6 text-center text-xs font-medium tracking-wide text-muted-foreground uppercase"
         >
-          Brands we stock
+          {t("title")}
         </h2>
         <ul className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-7">
           {brands.map((brand) => (

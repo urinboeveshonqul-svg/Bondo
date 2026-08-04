@@ -1,0 +1,18 @@
+{
+  "title": "Barcha mahsulotlar",
+  "metaDescription": "Bondo sotadigan barcha mahsulotlar — tayyor tizimlar, komplektuvchilar va aksessuarlar.",
+  "resultsHeading": "Mahsulotlar",
+  "count": "{count, plural, one {# ta mahsulot} other {# ta mahsulot}}",
+  "showingResultsFor": "“{query}” bo'yicha natijalar",
+  "filterByCategory": "Kategoriya bo'yicha saralash",
+  "all": "Barchasi",
+  "clearFilters": "Filtrlarni tozalash",
+  "empty": {
+    "noMatchTitle": "“{query}” bo'yicha hech narsa topilmadi",
+    "noMatchDescription": "Qisqaroq so'z bilan yoki brend yoxud SKU bo'yicha qidirib ko'ring.",
+    "categoryTitle": "Bu yerda hali mahsulot yo'q",
+    "categoryDescription": "Ayni paytda bu kategoriyada mahsulot mavjud emas.",
+    "defaultTitle": "Mahsulot topilmadi",
+    "defaultDescription": "Filtrlardan birini olib tashlang yoki kengroq so'rov bilan qidiring."
+  }
+}

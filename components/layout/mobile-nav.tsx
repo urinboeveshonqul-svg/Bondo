@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Menu } from "lucide-react";
 
 import { SearchBar } from "@/components/layout/search-bar";
@@ -14,8 +14,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Link } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig, type Locale } from "@/lib/site-config";
 import type { Category } from "@/types/catalog";
 
 /**
@@ -29,6 +30,9 @@ import type { Category } from "@/types/catalog";
  * because a usable search field and a logo do not both fit at 375px.
  */
 export function MobileNav({ categories }: { categories: Category[] }) {
+  const t = useTranslations("header");
+  const tCommon = useTranslations("common");
+  const locale = useLocale() as Locale;
   const [open, setOpen] = useState(false);
 
   return (
@@ -38,7 +42,7 @@ export function MobileNav({ categories }: { categories: Category[] }) {
           variant="ghost"
           size="icon"
           className="lg:hidden"
-          aria-label="Open menu"
+          aria-label={t("openMenu")}
         >
           <Menu />
         </Button>
@@ -52,9 +56,9 @@ export function MobileNav({ categories }: { categories: Category[] }) {
         <div className="flex flex-col gap-6 overflow-y-auto px-4 pb-8">
           <SearchBar />
 
-          <nav aria-label="Categories">
+          <nav aria-label={t("categoriesNav")}>
             <h3 className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              Shop by category
+              {t("shopByCategory")}
             </h3>
             <ul className="flex flex-col">
               {categories.map((category) => (
@@ -64,9 +68,11 @@ export function MobileNav({ categories }: { categories: Category[] }) {
                     onClick={() => setOpen(false)}
                     className="-mx-2 flex flex-col gap-0.5 rounded-md px-2 py-2.5 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
-                    <span className="text-sm font-medium">{category.name}</span>
+                    <span className="text-sm font-medium">
+                      {category.name[locale]}
+                    </span>
                     <span className="text-xs text-muted-foreground">
-                      {category.description}
+                      {category.description[locale]}
                     </span>
                   </Link>
                 </li>
@@ -81,7 +87,7 @@ export function MobileNav({ categories }: { categories: Category[] }) {
             onClick={() => setOpen(false)}
             className="-mx-2 rounded-md px-2 py-2.5 text-sm font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            All products
+            {tCommon("allProducts")}
           </Link>
         </div>
       </SheetContent>

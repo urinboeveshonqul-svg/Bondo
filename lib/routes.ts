@@ -1,3 +1,7 @@
+// Relative, not the `@/` alias — this module is reachable from `middleware.ts`
+// and Vercel resolves that graph itself without tsconfig `paths` (ADR-34).
+import { defaultLocale, isLocale, type Locale } from "./site-config";
+
 /**
  * Single source of truth for internal URLs.
  *
@@ -5,6 +9,12 @@
  * means a path change is one edit, and TypeScript catches every call site.
  * Routes are declared for the full storefront; the pages themselves are added
  * in later phases.
+ *
+ * **These paths carry no locale prefix.** `<Link>` from `@/i18n/navigation`
+ * adds the active locale, so a route declared once here works in all three
+ * languages. Keeping the prefix out of this file means route constants stay
+ * comparable — `pathname === routes.cart` is still a valid check — and adding a
+ * locale never touches this table.
  */
 export const routes = {
   home: "/",
@@ -69,8 +79,44 @@ export const protectedRoutePrefixes = [
   "/admin",
 ] as const;
 
+/**
+ * Splits a locale prefix off an incoming pathname.
+ *
+ * Every URL the middleware sees is prefixed (`/uz/account`), while everything in
+ * `routes` is not (`/account`). Comparing the two directly is the bug this
+ * exists to prevent: `"/uz/account".startsWith("/account")` is false, so a
+ * protected route would read as public and the sign-in gate would never fire.
+ *
+ * An unrecognised first segment is not a locale — `/products` returns the
+ * default locale and the path untouched, so this is safe to call on any URL.
+ */
+export function splitLocale(pathname: string): {
+  locale: Locale;
+  pathname: string;
+} {
+  const [, first = "", ...rest] = pathname.split("/");
+
+  if (!isLocale(first)) return { locale: defaultLocale, pathname };
+
+  return { locale: first, pathname: `/${rest.join("/")}` };
+}
+
+/** Prefixes an unprefixed route with a locale: `("uz", "/products")` → `/uz/products`. */
+export function localizePath(locale: Locale, pathname: string): string {
+  const [path = "", query] = pathname.split("?");
+  const base = path === "/" ? `/${locale}` : `/${locale}${path}`;
+
+  return query ? `${base}?${query}` : base;
+}
+
+/**
+ * Accepts a pathname with or without a locale prefix — middleware sees the
+ * prefixed form, tests and server code often do not.
+ */
 export function isProtectedRoute(pathname: string): boolean {
+  const { pathname: path } = splitLocale(pathname);
+
   return protectedRoutePrefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
   );
 }

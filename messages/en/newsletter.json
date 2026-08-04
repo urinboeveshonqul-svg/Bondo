@@ -1,0 +1,7 @@
+{
+  "emailLabel": "Email address",
+  "placeholder": "you@example.com",
+  "subscribe": "Subscribe",
+  "toastTitle": "Newsletter signup is not open yet",
+  "toastDescription": "We are not collecting addresses until the mailing service is live."
+}

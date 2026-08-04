@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { useRouter } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
@@ -15,11 +16,17 @@ import { cn } from "@/lib/utils";
  * Enter works, the mobile keyboard shows a "search" action, and the control is
  * announced as a search field.
  *
- * Submitting navigates to the listing with a `q` parameter. Type-ahead
- * suggestions need the database and land with the search service; the debounce
- * hook (`use-debounced-value`) is already in the codebase waiting for it.
+ * Submitting navigates to the listing with a `q` parameter. The router comes
+ * from `@/i18n/navigation`, so the search stays in the visitor's language —
+ * `next/navigation`'s router would push an unprefixed path and bounce them to
+ * the default locale mid-search.
+ *
+ * Type-ahead suggestions need the database and land with the search service;
+ * the debounce hook (`use-debounced-value`) is already in the codebase waiting
+ * for it.
  */
 export function SearchBar({ className }: { className?: string }) {
+  const t = useTranslations("header.search");
   const router = useRouter();
   const [query, setQuery] = useState("");
 
@@ -35,7 +42,7 @@ export function SearchBar({ className }: { className?: string }) {
       }}
     >
       <label htmlFor="site-search" className="sr-only">
-        Search products
+        {t("label")}
       </label>
       <Search
         aria-hidden="true"
@@ -46,7 +53,7 @@ export function SearchBar({ className }: { className?: string }) {
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search graphics cards, laptops, components…"
+        placeholder={t("placeholder")}
         className="ps-9"
         autoComplete="off"
       />

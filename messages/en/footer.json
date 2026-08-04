@@ -1,0 +1,24 @@
+{
+  "tagline": "Bondo is a computer store selling laptops, desktops, components and accessories.",
+  "warranty": "Three-year warranty on every system we build",
+  "shop": "Shop",
+  "support": "Support",
+  "company": "Company",
+  "stayInTouch": "Stay in touch",
+  "newsletterNote": "Restock alerts and build guides. No more than twice a month.",
+  "supportItems": {
+    "contact": "Contact support",
+    "delivery": "Delivery and returns",
+    "warranty": "Warranty claims",
+    "tracking": "Order tracking"
+  },
+  "companyItems": {
+    "about": "About Bondo",
+    "buildService": "Build service",
+    "business": "Business accounts",
+    "careers": "Careers"
+  },
+  "socialLabel": "Social channels, not yet live",
+  "copyright": "© {year} Bondo. All rights reserved.",
+  "pagesNote": "Support, warranty and company pages are listed above and arrive with the content phase. They are shown as plain text rather than links until the pages exist."
+}

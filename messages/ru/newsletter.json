@@ -1,0 +1,7 @@
+{
+  "emailLabel": "Электронная почта",
+  "placeholder": "vy@example.com",
+  "subscribe": "Подписаться",
+  "toastTitle": "Подписка пока не открыта",
+  "toastDescription": "Мы не собираем адреса, пока не запущен почтовый сервис."
+}

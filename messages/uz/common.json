@@ -1,0 +1,39 @@
+{
+  "skipToContent": "Asosiy qismga o'tish",
+  "allProducts": "Barcha mahsulotlar",
+  "browseProducts": "Mahsulotlarni ko'rish",
+  "viewAllProducts": "Barcha mahsulotlarni ko'rish",
+  "addToBasket": "Savatga qo'shish",
+  "outOfStock": "Sotuvda yo'q",
+  "save": "Saqlash",
+  "stock": {
+    "inStock": "Sotuvda bor",
+    "low": "Atigi {count} ta qoldi",
+    "outOfStock": "Sotuvda yo'q"
+  },
+  "badges": {
+    "new": "Yangi",
+    "bestseller": "Eng ko'p sotilgan",
+    "low-stock": "Tez tugayapti"
+  },
+  "price": {
+    "was": "Eski narxi",
+    "discount": "−{percent}%"
+  },
+  "rating": {
+    "outOf5": "5 balldan {rating}",
+    "outOf5WithReviews": "5 balldan {rating}, {count} ta sharh asosida"
+  },
+  "card": {
+    "saveToWishlist": "{name} ni sevimlilarga qo'shish",
+    "addToBasket": "{name} ni savatga qo'shish"
+  },
+  "theme": {
+    "toLight": "Yorug' rejimga o'tish",
+    "toDark": "Tungi rejimga o'tish"
+  },
+  "language": {
+    "label": "Til",
+    "change": "Tilni o'zgartirish"
+  }
+}

@@ -1,20 +1,32 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ProductGrid } from "@/components/home/product-grid";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
+import { localeAlternates } from "@/i18n/metadata";
 import { routes } from "@/lib/routes";
-import { siteConfig } from "@/lib/site-config";
+import type { Locale } from "@/lib/site-config";
 import { categories, products } from "@/mocks/catalog";
-import type { PageSearchParams } from "@/types";
+import type { PageParams, PageSearchParams } from "@/types";
 import type { ProductSummary } from "@/types/catalog";
 
-export const metadata: Metadata = {
-  title: "All products",
-  description: `Browse every product ${siteConfig.name} stocks — systems, components and accessories.`,
-  alternates: { canonical: routes.catalog.index },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: PageParams<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "catalog" });
+
+  return {
+    title: t("title"),
+    description: t("metaDescription"),
+    alternates: localeAlternates(locale as Locale, routes.catalog.index),
+  };
+}
 
 /**
  * Catalog listing.
@@ -27,11 +39,13 @@ export const metadata: Metadata = {
  * memory (D-2).
  *
  * Filtering happens on the server from `searchParams`, so a filtered view is a
- * real URL that can be shared, bookmarked and opened in a new tab.
+ * real URL that can be shared, bookmarked and opened in a new tab — in the
+ * language the sharer was reading, because the locale is part of the path.
  */
 function filterProducts(
   category: string | undefined,
   query: string | undefined,
+  locale: Locale,
 ): ProductSummary[] {
   let result: ProductSummary[] = products;
 
@@ -42,12 +56,17 @@ function filterProducts(
   if (query) {
     // Matches the fields the database's `search_vector` weights highest — name,
     // SKU and brand — so results here resemble what the real query returns.
-    const needle = query.toLowerCase();
+    //
+    // `toLocaleLowerCase(locale)` rather than `toLowerCase()`: the latter is
+    // locale-independent and gets Turkish-style dotted/dotless I wrong. It makes
+    // no difference for these three locales today, and costs nothing to get
+    // right before a fourth is added.
+    const needle = query.toLocaleLowerCase(locale);
     result = result.filter(
       (p) =>
-        p.name.toLowerCase().includes(needle) ||
-        p.sku.toLowerCase().includes(needle) ||
-        p.brand.toLowerCase().includes(needle),
+        p.name.toLocaleLowerCase(locale).includes(needle) ||
+        p.sku.toLocaleLowerCase(locale).includes(needle) ||
+        p.brand.toLocaleLowerCase(locale).includes(needle),
     );
   }
 
@@ -55,20 +74,38 @@ function filterProducts(
 }
 
 export default async function ProductsPage({
+  params,
   searchParams,
 }: {
+  params: PageParams<{ locale: string }>;
   searchParams: PageSearchParams;
 }) {
-  const params = await searchParams;
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  const resolved = await searchParams;
   const category =
-    typeof params.category === "string" ? params.category : undefined;
-  const query = typeof params.q === "string" ? params.q : undefined;
+    typeof resolved.category === "string" ? resolved.category : undefined;
+  const query = typeof resolved.q === "string" ? resolved.q : undefined;
+
+  return <ProductsListing category={category} query={query} />;
+}
+
+function ProductsListing({
+  category,
+  query,
+}: {
+  category: string | undefined;
+  query: string | undefined;
+}) {
+  const t = useTranslations("catalog");
+  const locale = useLocale() as Locale;
 
   const activeCategory = categories.find((c) => c.slug === category);
-  const results = filterProducts(category, query);
+  const results = filterProducts(category, query, locale);
 
-  const heading = activeCategory?.name ?? "All products";
-  const description = activeCategory?.description;
+  const heading = activeCategory ? activeCategory.name[locale] : t("title");
+  const description = activeCategory?.description[locale];
 
   return (
     <Container className="py-10 sm:py-14">
@@ -81,17 +118,17 @@ export default async function ProductsPage({
         ) : null}
         {query ? (
           <p className="text-sm text-muted-foreground">
-            Showing results for <span className="font-medium">“{query}”</span>
+            {t("showingResultsFor", { query })}
           </p>
         ) : null}
       </div>
 
       <nav
-        aria-label="Filter by category"
+        aria-label={t("filterByCategory")}
         className="mb-8 flex flex-wrap gap-2"
       >
         <Button asChild size="sm" variant={category ? "outline" : "default"}>
-          <Link href={routes.catalog.index}>All</Link>
+          <Link href={routes.catalog.index}>{t("all")}</Link>
         </Button>
         {categories.map((c) => (
           <Button
@@ -100,7 +137,9 @@ export default async function ProductsPage({
             size="sm"
             variant={category === c.slug ? "default" : "outline"}
           >
-            <Link href={routes.catalog.byCategory(c.slug)}>{c.name}</Link>
+            <Link href={routes.catalog.byCategory(c.slug)}>
+              {c.name[locale]}
+            </Link>
           </Button>
         ))}
       </nav>
@@ -109,25 +148,25 @@ export default async function ProductsPage({
           without an `h2` between them and the page `h1` the outline skips a
           level. It is visually redundant next to the count, so it is exposed to
           assistive technology only. */}
-      <h2 className="sr-only">Products</h2>
+      <h2 className="sr-only">{t("resultsHeading")}</h2>
 
       <p className="mb-4 text-sm text-muted-foreground" role="status">
-        {results.length} {results.length === 1 ? "product" : "products"}
+        {/* An ICU plural, not `count === 1 ? … : …`. Russian needs three forms
+            and picks between them by rules a ternary cannot express. */}
+        {t("count", { count: results.length })}
       </p>
 
       <ProductGrid
         products={results}
         emptyTitle={
-          query ? `Nothing matches “${query}”` : "No products here yet"
+          query ? t("empty.noMatchTitle", { query }) : t("empty.categoryTitle")
         }
         emptyDescription={
-          query
-            ? "Try a shorter term, or search by brand or SKU."
-            : "This category has no products at the moment."
+          query ? t("empty.noMatchDescription") : t("empty.categoryDescription")
         }
         emptyAction={
           <Button asChild variant="outline">
-            <Link href={routes.catalog.index}>Clear filters</Link>
+            <Link href={routes.catalog.index}>{t("clearFilters")}</Link>
           </Button>
         }
       />

@@ -1,0 +1,18 @@
+{
+  "title": "All products",
+  "metaDescription": "Browse every product Bondo stocks — systems, components and accessories.",
+  "resultsHeading": "Products",
+  "count": "{count, plural, one {# product} other {# products}}",
+  "showingResultsFor": "Showing results for “{query}”",
+  "filterByCategory": "Filter by category",
+  "all": "All",
+  "clearFilters": "Clear filters",
+  "empty": {
+    "noMatchTitle": "Nothing matches “{query}”",
+    "noMatchDescription": "Try a shorter term, or search by brand or SKU.",
+    "categoryTitle": "No products here yet",
+    "categoryDescription": "This category has no products at the moment.",
+    "defaultTitle": "No products found",
+    "defaultDescription": "Try removing a filter or searching for something broader."
+  }
+}

@@ -1,8 +1,10 @@
+import { useLocale, useTranslations } from "next-intl";
 import { BadgeCheck } from "lucide-react";
 
 import { Rating } from "@/components/commerce/rating";
 import { Section } from "@/components/layout/section";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import type { Locale } from "@/lib/site-config";
 import type { Review } from "@/types/catalog";
 
 /**
@@ -17,11 +19,11 @@ import type { Review } from "@/types/catalog";
  * product. Showing it on unverified reviews would make it worthless.
  */
 export function Reviews({ reviews }: { reviews: Review[] }) {
+  const t = useTranslations("home.reviews");
+  const locale = useLocale() as Locale;
+
   return (
-    <Section
-      title="What customers say"
-      description="Reviews from people who bought the product they are describing."
-    >
+    <Section id="reviews" title={t("title")} description={t("description")}>
       <ul className="grid gap-6 lg:grid-cols-3">
         {reviews.map((review) => (
           <li key={review.id}>
@@ -29,9 +31,11 @@ export function Reviews({ reviews }: { reviews: Review[] }) {
               <Rating rating={review.rating} size="small" />
 
               <blockquote className="flex-1 space-y-2">
-                <p className="font-medium tracking-tight">{review.title}</p>
+                <p className="font-medium tracking-tight">
+                  {review.title[locale]}
+                </p>
                 <p className="text-sm text-pretty text-muted-foreground">
-                  {review.body}
+                  {review.body[locale]}
                 </p>
               </blockquote>
 
@@ -50,7 +54,7 @@ export function Reviews({ reviews }: { reviews: Review[] }) {
                           className="size-4 shrink-0 text-primary"
                           aria-hidden="true"
                         />
-                        <span className="sr-only">Verified purchase</span>
+                        <span className="sr-only">{t("verified")}</span>
                       </>
                     ) : null}
                   </cite>

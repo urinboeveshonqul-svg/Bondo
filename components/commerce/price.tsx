@@ -1,4 +1,7 @@
+import { useLocale, useTranslations } from "next-intl";
+
 import { cn } from "@/lib/utils";
+import type { Locale } from "@/lib/site-config";
 import type { ProductSummary } from "@/types/catalog";
 import { getDiscount } from "@/utils/catalog";
 import { formatPrice } from "@/utils/format";
@@ -9,6 +12,10 @@ import { formatPrice } from "@/utils/format";
  * Orange is reserved for discounts across the whole design system, so this and
  * `DiscountBadge` are the only components that reach for it. Using it anywhere
  * else would make a saving indistinguishable from decoration.
+ *
+ * `useLocale` and `useTranslations` are next-intl's shared APIs: they work in
+ * Server Components as well as Client ones, so this stays a Server Component and
+ * a grid of sixty cards ships no JavaScript for its prices.
  */
 export function Price({
   product,
@@ -19,6 +26,9 @@ export function Price({
   size?: "default" | "large";
   className?: string;
 }) {
+  const t = useTranslations("common.price");
+  const locale = useLocale() as Locale;
+
   const discount = getDiscount(product);
   const current = product.salePriceCents ?? product.priceCents;
 
@@ -33,21 +43,21 @@ export function Price({
           discount && "text-discount",
         )}
       >
-        {formatPrice(current)}
+        {formatPrice(current, locale)}
       </span>
 
       {discount ? (
         <>
           {/* The original price is supplementary, so it is announced as such
               rather than read out as a second, contradictory price. */}
-          <span className="sr-only">Was</span>
+          <span className="sr-only">{t("was")}</span>
           <s
             className={cn(
               "text-muted-foreground tabular-nums",
               size === "large" ? "text-lg" : "text-sm",
             )}
           >
-            {formatPrice(product.priceCents)}
+            {formatPrice(product.priceCents, locale)}
           </s>
         </>
       ) : null}
@@ -63,7 +73,9 @@ export function DiscountBadge({
   product: Pick<ProductSummary, "priceCents" | "salePriceCents">;
   className?: string;
 }) {
+  const t = useTranslations("common.price");
   const discount = getDiscount(product);
+
   if (!discount) return null;
 
   return (
@@ -73,7 +85,7 @@ export function DiscountBadge({
         className,
       )}
     >
-      −{discount.percent}%
+      {t("discount", { percent: discount.percent })}
     </span>
   );
 }

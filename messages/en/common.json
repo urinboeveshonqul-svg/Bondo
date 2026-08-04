@@ -1,0 +1,39 @@
+{
+  "skipToContent": "Skip to content",
+  "allProducts": "All products",
+  "browseProducts": "Browse products",
+  "viewAllProducts": "View all products",
+  "addToBasket": "Add to basket",
+  "outOfStock": "Out of stock",
+  "save": "Save",
+  "stock": {
+    "inStock": "In stock",
+    "low": "Only {count} left",
+    "outOfStock": "Out of stock"
+  },
+  "badges": {
+    "new": "New",
+    "bestseller": "Bestseller",
+    "low-stock": "Selling fast"
+  },
+  "price": {
+    "was": "Was",
+    "discount": "−{percent}%"
+  },
+  "rating": {
+    "outOf5": "{rating} out of 5",
+    "outOf5WithReviews": "{rating} out of 5, from {count} reviews"
+  },
+  "card": {
+    "saveToWishlist": "Save {name} to wishlist",
+    "addToBasket": "Add {name} to basket"
+  },
+  "theme": {
+    "toLight": "Switch to light theme",
+    "toDark": "Switch to dark theme"
+  },
+  "language": {
+    "label": "Language",
+    "change": "Change language"
+  }
+}

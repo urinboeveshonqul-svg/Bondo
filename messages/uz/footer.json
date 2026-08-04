@@ -1,0 +1,24 @@
+{
+  "tagline": "Bondo — noutbuk, kompyuter, komplektuvchi va aksessuarlar sotadigan kompyuter do'koni.",
+  "warranty": "O'zimiz yig'gan har bir tizimga uch yillik kafolat",
+  "shop": "Xarid",
+  "support": "Yordam",
+  "company": "Kompaniya",
+  "stayInTouch": "Aloqada bo'ling",
+  "newsletterNote": "Mahsulot qaytganida xabar va yig'ish bo'yicha qo'llanmalar. Oyiga ikki martadan ko'p emas.",
+  "supportItems": {
+    "contact": "Yordam xizmati bilan bog'lanish",
+    "delivery": "Yetkazib berish va qaytarish",
+    "warranty": "Kafolat bo'yicha murojaat",
+    "tracking": "Buyurtmani kuzatish"
+  },
+  "companyItems": {
+    "about": "Bondo haqida",
+    "buildService": "Kompyuter yig'ish xizmati",
+    "business": "Korporativ mijozlar",
+    "careers": "Bo'sh ish o'rinlari"
+  },
+  "socialLabel": "Ijtimoiy tarmoqlar, hali ishga tushmagan",
+  "copyright": "© {year} Bondo. Barcha huquqlar himoyalangan.",
+  "pagesNote": "Yuqorida sanab o'tilgan yordam, kafolat va kompaniya sahifalari kontent bosqichida qo'shiladi. Sahifalar tayyor bo'lgunicha ular havola emas, oddiy matn sifatida ko'rsatiladi."
+}

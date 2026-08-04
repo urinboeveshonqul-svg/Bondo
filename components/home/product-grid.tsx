@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { PackageSearch } from "lucide-react";
 
 import { ProductCard } from "@/components/commerce/product-card";
@@ -17,11 +18,16 @@ import type { ProductSummary } from "@/types/catalog";
  * Renders its own empty state, so no caller has to remember to handle zero
  * results. That is the case ADR-20 says gets forgotten when a catalog is always
  * populated with fake rows.
+ *
+ * The empty copy defaults to the generic catalog strings and is overridable by
+ * callers that know something more specific — "Nothing matches “rtx”" beats "No
+ * products found". Callers pass already-translated strings rather than keys, so
+ * this component stays agnostic about which namespace the caller reads from.
  */
 export function ProductGrid({
   products,
-  emptyTitle = "No products found",
-  emptyDescription = "Try removing a filter or searching for something broader.",
+  emptyTitle,
+  emptyDescription,
   emptyAction,
   className,
 }: {
@@ -31,13 +37,15 @@ export function ProductGrid({
   emptyAction?: React.ReactNode;
   className?: string;
 }) {
+  const t = useTranslations("catalog.empty");
+
   if (products.length === 0) {
     return (
       <div className="rounded-xl border border-dashed">
         <EmptyState
           icon={PackageSearch}
-          title={emptyTitle}
-          description={emptyDescription}
+          title={emptyTitle ?? t("defaultTitle")}
+          description={emptyDescription ?? t("defaultDescription")}
           action={emptyAction}
         />
       </div>

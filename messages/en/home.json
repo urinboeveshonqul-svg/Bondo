@@ -1,0 +1,64 @@
+{
+  "metaTitle": "Computers, components and accessories.",
+  "metaDescription": "Bondo is a computer store selling laptops, desktops, components and accessories.",
+  "hero": {
+    "eyebrow": "Built for people who read the spec sheet",
+    "title": "Components chosen on merit, not margin",
+    "body": "Every system we build is assembled, cable-managed and burned in for 24 hours before it ships — and leaves with its own test results attached, not the model's.",
+    "browseCatalog": "Browse the catalog",
+    "prebuilt": "Prebuilt systems",
+    "assurances": {
+      "built": "Built and tested in-house",
+      "warranty": "Three-year warranty",
+      "delivery": "Free delivery over {amount}"
+    },
+    "panelValue": "24h",
+    "panelBody": "Every build runs a full day of thermal and stability testing before it is boxed."
+  },
+  "featured": {
+    "title": "Featured this month",
+    "description": "The systems and parts our build team reaches for first."
+  },
+  "brands": {
+    "title": "Brands we stock"
+  },
+  "category": {
+    "linkLabel": "All {category}"
+  },
+  "deals": {
+    "title": "Today's deals",
+    "description": "Current promotions. Prices return to list when the promotion ends.",
+    "emptyTitle": "No promotions running",
+    "emptyDescription": "Nothing is discounted right now. Check back — deals rotate monthly."
+  },
+  "valueProps": {
+    "title": "Why buy from Bondo",
+    "description": "Four things we do differently, all of which you can hold us to.",
+    "tested": {
+      "title": "Tested, not just assembled",
+      "body": "Every system runs 24 hours of thermal and stability testing. The results for your specific unit ship in the box."
+    },
+    "answers": {
+      "title": "Answers with numbers in them",
+      "body": "Ask whether a cooler clears a memory kit and you get the height in millimetres, not a link to the product page."
+    },
+    "packed": {
+      "title": "Packed for the courier it will meet",
+      "body": "Graphics cards are double-boxed with the connector supported. Nothing ships in a bag with a void in it."
+    },
+    "returns": {
+      "title": "Thirty days, no argument",
+      "body": "Changed your mind or picked the wrong socket? Send it back unopened within thirty days and we refund it."
+    }
+  },
+  "reviews": {
+    "title": "What customers say",
+    "description": "Reviews from people who bought the product they are describing.",
+    "verified": "Verified purchase"
+  },
+  "newsletter": {
+    "title": "Restock alerts, without the marketing",
+    "body": "Tell us once what you are waiting for and we will email when it is back. Twice a month at most, and nothing else.",
+    "note": "Unsubscribe in one click. We never share your address."
+  }
+}

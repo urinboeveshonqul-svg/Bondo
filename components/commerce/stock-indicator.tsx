@@ -1,5 +1,9 @@
+import { useLocale, useTranslations } from "next-intl";
+
 import { cn } from "@/lib/utils";
+import type { Locale } from "@/lib/site-config";
 import { getStockLevel } from "@/utils/catalog";
+import { formatNumber } from "@/utils/format";
 
 /**
  * Stock availability.
@@ -18,14 +22,16 @@ export function StockIndicator({
   stock: number;
   className?: string;
 }) {
+  const t = useTranslations("common.stock");
+  const locale = useLocale() as Locale;
   const level = getStockLevel(stock);
 
   const label =
     level === "out-of-stock"
-      ? "Out of stock"
+      ? t("outOfStock")
       : level === "low"
-        ? `Only ${stock} left`
-        : "In stock";
+        ? t("low", { count: formatNumber(stock, locale) })
+        : t("inStock");
 
   return (
     <span
