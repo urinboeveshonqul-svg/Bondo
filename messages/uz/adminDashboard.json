@@ -1,0 +1,66 @@
+{
+  "title": "Boshqaruv paneli",
+  "subtitle": "Do'kon bugun qanday ishlayapti.",
+  "range": {
+    "label": "Davr",
+    "last30": "So'nggi 30 kun",
+    "vsPrevious": "oldingi 30 kunga nisbatan"
+  },
+  "stats": {
+    "revenue": "Tushum",
+    "orders": "Buyurtmalar",
+    "products": "Mahsulotlar",
+    "customers": "Mijozlar",
+    "inventoryUnits": "Ombordagi birliklar",
+    "pendingReviews": "Moderatsiya kutayotgan sharhlar"
+  },
+  "charts": {
+    "revenueTitle": "Tushum",
+    "revenueDescription": "So'nggi 30 kunlik kunlik jami.",
+    "ordersTitle": "Kunlik buyurtmalar",
+    "ordersDescription": "Shu davr uchun buyurtmalar soni.",
+    "noData": "Grafik chizish uchun ma'lumot yetarli emas."
+  },
+  "lowStock": {
+    "title": "Ombor tugayapti",
+    "description": "Chegara darajasida yoki undan past mahsulotlar.",
+    "emptyTitle": "Hammasi yetarli",
+    "emptyDescription": "Hech bir mahsulot chegaradan past emas.",
+    "remaining": "{count} ta qoldi",
+    "viewAll": "Omborni ochish"
+  },
+  "recentOrders": {
+    "title": "So'nggi buyurtmalar",
+    "description": "Eng yangi yettitasi.",
+    "emptyTitle": "Hozircha buyurtma yo'q",
+    "emptyDescription": "To'lov tizimi ishga tushgach buyurtmalar shu yerda ko'rinadi.",
+    "reference": "Buyurtma",
+    "customer": "Mijoz",
+    "status": "Holati",
+    "total": "Jami",
+    "placed": "Berilgan"
+  },
+  "activity": {
+    "title": "So'nggi harakatlar",
+    "description": "Oxirgi kiritilgan o'zgarishlar.",
+    "emptyTitle": "Harakat yo'q",
+    "emptyDescription": "Boshqaruv panelidagi o'zgarishlar shu yerda qayd etiladi.",
+    "viewAll": "Audit jurnalini ochish"
+  },
+  "pendingReviews": {
+    "title": "Moderatsiya kutayotgan sharhlar",
+    "emptyTitle": "Moderatsiya uchun hech narsa yo'q",
+    "emptyDescription": "Sharhlar sharhlar moduli bilan birga keladi."
+  },
+  "orderStatus": {
+    "pending": "Kutilmoqda",
+    "paid": "To'langan",
+    "fulfilled": "Yetkazilgan",
+    "cancelled": "Bekor qilingan",
+    "refunded": "Qaytarilgan"
+  },
+  "notWired": {
+    "title": "Raqamlar namunaviy",
+    "body": "Tushum, buyurtmalar va mijozlar namunaviy ma'lumotlardan olingan. To'lov tizimi qo'shilmaguncha buyurtmalar jadvali mavjud emas."
+  }
+}

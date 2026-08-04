@@ -80,7 +80,7 @@ export async function generateMetadata({
   const description = product.shortDescription[locale as Locale];
 
   return {
-    title: product.name,
+    title: product.name[locale as Locale],
     description,
     // Per-page canonical and `hreflang`, never on the root layout — a root
     // canonical would tell crawlers the whole catalog duplicates one URL
@@ -91,7 +91,7 @@ export async function generateMetadata({
       routes.catalog.detail(product.slug),
     ),
     openGraph: {
-      title: product.name,
+      title: product.name[locale as Locale],
       description,
       type: "website",
     },
@@ -169,7 +169,7 @@ function ProductDetail({ product }: { product: Product }) {
           </li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="font-medium text-foreground">
-            {product.name}
+            {product.name[locale]}
           </li>
         </ol>
       </nav>
@@ -188,7 +188,7 @@ function ProductDetail({ product }: { product: Product }) {
               {product.brand}
             </p>
             <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {product.name}
+              {product.name[locale]}
             </h1>
             <p className="text-pretty text-muted-foreground">
               {product.shortDescription[locale]}
@@ -265,7 +265,7 @@ function ProductDetail({ product }: { product: Product }) {
           <div className="overflow-hidden rounded-xl border">
             <table className="w-full text-sm">
               <caption className="sr-only">
-                {t("specsCaption", { name: product.name })}
+                {t("specsCaption", { name: product.name[locale] })}
               </caption>
               <tbody>
                 {Object.entries(specGroups).map(([group, specs]) => (

@@ -1,0 +1,66 @@
+{
+  "title": "Dashboard",
+  "subtitle": "How the store is doing today.",
+  "range": {
+    "label": "Period",
+    "last30": "Last 30 days",
+    "vsPrevious": "vs previous 30 days"
+  },
+  "stats": {
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "products": "Products",
+    "customers": "Customers",
+    "inventoryUnits": "Units in stock",
+    "pendingReviews": "Reviews awaiting moderation"
+  },
+  "charts": {
+    "revenueTitle": "Revenue",
+    "revenueDescription": "Daily totals for the last 30 days.",
+    "ordersTitle": "Orders per day",
+    "ordersDescription": "Order count for the same period.",
+    "noData": "Not enough data to draw a chart yet."
+  },
+  "lowStock": {
+    "title": "Low stock",
+    "description": "Products at or below their threshold.",
+    "emptyTitle": "Everything is stocked",
+    "emptyDescription": "No product is below its threshold.",
+    "remaining": "{count} left",
+    "viewAll": "Open inventory"
+  },
+  "recentOrders": {
+    "title": "Recent orders",
+    "description": "The seven most recent, newest first.",
+    "emptyTitle": "No orders yet",
+    "emptyDescription": "Orders appear here once checkout is live.",
+    "reference": "Order",
+    "customer": "Customer",
+    "status": "Status",
+    "total": "Total",
+    "placed": "Placed"
+  },
+  "activity": {
+    "title": "Recent activity",
+    "description": "The last changes anyone made.",
+    "emptyTitle": "No activity",
+    "emptyDescription": "Changes made in the admin are recorded here.",
+    "viewAll": "Open audit log"
+  },
+  "pendingReviews": {
+    "title": "Reviews awaiting moderation",
+    "emptyTitle": "Nothing to moderate",
+    "emptyDescription": "Reviews arrive with the reviews module."
+  },
+  "orderStatus": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "fulfilled": "Fulfilled",
+    "cancelled": "Cancelled",
+    "refunded": "Refunded"
+  },
+  "notWired": {
+    "title": "Figures are illustrative",
+    "body": "Revenue, orders and customers come from fixtures. There is no orders table until checkout lands."
+  }
+}

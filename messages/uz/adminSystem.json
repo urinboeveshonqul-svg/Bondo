@@ -1,0 +1,175 @@
+{
+  "settings": {
+    "title": "Sozlamalar",
+    "subtitle": "Do'kon bo'yicha umumiy sozlamalar. Ularni o'zgartirish do'kon sahifasini o'zgartiradi.",
+    "tabs": {
+      "store": "Do'kon",
+      "commerce": "Savdo",
+      "email": "Pochta",
+      "social": "Ijtimoiy tarmoqlar",
+      "branding": "Brending",
+      "hours": "Ish vaqti"
+    },
+    "store": {
+      "title": "Do'kon ma'lumotlari",
+      "description": "Yuqori qism, pastki qism va havola ko'rinishlarida ishlatiladi.",
+      "name": "Do'kon nomi",
+      "nameHint": "Tarjima qilinmaydi — brend nomi barcha tillarda bir xil.",
+      "tagline": "Shiori",
+      "supportEmail": "Yordam pochtasi",
+      "supportPhone": "Yordam telefoni",
+      "address": "Manzil"
+    },
+    "commerce": {
+      "title": "Savdo",
+      "description": "Valyuta, soliq va yetkazib berish chegaralari.",
+      "currency": "Valyuta",
+      "currencyHint": "Do'kon bo'yicha yagona valyuta. Narxlar uning mayda birliklarida saqlanadi.",
+      "taxRate": "Soliq stavkasi",
+      "taxInclusive": "Narxlar soliq bilan",
+      "freeDelivery": "Bepul yetkazib berish chegarasi",
+      "flatFee": "Yagona yetkazib berish narxi",
+      "shippingNote": "Yetkazib berish hududlari va tashuvchi tariflari operatsiyalar bosqichida qo'shiladi."
+    },
+    "email": {
+      "title": "Pochta",
+      "description": "Tranzaksion xatlar qayerdan kelishi va nima ularni ishga tushirishi.",
+      "senderName": "Jo'natuvchi nomi",
+      "senderAddress": "Jo'natuvchi manzili",
+      "lowStockAlerts": "Ombor tugaganda menga xat yuborilsin",
+      "orderNotifications": "Har bir yangi buyurtma haqida xat yuborilsin",
+      "notWired": "Hozircha hech qanday xat yuborilmaydi. Provayder keyingi bosqichda tanlanadi."
+    },
+    "social": {
+      "title": "Ijtimoiy tarmoqlar",
+      "description": "Pastki qismda ko'rsatiladi. Maydonni bo'sh qoldirsangiz, kanal yashiriladi.",
+      "x": "X",
+      "youtube": "YouTube",
+      "linkedin": "LinkedIn",
+      "github": "GitHub"
+    },
+    "branding": {
+      "title": "Brending",
+      "description": "Logotip va favicon.",
+      "logo": "Logotip",
+      "favicon": "Favicon",
+      "noLogo": "Logotip yuklanmagan — do'kon nomi matn sifatida ko'rsatiladi.",
+      "uploadsUnavailable": "Yuklash uchun Supabase Storage kerak, u servislar bosqichida qo'shiladi."
+    },
+    "hours": {
+      "title": "Ish vaqti",
+      "description": "Aloqa sahifasida ko'rsatiladi va yordam kutish vaqtini belgilaydi.",
+      "opens": "Ochiladi",
+      "closes": "Yopiladi",
+      "closed": "Dam olish",
+      "days": {
+        "1": "Dushanba",
+        "2": "Seshanba",
+        "3": "Chorshanba",
+        "4": "Payshanba",
+        "5": "Juma",
+        "6": "Shanba",
+        "7": "Yakshanba"
+      }
+    }
+  },
+  "users": {
+    "title": "Jamoa",
+    "subtitle": "Administratorlar va ularning har biri nima qila olishi.",
+    "tabs": {
+      "members": "A'zolar",
+      "roles": "Rollar"
+    },
+    "invite": "Administrator taklif qilish",
+    "emptyTitle": "Administrator yo'q",
+    "emptyDescription": "Har bir do'konda kamida bitta bosh administrator bo'lishi kerak.",
+    "columns": {
+      "member": "A'zo",
+      "roles": "Rollari",
+      "status": "Holati",
+      "lastSeen": "Oxirgi kirish",
+      "added": "Qo'shilgan"
+    },
+    "deactivate": "Faolsizlantirish",
+    "activate": "Faollashtirish",
+    "deactivatedNote": "Faolsizlantirilgan administrator kirish huquqini darhol yo'qotadi, lekin qilgan ishlarida nomi qoladi.",
+    "roles": {
+      "title": "Rollar",
+      "description": "Sxema bilan beshta tizim roli keladi; ularni qayta nomlash yoki o'chirish mumkin emas — dastur kodi ularning kalitlariga tayanadi.",
+      "system": "Tizim roli",
+      "members": "{count, plural, one {# ta a'zo} other {# ta a'zo}}",
+      "permissionCount": "{count, plural, one {# ta ruxsat} other {# ta ruxsat}}",
+      "permissions": "Ruxsatlar",
+      "viewPermissions": "Ruxsatlarni ko'rsatish",
+      "hidePermissions": "Ruxsatlarni yashirish"
+    },
+    "permissions": {
+      "products": {
+        "read": "Mahsulotlarni ko'rish",
+        "create": "Mahsulot yaratish",
+        "update": "Mahsulotni tahrirlash",
+        "delete": "Mahsulotni o'chirish"
+      },
+      "categories": {
+        "read": "Kategoriyalarni ko'rish",
+        "manage": "Kategoriyalarni boshqarish"
+      },
+      "brands": {
+        "read": "Brendlarni ko'rish",
+        "manage": "Brendlarni boshqarish"
+      },
+      "inventory": {
+        "read": "Omborni ko'rish",
+        "adjust": "Omborni tuzatish"
+      },
+      "banners": {
+        "read": "Bannerlarni ko'rish",
+        "manage": "Bannerlarni boshqarish"
+      },
+      "settings": {
+        "read": "Sozlamalarni ko'rish",
+        "update": "Sozlamalarni o'zgartirish"
+      },
+      "users": {
+        "read": "Mijozlarni ko'rish",
+        "update": "Mijozlarni tahrirlash",
+        "assign_roles": "Rollarni tayinlash"
+      },
+      "admins": {
+        "manage": "Administratorlarni boshqarish"
+      },
+      "roles": {
+        "manage": "Rollarni boshqarish"
+      },
+      "audit": {
+        "read": "Audit jurnalini o'qish"
+      }
+    },
+    "inviteUnavailable": "Administrator taklif qilish uchun Supabase Auth kerak, u hali ulanmagan."
+  },
+  "audit": {
+    "title": "Audit jurnali",
+    "subtitle": "Har bir o'zgarish, uni kim va qachon qilgani.",
+    "emptyTitle": "Hech narsa qayd etilmagan",
+    "emptyDescription": "Boshqaruv panelidagi o'zgarishlar shu yerda ko'rinadi.",
+    "columns": {
+      "when": "Vaqti",
+      "actor": "Kim",
+      "action": "Amal",
+      "entity": "Ob'ekt",
+      "summary": "O'zgarish"
+    },
+    "filters": {
+      "action": "Amal",
+      "all": "Barcha amallar"
+    },
+    "actions": {
+      "create": "Yaratdi",
+      "update": "Yangiladi",
+      "delete": "O'chirdi",
+      "login": "Kirdi",
+      "adjust": "Tuzatdi"
+    },
+    "appendOnly": "Audit jurnaliga faqat qo'shiladi va u service role uchun ham o'zgarmasdir."
+  }
+}

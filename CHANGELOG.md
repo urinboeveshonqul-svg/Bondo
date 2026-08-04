@@ -12,6 +12,82 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — professional admin panel
+
+A complete store-management interface on mock data. Thirteen routes × three
+locales, every string translated, no page touching Supabase.
+
+**Layout.** Collapsible sidebar that becomes a drawer below `md`, sticky top
+bar, breadcrumbs, notifications, user menu, quick actions, theme and language
+switchers. Navigation is **permission-filtered on the server** — a module an
+administrator cannot use is absent, not greyed out, because a disabled
+"Settings" advertises exactly which capability to go looking for.
+
+**Dashboard.** Six stat cards with period-over-period deltas, revenue and order
+charts, low stock, recent orders and recent activity. The charts are hand-written
+SVG rather than a charting library: they render on the server, ship as markup,
+and carry a visually hidden data table so a screen reader gets the figures rather
+than the word "graphic".
+
+**Products.** List with search, three filters, sortable columns, pagination, row
+actions and bulk actions. Editor covering basics, localized descriptions,
+pricing, publishing state (draft / published / hidden / scheduled), featured,
+specifications, images, SEO and search keywords.
+
+**Variants.** An axis editor — memory, storage, graphics — that generates the
+combination matrix, with per-variant SKU, price, sale price, stock, weight and
+active flag. Regeneration keeps rows whose combination still exists, so adding a
+value to an axis does not silently wipe prices already entered.
+
+**Categories, brands, inventory, homepage, pages, settings, team, audit.**
+Category ordering is drag-and-drop **with keyboard Move up / Move down**, because
+WCAG 2.2 SC 2.5.7 requires a non-dragging alternative and a keyboard user has no
+drag at all. Inventory adjustment records a _movement_ with a reason rather than
+overwriting a total, matching the append-only ledger the schema enforces
+(ADR-27). The Roles screen prints the real grant table, so a permission that
+drifts from the migration is visible on screen.
+
+**Localization.** Six new namespaces, 523 new keys per locale (692 total).
+`LocalizedField` gives every translatable field a three-tab control that shows
+which languages are still empty — it is what makes the policy operable rather
+than aspirational.
+
+**Reusable pieces**, so no screen reimplements them: one `DataTable` behind every
+list, one `SortableList` behind both ordering screens, one `SeoFieldset`, one
+`FormSection`, one `StatusBadge`.
+
+### Changed
+
+- **Product `name` is now `LocalizedText`** (**ADR-47**). The brief lists it as a
+  localized field, and it is right to: Bondo's own builds read differently in
+  each language. Manufacturer model numbers go through a `modelName()` helper
+  that declares the three identical copies once. This reversed a Phase 3A
+  decision and touched ten files.
+- The admin is reachable in **development only** (**ADR-45**), gated by a
+  `NODE_ENV` check Next.js inlines at build time. Production behaviour is
+  unchanged — `/admin` redirects to sign-in — and this is deleted when the real
+  role check lands. It exists because `/admin` is a protected route pointing at a
+  `/sign-in` page that does not exist, so the panel could not otherwise be built.
+- `lib/routes.ts` gains the thirteen admin routes.
+- `messages/*/adminSystem.json` nests permission labels (`permissions.products.read`
+  rather than a flat `"products.read"` key), because next-intl reads a dot as
+  nesting and the flat form silently missed on every lookup.
+
+### Deliberate exemptions
+
+- **ADR-46** — built out of roadmap order. The roadmap places the admin at Phase
+  6, behind checkout; the brief asked for it now. Recorded rather than done
+  quietly, because the skipped dependency shows: with no `orders` table the
+  revenue, order and customer figures are fixtures and say so on screen, and
+  order management cannot be built at all.
+- **ADR-44** — the five roles are the schema's, not the brief's. The brief named
+  Owner / Super Admin / Admin / Inventory Manager / Content Manager; the database
+  ships `super_admin`, `catalog_manager`, `inventory_manager`, `support_agent`
+  and `content_editor`, protected from rename by a trigger. Inventing a parallel
+  vocabulary would mean offering capabilities the database refuses.
+- **ADR-43** — `mocks/admin.ts`, on ADR-36's terms, derived from the storefront
+  catalog rather than duplicating it (**D-15**).
+
 ### Added — internationalization (Uzbek, Russian, English)
 
 The storefront is multilingual, with the locale in the URL: `/uz` (default),

@@ -1,0 +1,171 @@
+{
+  "products": {
+    "title": "Mahsulotlar",
+    "subtitle": "Katalogda {count, plural, one {# ta mahsulot} other {# ta mahsulot}}.",
+    "new": "Yangi mahsulot",
+    "searchPlaceholder": "Nom, SKU yoki brend bo'yicha qidiring…",
+    "emptyTitle": "Hozircha mahsulot yo'q",
+    "emptyDescription": "Birinchisini yarating — chop etilgach do'kon sahifasida ko'rinadi.",
+    "columns": {
+      "product": "Mahsulot",
+      "sku": "SKU",
+      "brand": "Brend",
+      "category": "Kategoriya",
+      "price": "Narxi",
+      "stock": "Ombor",
+      "status": "Holati",
+      "updated": "Yangilangan"
+    },
+    "filters": {
+      "status": "Holati",
+      "category": "Kategoriya",
+      "brand": "Brend",
+      "all": "Barchasi"
+    },
+    "bulk": {
+      "publish": "Chop etish",
+      "unpublish": "Qoralamaga o'tkazish",
+      "feature": "Tanlanganlarga qo'shish",
+      "delete": "O'chirish"
+    },
+    "variantCount": "{count, plural, one {# ta variant} other {# ta variant}}",
+    "noVariants": "Yagona konfiguratsiya"
+  },
+  "editor": {
+    "newTitle": "Yangi mahsulot",
+    "editTitle": "Mahsulotni tahrirlash",
+    "sections": {
+      "basics": "Asosiy",
+      "description": "Tavsif",
+      "pricing": "Narx va ombor",
+      "variants": "Variantlar",
+      "images": "Rasmlar",
+      "specs": "Xarakteristikalar",
+      "organisation": "Tashkiliy",
+      "publishing": "Chop etish",
+      "seo": "Qidiruv tizimidagi ko'rinish"
+    },
+    "fields": {
+      "name": "Mahsulot nomi",
+      "slug": "URL manzili",
+      "slugHint": "Tarjima qilinmaydi — har bir mahsulotga barcha tillarda bitta manzil.",
+      "sku": "SKU",
+      "brand": "Brend",
+      "category": "Kategoriya",
+      "shortDescription": "Qisqa tavsif",
+      "description": "To'liq tavsif",
+      "price": "Narxi",
+      "salePrice": "Chegirmali narx",
+      "salePriceHint": "Aksiya bo'lmasa bo'sh qoldiring.",
+      "stock": "Ombordagi miqdor",
+      "stockFromVariants": "Variantlardan hisoblanadi",
+      "warranty": "Kafolat",
+      "warrantyMonths": "Oy",
+      "searchKeywords": "Qidiruv kalit so'zlari",
+      "searchKeywordsHint": "Xaridor yozishi mumkin bo'lgan sinonimlar. Tarjima qilinmaydi.",
+      "status": "Holati",
+      "visibility": "Ko'rinishi",
+      "featured": "Tanlangan bo'limlarda ko'rsatish",
+      "scheduledFor": "Chop etish vaqti",
+      "scheduledForHint": "Darhol chop etish uchun bo'sh qoldiring."
+    },
+    "images": {
+      "title": "Rasmlar",
+      "description": "Asosiy rasm kartochkalarda va havola ko'rinishlarida ishlatiladi.",
+      "add": "Rasm qo'shish",
+      "setPrimary": "Asosiy qilish",
+      "primary": "Asosiy",
+      "altLabel": "Alt matni",
+      "emptyTitle": "Hozircha rasm yo'q",
+      "emptyDescription": "Mahsulot suratlari Storage bilan keladi. Unga qadar kartochkalarda monogramma ko'rsatiladi.",
+      "unavailableTitle": "Yuklash hali ulanmagan",
+      "unavailableDescription": "Supabase Storage servislar bosqichida qo'shiladi. Alt matnini hozir yozish mumkin."
+    },
+    "specs": {
+      "title": "Xarakteristikalar",
+      "description": "Guruh va nom umumiy lug'atdan olinadi, shuning uchun katalog bo'ylab bir xil o'qiladi.",
+      "group": "Guruh",
+      "name": "Nomi",
+      "value": "Qiymati",
+      "unit": "Birlik",
+      "add": "Xarakteristika qo'shish",
+      "emptyTitle": "Xarakteristika yo'q",
+      "emptyDescription": "Xaridor sotib olishdan oldin solishtiradigan raqamlarni qo'shing."
+    },
+    "variants": {
+      "title": "Variantlar",
+      "description": "Bitta mahsulot ostida sotiladigan konfiguratsiyalar — xotira, disk, videokarta.",
+      "addOption": "Parametr qo'shish",
+      "optionName": "Parametr",
+      "optionValues": "Qiymatlar",
+      "optionValuesHint": "Vergul bilan ajrating.",
+      "generate": "Kombinatsiyalarni yaratish",
+      "generateHint": "Yuqoridagi parametrlardan {count, plural, one {# ta qator} other {# ta qator}} yaratadi.",
+      "emptyTitle": "Yagona konfiguratsiya",
+      "emptyDescription": "Bu mahsulot bitta konfiguratsiyada sotiladi. Variantlarga bo'lish uchun parametr qo'shing.",
+      "columns": {
+        "variant": "Variant",
+        "sku": "SKU",
+        "price": "Narxi",
+        "salePrice": "Chegirmali narx",
+        "stock": "Ombor",
+        "weight": "Og'irligi",
+        "active": "Faol"
+      },
+      "weightGrams": "g",
+      "tooMany": "Bu {count} ta variant yaratadi. Avval parametrlarni kamaytiring."
+    }
+  },
+  "categories": {
+    "title": "Kategoriyalar",
+    "subtitle": "Xaridorlar ko'radigan tuzilma. Qatorni torting yoki ko'chirish tugmalaridan foydalaning.",
+    "new": "Yangi kategoriya",
+    "emptyTitle": "Kategoriya yo'q",
+    "emptyDescription": "Kategoriyalar katalogni tartibga soladi va do'kon navigatsiyasini belgilaydi.",
+    "columns": {
+      "name": "Kategoriya",
+      "products": "Mahsulotlar",
+      "visibility": "Ko'rinishi",
+      "position": "Tartibi"
+    },
+    "fields": {
+      "name": "Nomi",
+      "slug": "URL manzili",
+      "description": "Tavsifi",
+      "parent": "Ota kategoriya",
+      "noParent": "Yuqori daraja",
+      "icon": "Belgi",
+      "image": "Rasm",
+      "visible": "Navigatsiyada ko'rinadi"
+    },
+    "productCount": "{count, plural, one {# ta mahsulot} other {# ta mahsulot}}",
+    "reorderHint": "Tartib kategoriyalarning menyu va pastki qismda qanday ko'rinishini belgilaydi.",
+    "dragHandle": "{name} tartibini o'zgartirish uchun torting"
+  },
+  "brands": {
+    "title": "Brendlar",
+    "subtitle": "Do'kon sotadigan ishlab chiqaruvchilar.",
+    "new": "Yangi brend",
+    "emptyTitle": "Brend yo'q",
+    "emptyDescription": "Mahsulot chop etilishidan oldin brendga tegishli bo'lishi kerak.",
+    "columns": {
+      "name": "Brend",
+      "products": "Mahsulotlar",
+      "website": "Sayt",
+      "featured": "Tanlangan",
+      "visibility": "Ko'rinishi"
+    },
+    "fields": {
+      "name": "Nomi",
+      "slug": "URL manzili",
+      "monogram": "Monogramma",
+      "monogramHint": "Ikki-to'rt belgi, litsenziyalangan logotip yuklanmaguncha ko'rsatiladi.",
+      "description": "Tavsifi",
+      "website": "Sayt",
+      "logo": "Logotip",
+      "featured": "Brendlar qatorida ko'rsatish",
+      "visible": "Do'kon sahifasida ko'rinadi"
+    },
+    "productCount": "{count, plural, one {# ta mahsulot} other {# ta mahsulot}}"
+  }
+}

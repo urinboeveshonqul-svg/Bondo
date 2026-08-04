@@ -77,7 +77,9 @@ export function ProductCard({
           <Button
             variant="secondary"
             size="icon-sm"
-            aria-label={t("card.saveToWishlist", { name: product.name })}
+            aria-label={t("card.saveToWishlist", {
+              name: product.name[locale],
+            })}
             disabled
           >
             <Heart />
@@ -85,7 +87,7 @@ export function ProductCard({
           <Button
             variant="secondary"
             size="icon-sm"
-            aria-label={t("card.addToBasket", { name: product.name })}
+            aria-label={t("card.addToBasket", { name: product.name[locale] })}
             disabled={isOutOfStock}
           >
             <ShoppingCart />
@@ -103,7 +105,7 @@ export function ProductCard({
             href={routes.catalog.detail(product.slug)}
             className="before:absolute before:inset-0 focus-visible:outline-none"
           >
-            {product.name}
+            {product.name[locale]}
           </Link>
         </h3>
 

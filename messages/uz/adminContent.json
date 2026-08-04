@@ -1,0 +1,77 @@
+{
+  "homepage": {
+    "title": "Bosh sahifa",
+    "subtitle": "Do'kon bosh sahifasidagi barcha bo'limlar, ko'rinish tartibida.",
+    "reorderHint": "Bo'limni torting yoki ko'chirish tugmalaridan foydalaning — ikkalasi ham xaridor ko'radigan tartibni o'zgartiradi.",
+    "sectionLabel": "Bosh sahifa bo'limlari",
+    "visible": "Ko'rinadi",
+    "hidden": "Yashirilgan",
+    "emptyTitle": "Bo'lim yo'q",
+    "emptyDescription": "Bosh sahifani yig'ish uchun bo'lim qo'shing.",
+    "types": {
+      "hero": "Bosh banner",
+      "featured": "Tanlangan mahsulotlar",
+      "brands": "Ommabop brendlar",
+      "category-rail": "Kategoriya bo'limi",
+      "deals": "Bugungi chegirmalar",
+      "value-props": "Nega bizdan xarid qilish kerak",
+      "reviews": "Mijozlar sharhlari",
+      "newsletter": "Obuna"
+    },
+    "position": "{position}-o'rin",
+    "linkedTo": "{ref} bilan bog'langan",
+    "banners": {
+      "title": "Bosh bannerlar",
+      "description": "Bosh bo'limda ko'rsatiladi. Boshlanish sanasi bo'lgan banner o'zi ishga tushadi.",
+      "new": "Yangi banner",
+      "emptyTitle": "Banner yo'q",
+      "emptyDescription": "Bannersiz bosh bo'lim standart matnga qaytadi.",
+      "columns": {
+        "banner": "Banner",
+        "schedule": "Jadval",
+        "visibility": "Ko'rinishi"
+      },
+      "fields": {
+        "title": "Sarlavha",
+        "subtitle": "Qo'shimcha satr",
+        "ctaLabel": "Tugma matni",
+        "ctaHref": "Tugma havolasi",
+        "startsAt": "Boshlanishi",
+        "endsAt": "Tugashi",
+        "visible": "Ko'rinadi"
+      },
+      "always": "Doim yoqilgan",
+      "scheduled": "{from} → {to}",
+      "openEnded": "tugash sanasi yo'q"
+    }
+  },
+  "pages": {
+    "title": "Sahifalar",
+    "subtitle": "Chop etilgach pastki qism havola qiladigan statik sahifalar.",
+    "emptyTitle": "Sahifa yo'q",
+    "emptyDescription": "Yordam, kafolat va kompaniya sahifalari shu yerda.",
+    "columns": {
+      "page": "Sahifa",
+      "status": "Holati",
+      "updated": "Yangilangan"
+    },
+    "published": "Chop etilgan",
+    "draft": "Qoralama",
+    "notLinkedYet": "Chop etilib, manzillari paydo bo'lguncha pastki qism ularni oddiy matn sifatida ko'rsatadi.",
+    "editor": {
+      "title": "Sahifani tahrirlash",
+      "sections": {
+        "content": "Matn",
+        "seo": "Qidiruv tizimidagi ko'rinish",
+        "publishing": "Chop etish"
+      },
+      "fields": {
+        "title": "Sarlavha",
+        "excerpt": "Qisqacha",
+        "body": "Matn",
+        "slug": "URL manzili",
+        "published": "Chop etilgan"
+      }
+    }
+  }
+}

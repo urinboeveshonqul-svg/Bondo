@@ -56,6 +56,12 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 /**
+ * Inlined at build time by Next.js, so this is a literal in the Edge bundle and
+ * carries none of the K-14 risk that reading a non-inlined variable would.
+ */
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+/**
  * Supabase stores its session in cookies named `sb-<project-ref>-auth-token`,
  * chunked with a `.0`/`.1` suffix when the JWT is large.
  */
@@ -82,6 +88,35 @@ function redirectToSignIn(request: NextRequest) {
   signInUrl.searchParams.set("redirectTo", `${pathname}${search}`);
 
   return NextResponse.redirect(signInUrl);
+}
+
+/**
+ * Whether this request is the **development-only** admin preview.
+ *
+ * The admin panel is built and reviewed before authentication exists (**K-1**,
+ * **K-2**). Without this, `/admin` is protected, the redirect goes to a
+ * `/sign-in` page that has not been written, and the panel 404s for everyone —
+ * including the people building it.
+ *
+ * The gate is `NODE_ENV`, which Next.js inlines as a literal at build time. That
+ * matters for two reasons: there is no runtime variable to misconfigure, and the
+ * production bundle contains `false` rather than a check, so the branch is
+ * unreachable in a deployed build no matter what the environment says.
+ *
+ * **This is not authorisation and it is not a substitute for it.** In production
+ * `/admin` still redirects to sign-in, exactly as before. When Supabase Auth
+ * lands, the admin layout gets a real role check backed by RLS and this function
+ * is deleted — it is the first task of the auth phase, and K-1 stays open until
+ * it is done.
+ */
+function isAdminPreview(pathname: string): boolean {
+  if (IS_PRODUCTION) return false;
+
+  const { pathname: path } = splitLocale(pathname);
+
+  return (
+    path === routes.admin.index || path.startsWith(`${routes.admin.index}/`)
+  );
 }
 
 /**
@@ -149,7 +184,9 @@ export async function updateSession(request: NextRequest, i18n: NextResponse) {
   const { pathname } = request.nextUrl;
 
   if (!hasAuthCookie(request)) {
-    if (isProtectedRoute(pathname)) return redirectToSignIn(request);
+    if (isProtectedRoute(pathname) && !isAdminPreview(pathname)) {
+      return redirectToSignIn(request);
+    }
     return i18n;
   }
 

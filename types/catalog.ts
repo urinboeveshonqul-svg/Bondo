@@ -66,7 +66,15 @@ export type ProductSummary = {
   id: string;
   slug: string;
   sku: string;
-  name: string;
+  /**
+   * Localized. A manufacturer's model number reads the same in every language —
+   * "RTX 4090" is "RTX 4090" — but the words around it do not: Bondo's own
+   * builds are "Gaming PC" in English and "Игровой компьютер" in Russian, and a
+   * shopper searching in Uzbek should find the Uzbek phrasing. `modelName()` in
+   * `mocks/catalog.ts` exists for the identical case so the three copies are
+   * declared once rather than typed out.
+   */
+  name: LocalizedText;
   brand: string;
   category: string;
   /** Storage path today; a real Supabase Storage key once wired. */
@@ -87,6 +95,64 @@ export type Product = ProductSummary & {
   description: LocalizedText;
   specs: ProductSpec[];
   warrantyMonths: number;
+};
+
+/**
+ * Publishing state.
+ *
+ * Three states rather than a boolean because they answer different questions.
+ * `draft` is unfinished work, `published` is live, and `hidden` is finished work
+ * deliberately withheld — an end-of-line product kept for its URL, or a launch
+ * staged behind a date. Collapsing hidden into draft loses the distinction
+ * between "not ready" and "ready, not now".
+ */
+export type ProductStatus = "draft" | "published" | "hidden";
+
+/**
+ * A product image. `position` orders the gallery and `isPrimary` picks the one
+ * used on cards and in Open Graph tags — a separate flag rather than "position
+ * 0" so reordering the gallery cannot silently change the card thumbnail.
+ *
+ * Mirrors `public.product_images`.
+ */
+export type ProductImage = {
+  id: string;
+  /** Storage path today; a Supabase Storage key once wired (D-12). */
+  path: string;
+  alt: LocalizedText;
+  position: number;
+  isPrimary: boolean;
+};
+
+/**
+ * A purchasable configuration of a product — 16GB/512GB, or an RTX 5080 build.
+ *
+ * **There is no `product_variants` table yet** (**D-8**): the schema gives a
+ * product one SKU, price and stock. This type is what the admin edits and what
+ * that table has to store, so it is deliberately shaped as rows rather than as
+ * a nested blob: `options` is the axis set that renders the picker, and every
+ * commercial field is per-variant because price, stock and weight all differ
+ * between a 512GB and a 2TB configuration.
+ */
+export type ProductVariant = {
+  id: string;
+  sku: string;
+  /** Axis name → value, e.g. `{ memory: "32GB", storage: "1TB" }`. */
+  options: Record<string, string>;
+  priceCents: number;
+  salePriceCents: number | null;
+  stock: number;
+  /** Grams. Shipping needs it per configuration, not per product. */
+  weightGrams: number;
+  imagePath: string | null;
+  isActive: boolean;
+};
+
+/** An axis a product varies on, with its allowed values in display order. */
+export type VariantOption = {
+  key: string;
+  name: LocalizedText;
+  values: readonly string[];
 };
 
 /**

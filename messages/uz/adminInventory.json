@@ -1,0 +1,71 @@
+{
+  "title": "Ombor",
+  "subtitle": "Ombor qoldiqlari va ularni hosil qilgan harakatlar.",
+  "stats": {
+    "unitsOnHand": "Ombordagi birliklar",
+    "lowStock": "Tugayapti",
+    "outOfStock": "Tugagan",
+    "reserved": "Band qilingan"
+  },
+  "reservedNote": "Band qilingan miqdor sxemada e'lon qilingan, lekin to'lov tizimi qo'shilmaguncha unga hech narsa yozilmaydi.",
+  "tabs": {
+    "levels": "Ombor qoldiqlari",
+    "movements": "Harakatlar tarixi"
+  },
+  "levels": {
+    "searchPlaceholder": "Mahsulot yoki SKU bo'yicha qidiring…",
+    "emptyTitle": "Omborda hech narsa yo'q",
+    "emptyDescription": "Mahsulotlar qabul qilingach qoldiqlar shu yerda ko'rinadi.",
+    "columns": {
+      "product": "Mahsulot",
+      "sku": "SKU",
+      "onHand": "Omborda",
+      "reserved": "Band",
+      "available": "Mavjud",
+      "threshold": "Chegara",
+      "state": "Holati"
+    },
+    "filters": {
+      "state": "Holati",
+      "all": "Barchasi",
+      "low": "Tugayapti",
+      "out": "Tugagan",
+      "healthy": "Yetarli"
+    },
+    "adjust": "Tuzatish"
+  },
+  "movements": {
+    "emptyTitle": "Harakatlar qayd etilmagan",
+    "emptyDescription": "Har bir ombor o'zgarishi shu yerga yoziladi va hech qachon qayta yozilmaydi.",
+    "columns": {
+      "when": "Vaqti",
+      "product": "Mahsulot",
+      "reason": "Sababi",
+      "change": "O'zgarish",
+      "after": "Keyin",
+      "note": "Izoh",
+      "by": "Kim"
+    },
+    "appendOnly": "Bu jurnalga faqat qo'shiladi. Tuzatish — yangi harakat, tahrir emas."
+  },
+  "reasons": {
+    "purchase": "Xarid",
+    "sale": "Sotuv",
+    "return": "Qaytarish",
+    "adjustment": "Tuzatish",
+    "damage": "Shikast",
+    "recount": "Qayta sanoq"
+  },
+  "adjustDialog": {
+    "title": "Omborni tuzatish",
+    "description": "{product} bo'yicha harakat qayd etiladi. Ombor qoldig'i hech qachon qayta yozilmaydi.",
+    "reason": "Sababi",
+    "quantity": "Miqdori",
+    "quantityHint": "Musbat qiymat qo'shadi, manfiy ayiradi.",
+    "note": "Izoh",
+    "notePlaceholder": "Bu tuzatish nima uchun qilindi",
+    "current": "Hozir omborda {count} ta",
+    "resulting": "Natijaviy qoldiq: {count}",
+    "submit": "Harakatni qayd etish"
+  }
+}

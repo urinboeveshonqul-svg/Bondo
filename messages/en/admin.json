@@ -1,0 +1,155 @@
+{
+  "title": "Admin",
+  "backToStore": "Back to store",
+  "preview": {
+    "label": "Preview mode",
+    "body": "No authentication exists yet, so this panel is unprotected and reachable in development only. Everything you see is mock data and nothing you change is saved."
+  },
+  "nav": {
+    "label": "Admin navigation",
+    "openMenu": "Open admin menu",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "sections": {
+      "overview": "Overview",
+      "catalog": "Catalog",
+      "storefront": "Storefront",
+      "administration": "Administration"
+    },
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "categories": "Categories",
+    "brands": "Brands",
+    "inventory": "Inventory",
+    "homepage": "Homepage",
+    "content": "Pages",
+    "users": "Team",
+    "audit": "Audit log",
+    "settings": "Settings"
+  },
+  "breadcrumb": {
+    "label": "Breadcrumb",
+    "home": "Admin"
+  },
+  "search": {
+    "open": "Search",
+    "title": "Search the admin",
+    "description": "Find products, categories, brands, customers, orders, pages and settings.",
+    "placeholder": "Search or jump to…",
+    "empty": "Nothing matches that.",
+    "shortcut": "Ctrl K",
+    "groups": {
+      "navigation": "Go to",
+      "products": "Products",
+      "categories": "Categories",
+      "brands": "Brands",
+      "customers": "Customers",
+      "orders": "Orders",
+      "pages": "Pages",
+      "settings": "Settings"
+    }
+  },
+  "quickActions": {
+    "label": "Quick actions",
+    "newProduct": "New product",
+    "newCategory": "New category",
+    "newBrand": "New brand",
+    "adjustStock": "Adjust stock"
+  },
+  "notifications": {
+    "open": "Notifications",
+    "title": "Notifications",
+    "unread": "{count, plural, =0 {No unread} one {# unread} other {# unread}}",
+    "markAllRead": "Mark all as read",
+    "emptyTitle": "Nothing new",
+    "emptyDescription": "Low stock warnings and order updates appear here."
+  },
+  "userMenu": {
+    "open": "Account menu",
+    "signedInAs": "Signed in as",
+    "profile": "Profile",
+    "signOut": "Sign out"
+  },
+  "actions": {
+    "create": "Create",
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "duplicate": "Duplicate",
+    "view": "View",
+    "back": "Back",
+    "filter": "Filter",
+    "reset": "Reset",
+    "apply": "Apply",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "reorder": "Reorder",
+    "add": "Add",
+    "remove": "Remove"
+  },
+  "status": {
+    "draft": "Draft",
+    "published": "Published",
+    "hidden": "Hidden",
+    "scheduled": "Scheduled",
+    "active": "Active",
+    "inactive": "Inactive",
+    "visible": "Visible",
+    "invisible": "Hidden",
+    "featured": "Featured"
+  },
+  "table": {
+    "search": "Search",
+    "searchPlaceholder": "Search…",
+    "noResultsTitle": "No results",
+    "noResultsDescription": "Nothing matches the current filters.",
+    "clearFilters": "Clear filters",
+    "selectAll": "Select all rows",
+    "selectRow": "Select row",
+    "selected": "{count, plural, one {# selected} other {# selected}}",
+    "bulkActions": "Bulk actions",
+    "sortBy": "Sort by",
+    "sortAscending": "Sort ascending",
+    "sortDescending": "Sort descending",
+    "rowsPerPage": "Rows per page",
+    "page": "Page {page} of {total}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "showing": "Showing {from}–{to} of {total}",
+    "rowActions": "Row actions"
+  },
+  "localized": {
+    "label": "Translations",
+    "hint": "Every language must be filled in before this can be published.",
+    "missing": "Missing {count, plural, one {# language} other {# languages}}",
+    "complete": "All languages filled in"
+  },
+  "seo": {
+    "title": "Search engine listing",
+    "description": "How this appears in search results. Left empty, the name and description are used.",
+    "metaTitle": "Meta title",
+    "metaDescription": "Meta description",
+    "keywords": "Keywords",
+    "keywordsHint": "Search terms, not translated. Press Enter to add."
+  },
+  "confirm": {
+    "deleteTitle": "Delete {name}?",
+    "deleteBody": "This cannot be undone.",
+    "confirm": "Delete",
+    "cancel": "Cancel"
+  },
+  "readOnly": {
+    "badge": "Read only",
+    "body": "Your role can view this but not change it."
+  },
+  "notSaved": {
+    "title": "Nothing was saved",
+    "body": "The admin runs on mock data until the services land, so this form does not persist."
+  },
+  "emptyTitle": "Nothing here yet",
+  "updatedBy": "Updated by {name}",
+  "createdBy": "Created by {name}",
+  "never": "Never"
+}

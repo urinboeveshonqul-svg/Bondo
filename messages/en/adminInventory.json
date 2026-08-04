@@ -1,0 +1,71 @@
+{
+  "title": "Inventory",
+  "subtitle": "Stock levels and the movements that produced them.",
+  "stats": {
+    "unitsOnHand": "Units on hand",
+    "lowStock": "Low stock",
+    "outOfStock": "Out of stock",
+    "reserved": "Reserved"
+  },
+  "reservedNote": "Reserved stock is declared in the schema but nothing writes it until checkout lands.",
+  "tabs": {
+    "levels": "Stock levels",
+    "movements": "Movement history"
+  },
+  "levels": {
+    "searchPlaceholder": "Search by product or SKU…",
+    "emptyTitle": "Nothing in stock",
+    "emptyDescription": "Stock appears here once products are received.",
+    "columns": {
+      "product": "Product",
+      "sku": "SKU",
+      "onHand": "On hand",
+      "reserved": "Reserved",
+      "available": "Available",
+      "threshold": "Threshold",
+      "state": "State"
+    },
+    "filters": {
+      "state": "State",
+      "all": "All",
+      "low": "Low stock",
+      "out": "Out of stock",
+      "healthy": "In stock"
+    },
+    "adjust": "Adjust"
+  },
+  "movements": {
+    "emptyTitle": "No movements recorded",
+    "emptyDescription": "Every stock change is written here and never overwritten.",
+    "columns": {
+      "when": "When",
+      "product": "Product",
+      "reason": "Reason",
+      "change": "Change",
+      "after": "After",
+      "note": "Note",
+      "by": "By"
+    },
+    "appendOnly": "This ledger is append-only. A correction is a new movement, never an edit."
+  },
+  "reasons": {
+    "purchase": "Purchase",
+    "sale": "Sale",
+    "return": "Return",
+    "adjustment": "Adjustment",
+    "damage": "Damage",
+    "recount": "Recount"
+  },
+  "adjustDialog": {
+    "title": "Adjust stock",
+    "description": "Records a movement against {product}. Stock is never overwritten.",
+    "reason": "Reason",
+    "quantity": "Quantity",
+    "quantityHint": "Positive adds stock, negative removes it.",
+    "note": "Note",
+    "notePlaceholder": "Why this adjustment was made",
+    "current": "Currently {count} on hand",
+    "resulting": "Resulting stock: {count}",
+    "submit": "Record movement"
+  }
+}

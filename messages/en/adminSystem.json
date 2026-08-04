@@ -1,0 +1,175 @@
+{
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Store-wide configuration. Changing these changes the storefront.",
+    "tabs": {
+      "store": "Store",
+      "commerce": "Commerce",
+      "email": "Email",
+      "social": "Social",
+      "branding": "Branding",
+      "hours": "Business hours"
+    },
+    "store": {
+      "title": "Store information",
+      "description": "Shown in the header, the footer and in link previews.",
+      "name": "Store name",
+      "nameHint": "Not translated — a brand name is the same in every language.",
+      "tagline": "Tagline",
+      "supportEmail": "Support email",
+      "supportPhone": "Support phone",
+      "address": "Address"
+    },
+    "commerce": {
+      "title": "Commerce",
+      "description": "Currency, tax and delivery thresholds.",
+      "currency": "Currency",
+      "currencyHint": "One store-wide currency. Prices are stored as minor units of it.",
+      "taxRate": "Tax rate",
+      "taxInclusive": "Prices include tax",
+      "freeDelivery": "Free delivery over",
+      "flatFee": "Flat delivery fee",
+      "shippingNote": "Shipping zones and carrier rates arrive with the operations phase."
+    },
+    "email": {
+      "title": "Email",
+      "description": "Where transactional mail comes from and what triggers it.",
+      "senderName": "Sender name",
+      "senderAddress": "Sender address",
+      "lowStockAlerts": "Email me when stock runs low",
+      "orderNotifications": "Email me on every new order",
+      "notWired": "No mail is sent yet. The provider is chosen in a later phase."
+    },
+    "social": {
+      "title": "Social links",
+      "description": "Shown in the footer. Leave a field empty to hide that channel.",
+      "x": "X",
+      "youtube": "YouTube",
+      "linkedin": "LinkedIn",
+      "github": "GitHub"
+    },
+    "branding": {
+      "title": "Branding",
+      "description": "Logo and favicon.",
+      "logo": "Logo",
+      "favicon": "Favicon",
+      "noLogo": "No logo uploaded — the store name is rendered as text.",
+      "uploadsUnavailable": "Uploads need Supabase Storage, which lands with the services phase."
+    },
+    "hours": {
+      "title": "Business hours",
+      "description": "Shown on the contact page and used for support expectations.",
+      "opens": "Opens",
+      "closes": "Closes",
+      "closed": "Closed",
+      "days": {
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday",
+        "7": "Sunday"
+      }
+    }
+  },
+  "users": {
+    "title": "Team",
+    "subtitle": "Administrators and what each of them can do.",
+    "tabs": {
+      "members": "Members",
+      "roles": "Roles"
+    },
+    "invite": "Invite administrator",
+    "emptyTitle": "No administrators",
+    "emptyDescription": "Every store needs at least one super administrator.",
+    "columns": {
+      "member": "Member",
+      "roles": "Roles",
+      "status": "Status",
+      "lastSeen": "Last seen",
+      "added": "Added"
+    },
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "deactivatedNote": "A deactivated administrator loses access immediately but keeps their name on everything they did.",
+    "roles": {
+      "title": "Roles",
+      "description": "Five system roles ship with the schema and cannot be renamed or deleted — application code branches on their keys.",
+      "system": "System role",
+      "members": "{count, plural, one {# member} other {# members}}",
+      "permissionCount": "{count, plural, one {# permission} other {# permissions}}",
+      "permissions": "Permissions",
+      "viewPermissions": "Show permissions",
+      "hidePermissions": "Hide permissions"
+    },
+    "permissions": {
+      "products": {
+        "read": "View products",
+        "create": "Create products",
+        "update": "Edit products",
+        "delete": "Delete products"
+      },
+      "categories": {
+        "read": "View categories",
+        "manage": "Manage categories"
+      },
+      "brands": {
+        "read": "View brands",
+        "manage": "Manage brands"
+      },
+      "inventory": {
+        "read": "View inventory",
+        "adjust": "Adjust inventory"
+      },
+      "banners": {
+        "read": "View banners",
+        "manage": "Manage banners"
+      },
+      "settings": {
+        "read": "View settings",
+        "update": "Change settings"
+      },
+      "users": {
+        "read": "View customers",
+        "update": "Edit customers",
+        "assign_roles": "Assign roles"
+      },
+      "admins": {
+        "manage": "Manage administrators"
+      },
+      "roles": {
+        "manage": "Manage roles"
+      },
+      "audit": {
+        "read": "Read the audit log"
+      }
+    },
+    "inviteUnavailable": "Inviting an administrator needs Supabase Auth, which is not wired yet."
+  },
+  "audit": {
+    "title": "Audit log",
+    "subtitle": "Every change, who made it and when.",
+    "emptyTitle": "Nothing recorded",
+    "emptyDescription": "Changes made in the admin appear here.",
+    "columns": {
+      "when": "When",
+      "actor": "Who",
+      "action": "Action",
+      "entity": "Item",
+      "summary": "Change"
+    },
+    "filters": {
+      "action": "Action",
+      "all": "All actions"
+    },
+    "actions": {
+      "create": "Created",
+      "update": "Updated",
+      "delete": "Deleted",
+      "login": "Signed in",
+      "adjust": "Adjusted"
+    },
+    "appendOnly": "The audit log is append-only and immutable even to the service role."
+  }
+}

@@ -12,17 +12,18 @@ scope" and into every phase: from now on a feature is not complete until Uzbek,
 Russian and English all exist for it, enforced by `npm run check`. See
 [CLAUDE.md § 11](CLAUDE.md#11-internationalization-policy).
 
-**Overall progress:** ~35%
+**Overall progress:** ~48%
 
 ```
 Phase 1  Foundation                ████████████████████ 100%   ✅ complete
 Phase 2  Database Foundation       ████████████████████ 100%   ✅ complete (K-3 open)
 Phase 3A Premium UI (mock data)    ████████████████████ 100%   ✅ complete
          Internationalization      ████████████████████ 100%   ✅ complete (uz/ru/en)
+         Admin panel (mock data)   ████████████████████ 100%   ✅ complete — out of order, ADR-46
 Phase 3B Storefront Data Wiring    ░░░░░░░░░░░░░░░░░░░░   0%   ← next (needs K-3)
 Phase 4  Cart & Checkout           ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5  Customer Accounts         ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 6  Admin Dashboard           ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 6  Admin — data + auth       ░░░░░░░░░░░░░░░░░░░░   0%   (UI done; needs services, auth, orders)
 Phase 7  Commerce Features         ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 8  Operations                ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 9  Production Hardening      ░░░░░░░░░░░░░░░░░░░░   0%
@@ -307,23 +308,40 @@ verified against RLS with a second account.
 
 ---
 
-## Phase 6 — Admin Dashboard
+## Phase 6 — Admin: data, auth and orders
 
-**Status:** Not started · **Target version:** v0.6.0
+**Status:** Interface complete, everything behind it outstanding ·
+**Target version:** v0.6.0
+
+> **The interface was built early** (**ADR-46**), against mock data, because the
+> brief asked for it. What remains is everything the interface stands on.
 
 Built for 10+ concurrent admins.
 
-- [ ] **Role check in the admin layout — the first task, before any admin route
-      exists** (resolves **K-1**, the one place the route table currently
-      implies more protection than it delivers)
-- [ ] Route group `app/(admin)/`
-- [ ] Product CRUD with image upload
-- [ ] Category management
-- [ ] **Inventory** — stock levels, low-stock alerts, adjustments with an audit trail
-- [ ] Order management: status transitions, refunds, notes
-- [ ] Customer lookup
-- [ ] Admin-side pagination and search over 50k products
-- [ ] Audit log for every privileged mutation
+### Done
+
+- [x] Admin layout — sidebar, top bar, breadcrumbs, notifications, user menu
+- [x] Permission-aware navigation, filtered server-side from the Phase 2 model
+- [x] Product list and editor, including variants (**D-8** now has a UI shape)
+- [x] Category, brand, inventory, homepage, page, settings, team and audit screens
+- [x] Global search across products, categories, brands, customers, orders and pages
+- [x] Admin-side search, filtering, sorting and pagination — **in memory** (D-2)
+
+### Outstanding
+
+- [ ] **Role check in the admin layout — the first task, before the panel is
+      reachable in production** (resolves **K-1**; deletes `isAdminPreview` in
+      `supabase/session.ts`, ADR-45)
+- [ ] Sign-in, so the redirect target exists (**K-2**)
+- [ ] Services behind every screen; delete `mocks/admin.ts` (**D-15**, **D-16**)
+- [ ] Product image upload — needs Supabase Storage (**D-12**)
+- [ ] Order management: status transitions, refunds, notes — **needs an `orders`
+      table, which arrives with Phase 4**
+- [ ] Customer lookup against real profiles
+- [ ] Move pagination and search into the query; the current in-memory filter
+      does not survive 50k products (**D-2**)
+- [ ] `product_variants` table to back the variant editor (**D-8**)
+- [ ] Write real audit rows for every privileged mutation
 
 **Exit criteria:** a non-admin account is denied at the layout _and_ by RLS
 (verified separately — the layout check alone is not the boundary); two admins

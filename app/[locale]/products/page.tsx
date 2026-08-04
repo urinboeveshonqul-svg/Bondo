@@ -64,7 +64,7 @@ function filterProducts(
     const needle = query.toLocaleLowerCase(locale);
     result = result.filter(
       (p) =>
-        p.name.toLocaleLowerCase(locale).includes(needle) ||
+        p.name[locale].toLocaleLowerCase(locale).includes(needle) ||
         p.sku.toLocaleLowerCase(locale).includes(needle) ||
         p.brand.toLocaleLowerCase(locale).includes(needle),
     );

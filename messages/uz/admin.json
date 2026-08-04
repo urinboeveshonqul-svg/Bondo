@@ -1,0 +1,155 @@
+{
+  "title": "Boshqaruv paneli",
+  "backToStore": "Do'konga qaytish",
+  "preview": {
+    "label": "Ko'rib chiqish rejimi",
+    "body": "Autentifikatsiya hali yo'q, shuning uchun bu panel himoyalanmagan va faqat ishlab chiqish rejimida ochiladi. Bu yerdagi barcha ma'lumotlar namunaviy, o'zgarishlar saqlanmaydi."
+  },
+  "nav": {
+    "label": "Boshqaruv navigatsiyasi",
+    "openMenu": "Boshqaruv menyusini ochish",
+    "collapse": "Yon panelni yig'ish",
+    "expand": "Yon panelni yoyish",
+    "sections": {
+      "overview": "Umumiy",
+      "catalog": "Katalog",
+      "storefront": "Do'kon sahifasi",
+      "administration": "Boshqaruv"
+    },
+    "dashboard": "Boshqaruv paneli",
+    "products": "Mahsulotlar",
+    "categories": "Kategoriyalar",
+    "brands": "Brendlar",
+    "inventory": "Ombor",
+    "homepage": "Bosh sahifa",
+    "content": "Sahifalar",
+    "users": "Jamoa",
+    "audit": "Audit jurnali",
+    "settings": "Sozlamalar"
+  },
+  "breadcrumb": {
+    "label": "Navigatsiya zanjiri",
+    "home": "Boshqaruv"
+  },
+  "search": {
+    "open": "Qidiruv",
+    "title": "Boshqaruv panelidan qidirish",
+    "description": "Mahsulot, kategoriya, brend, mijoz, buyurtma, sahifa va sozlamalarni toping.",
+    "placeholder": "Qidiring yoki o'ting…",
+    "empty": "Hech narsa topilmadi.",
+    "shortcut": "Ctrl K",
+    "groups": {
+      "navigation": "O'tish",
+      "products": "Mahsulotlar",
+      "categories": "Kategoriyalar",
+      "brands": "Brendlar",
+      "customers": "Mijozlar",
+      "orders": "Buyurtmalar",
+      "pages": "Sahifalar",
+      "settings": "Sozlamalar"
+    }
+  },
+  "quickActions": {
+    "label": "Tezkor amallar",
+    "newProduct": "Yangi mahsulot",
+    "newCategory": "Yangi kategoriya",
+    "newBrand": "Yangi brend",
+    "adjustStock": "Ombor tuzatish"
+  },
+  "notifications": {
+    "open": "Bildirishnomalar",
+    "title": "Bildirishnomalar",
+    "unread": "{count, plural, =0 {O'qilmagan yo'q} one {# ta o'qilmagan} other {# ta o'qilmagan}}",
+    "markAllRead": "Barchasini o'qilgan deb belgilash",
+    "emptyTitle": "Yangilik yo'q",
+    "emptyDescription": "Ombor tugashi va buyurtma yangiliklari shu yerda ko'rinadi."
+  },
+  "userMenu": {
+    "open": "Hisob menyusi",
+    "signedInAs": "Kirgan foydalanuvchi",
+    "profile": "Profil",
+    "signOut": "Chiqish"
+  },
+  "actions": {
+    "create": "Yaratish",
+    "save": "Saqlash",
+    "saveChanges": "O'zgarishlarni saqlash",
+    "cancel": "Bekor qilish",
+    "edit": "Tahrirlash",
+    "delete": "O'chirish",
+    "duplicate": "Nusxalash",
+    "view": "Ko'rish",
+    "back": "Orqaga",
+    "filter": "Filtr",
+    "reset": "Tozalash",
+    "apply": "Qo'llash",
+    "moveUp": "Yuqoriga",
+    "moveDown": "Pastga",
+    "reorder": "Tartibni o'zgartirish",
+    "add": "Qo'shish",
+    "remove": "Olib tashlash"
+  },
+  "status": {
+    "draft": "Qoralama",
+    "published": "Chop etilgan",
+    "hidden": "Yashirilgan",
+    "scheduled": "Rejalashtirilgan",
+    "active": "Faol",
+    "inactive": "Nofaol",
+    "visible": "Ko'rinadi",
+    "invisible": "Yashirilgan",
+    "featured": "Tanlangan"
+  },
+  "table": {
+    "search": "Qidirish",
+    "searchPlaceholder": "Qidiring…",
+    "noResultsTitle": "Natija yo'q",
+    "noResultsDescription": "Joriy filtrlarga mos hech narsa yo'q.",
+    "clearFilters": "Filtrlarni tozalash",
+    "selectAll": "Barcha qatorlarni tanlash",
+    "selectRow": "Qatorni tanlash",
+    "selected": "{count, plural, one {# ta tanlandi} other {# ta tanlandi}}",
+    "bulkActions": "Ommaviy amallar",
+    "sortBy": "Saralash",
+    "sortAscending": "O'sish bo'yicha saralash",
+    "sortDescending": "Kamayish bo'yicha saralash",
+    "rowsPerPage": "Sahifadagi qatorlar",
+    "page": "{total} dan {page} sahifa",
+    "previous": "Oldingi sahifa",
+    "next": "Keyingi sahifa",
+    "showing": "{total} tadan {from}–{to} ko'rsatilmoqda",
+    "rowActions": "Qator amallari"
+  },
+  "localized": {
+    "label": "Tarjimalar",
+    "hint": "Chop etishdan oldin barcha tillar to'ldirilishi shart.",
+    "missing": "{count, plural, one {# ta til to'ldirilmagan} other {# ta til to'ldirilmagan}}",
+    "complete": "Barcha tillar to'ldirilgan"
+  },
+  "seo": {
+    "title": "Qidiruv tizimidagi ko'rinish",
+    "description": "Qidiruv natijalarida qanday ko'rinishi. Bo'sh qoldirilsa, nom va tavsif ishlatiladi.",
+    "metaTitle": "Meta sarlavha",
+    "metaDescription": "Meta tavsif",
+    "keywords": "Kalit so'zlar",
+    "keywordsHint": "Qidiruv so'zlari, tarjima qilinmaydi. Qo'shish uchun Enter bosing."
+  },
+  "confirm": {
+    "deleteTitle": "{name} o'chirilsinmi?",
+    "deleteBody": "Buni qaytarib bo'lmaydi.",
+    "confirm": "O'chirish",
+    "cancel": "Bekor qilish"
+  },
+  "readOnly": {
+    "badge": "Faqat o'qish",
+    "body": "Rolingiz buni ko'rishga ruxsat beradi, o'zgartirishga emas."
+  },
+  "notSaved": {
+    "title": "Hech narsa saqlanmadi",
+    "body": "Servislar ulanmaguncha boshqaruv paneli namunaviy ma'lumotlarda ishlaydi, shuning uchun bu forma saqlanmaydi."
+  },
+  "emptyTitle": "Hozircha bu yerda hech narsa yo'q",
+  "updatedBy": "{name} yangiladi",
+  "createdBy": "{name} yaratdi",
+  "never": "Hech qachon"
+}

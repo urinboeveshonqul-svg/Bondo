@@ -1,0 +1,171 @@
+{
+  "products": {
+    "title": "Products",
+    "subtitle": "{count, plural, one {# product} other {# products}} in the catalog.",
+    "new": "New product",
+    "searchPlaceholder": "Search by name, SKU or brand…",
+    "emptyTitle": "No products yet",
+    "emptyDescription": "Create the first one and it appears on the storefront when published.",
+    "columns": {
+      "product": "Product",
+      "sku": "SKU",
+      "brand": "Brand",
+      "category": "Category",
+      "price": "Price",
+      "stock": "Stock",
+      "status": "Status",
+      "updated": "Updated"
+    },
+    "filters": {
+      "status": "Status",
+      "category": "Category",
+      "brand": "Brand",
+      "all": "All"
+    },
+    "bulk": {
+      "publish": "Publish",
+      "unpublish": "Move to draft",
+      "feature": "Mark as featured",
+      "delete": "Delete"
+    },
+    "variantCount": "{count, plural, one {# variant} other {# variants}}",
+    "noVariants": "Single configuration"
+  },
+  "editor": {
+    "newTitle": "New product",
+    "editTitle": "Edit product",
+    "sections": {
+      "basics": "Basics",
+      "description": "Description",
+      "pricing": "Pricing and stock",
+      "variants": "Variants",
+      "images": "Images",
+      "specs": "Specifications",
+      "organisation": "Organisation",
+      "publishing": "Publishing",
+      "seo": "Search engine listing"
+    },
+    "fields": {
+      "name": "Product name",
+      "slug": "URL slug",
+      "slugHint": "Not translated — one address per product in every language.",
+      "sku": "SKU",
+      "brand": "Brand",
+      "category": "Category",
+      "shortDescription": "Short description",
+      "description": "Full description",
+      "price": "Price",
+      "salePrice": "Sale price",
+      "salePriceHint": "Leave empty when no promotion is running.",
+      "stock": "Stock on hand",
+      "stockFromVariants": "Calculated from variants",
+      "warranty": "Warranty",
+      "warrantyMonths": "Months",
+      "searchKeywords": "Search keywords",
+      "searchKeywordsHint": "Synonyms a shopper might type. Not translated.",
+      "status": "Status",
+      "visibility": "Visibility",
+      "featured": "Show in featured rails",
+      "scheduledFor": "Publish at",
+      "scheduledForHint": "Leave empty to publish immediately."
+    },
+    "images": {
+      "title": "Images",
+      "description": "The primary image is used on cards and in link previews.",
+      "add": "Add image",
+      "setPrimary": "Make primary",
+      "primary": "Primary",
+      "altLabel": "Alt text",
+      "emptyTitle": "No images yet",
+      "emptyDescription": "Product photography arrives with Storage. Cards render a monogram until then.",
+      "unavailableTitle": "Uploads are not wired yet",
+      "unavailableDescription": "Supabase Storage lands with the services phase. Alt text can be written now."
+    },
+    "specs": {
+      "title": "Specifications",
+      "description": "Group and name come from a shared vocabulary so they read the same across the catalog.",
+      "group": "Group",
+      "name": "Name",
+      "value": "Value",
+      "unit": "Unit",
+      "add": "Add specification",
+      "emptyTitle": "No specifications",
+      "emptyDescription": "Add the figures a shopper compares before buying."
+    },
+    "variants": {
+      "title": "Variants",
+      "description": "Configurations sold under one product — memory, storage, graphics.",
+      "addOption": "Add an option",
+      "optionName": "Option",
+      "optionValues": "Values",
+      "optionValuesHint": "Comma separated.",
+      "generate": "Generate combinations",
+      "generateHint": "Creates {count, plural, one {# row} other {# rows}} from the options above.",
+      "emptyTitle": "One configuration",
+      "emptyDescription": "This product is sold in a single configuration. Add an option to split it into variants.",
+      "columns": {
+        "variant": "Variant",
+        "sku": "SKU",
+        "price": "Price",
+        "salePrice": "Sale price",
+        "stock": "Stock",
+        "weight": "Weight",
+        "active": "Active"
+      },
+      "weightGrams": "g",
+      "tooMany": "That would create {count} variants. Reduce the options first."
+    }
+  },
+  "categories": {
+    "title": "Categories",
+    "subtitle": "The tree shoppers browse. Drag a row, or use the move buttons.",
+    "new": "New category",
+    "emptyTitle": "No categories",
+    "emptyDescription": "Categories organise the catalog and drive the storefront navigation.",
+    "columns": {
+      "name": "Category",
+      "products": "Products",
+      "visibility": "Visibility",
+      "position": "Position"
+    },
+    "fields": {
+      "name": "Name",
+      "slug": "URL slug",
+      "description": "Description",
+      "parent": "Parent category",
+      "noParent": "Top level",
+      "icon": "Icon",
+      "image": "Image",
+      "visible": "Visible in navigation"
+    },
+    "productCount": "{count, plural, one {# product} other {# products}}",
+    "reorderHint": "Order decides how categories appear in the menu and the footer.",
+    "dragHandle": "Drag to reorder {name}"
+  },
+  "brands": {
+    "title": "Brands",
+    "subtitle": "Manufacturers whose products the store carries.",
+    "new": "New brand",
+    "emptyTitle": "No brands",
+    "emptyDescription": "A product must belong to a brand before it can be published.",
+    "columns": {
+      "name": "Brand",
+      "products": "Products",
+      "website": "Website",
+      "featured": "Featured",
+      "visibility": "Visibility"
+    },
+    "fields": {
+      "name": "Name",
+      "slug": "URL slug",
+      "monogram": "Monogram",
+      "monogramHint": "Two to four characters, shown until a licensed logo is uploaded.",
+      "description": "Description",
+      "website": "Website",
+      "logo": "Logo",
+      "featured": "Show in the brand strip",
+      "visible": "Visible on the storefront"
+    },
+    "productCount": "{count, plural, one {# product} other {# products}}"
+  }
+}

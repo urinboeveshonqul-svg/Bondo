@@ -56,6 +56,18 @@ export const routes = {
 
   admin: {
     index: "/admin",
+    products: "/admin/products",
+    productNew: "/admin/products/new",
+    product: (id: string) => `/admin/products/${id}`,
+    categories: "/admin/categories",
+    brands: "/admin/brands",
+    inventory: "/admin/inventory",
+    homepage: "/admin/homepage",
+    content: "/admin/content",
+    contentPage: (slug: string) => `/admin/content/${slug}`,
+    settings: "/admin/settings",
+    users: "/admin/users",
+    audit: "/admin/audit",
   },
 } as const;
 

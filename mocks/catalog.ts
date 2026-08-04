@@ -1,5 +1,6 @@
 import type {
   Brand,
+  LocalizedText,
   Category,
   Product,
   ProductSummary,
@@ -97,12 +98,24 @@ export const brands: Brand[] = [
   { slug: "razer", name: "Razer", monogram: "RZ", productCount: 1 },
 ];
 
+/**
+ * A model name that is the same string in every language.
+ *
+ * Manufacturer model numbers are trademarks: "GeForce RTX 4090" is not
+ * translated, and writing it out three times per product would be noise that
+ * invites one copy to drift. Bondo's own builds are written out per locale
+ * below, because there the words around the model really do differ.
+ */
+function modelName(name: string): LocalizedText {
+  return { uz: name, ru: name, en: name };
+}
+
 export const products: Product[] = [
   {
     id: "c0000000-0000-4000-8000-000000000001",
     slug: "nvidia-geforce-rtx-4090-founders-edition",
     sku: "GPU-RTX4090-FE",
-    name: "NVIDIA GeForce RTX 4090 Founders Edition",
+    name: modelName("NVIDIA GeForce RTX 4090 Founders Edition"),
     brand: "NVIDIA",
     category: "components",
     image: "products/gpu-rtx4090-fe.webp",
@@ -144,7 +157,7 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000002",
     slug: "amd-ryzen-9-7950x",
     sku: "CPU-R9-7950X",
-    name: "AMD Ryzen 9 7950X",
+    name: modelName("AMD Ryzen 9 7950X"),
     brand: "AMD",
     category: "components",
     image: "products/cpu-ryzen-9-7950x.webp",
@@ -181,7 +194,7 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000003",
     slug: "corsair-vengeance-32gb-ddr5-6000",
     sku: "MEM-CORS-32GB-DDR5",
-    name: "Corsair Vengeance 32GB DDR5-6000",
+    name: modelName("Corsair Vengeance 32GB DDR5-6000"),
     brand: "Corsair",
     category: "components",
     image: "products/mem-corsair-vengeance-ddr5.webp",
@@ -218,7 +231,7 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000004",
     slug: "lenovo-thinkpad-x1-carbon-gen-12",
     sku: "LAP-LEN-X1C-G12",
-    name: "Lenovo ThinkPad X1 Carbon Gen 12",
+    name: modelName("Lenovo ThinkPad X1 Carbon Gen 12"),
     brand: "Lenovo",
     category: "laptops",
     image: "products/lap-thinkpad-x1-carbon.webp",
@@ -260,7 +273,7 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000005",
     slug: "amd-radeon-rx-7900-xtx",
     sku: "GPU-RX7900XTX",
-    name: "AMD Radeon RX 7900 XTX",
+    name: modelName("AMD Radeon RX 7900 XTX"),
     brand: "AMD",
     category: "components",
     image: "products/gpu-rx-7900-xtx.webp",
@@ -296,7 +309,7 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000006",
     slug: "corsair-k70-rgb-mechanical-keyboard",
     sku: "KEY-CORS-K70",
-    name: "Corsair K70 RGB Mechanical Keyboard",
+    name: modelName("Corsair K70 RGB Mechanical Keyboard"),
     brand: "Corsair",
     category: "accessories",
     image: "products/key-corsair-k70.webp",
@@ -352,7 +365,11 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000007",
     slug: "bondo-forge-rtx-4080-gaming-pc",
     sku: "PC-FORGE-4080",
-    name: "Bondo Forge RTX 4080 Gaming PC",
+    name: {
+      uz: "Bondo Forge RTX 4080 o'yin kompyuteri",
+      ru: "Игровой компьютер Bondo Forge RTX 4080",
+      en: "Bondo Forge RTX 4080 Gaming PC",
+    },
     brand: "Bondo",
     category: "gaming-pcs",
     image: "products/pc-forge-4080.webp",
@@ -399,7 +416,7 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000008",
     slug: "asus-rog-strix-g16-gaming-laptop",
     sku: "LAP-ASUS-G16",
-    name: "ASUS ROG Strix G16 Gaming Laptop",
+    name: modelName("ASUS ROG Strix G16 Gaming Laptop"),
     brand: "ASUS",
     category: "laptops",
     image: "products/lap-asus-rog-g16.webp",
@@ -440,7 +457,7 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000009",
     slug: "razer-deathadder-v3-pro",
     sku: "MOU-RAZ-DAV3",
-    name: "Razer DeathAdder V3 Pro",
+    name: modelName("Razer DeathAdder V3 Pro"),
     brand: "Razer",
     category: "accessories",
     image: "products/mou-razer-deathadder-v3.webp",
@@ -476,7 +493,11 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000010",
     slug: "bondo-atlas-workstation",
     sku: "PC-ATLAS-WS",
-    name: "Bondo Atlas Workstation",
+    name: {
+      uz: "Bondo Atlas ish stansiyasi",
+      ru: "Рабочая станция Bondo Atlas",
+      en: "Bondo Atlas Workstation",
+    },
     brand: "Bondo",
     category: "gaming-pcs",
     image: "products/pc-atlas-workstation.webp",
@@ -517,7 +538,7 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000011",
     slug: "asus-proart-display-pa279crv",
     sku: "MON-ASUS-PA279",
-    name: "ASUS ProArt Display PA279CRV",
+    name: modelName("ASUS ProArt Display PA279CRV"),
     brand: "ASUS",
     category: "accessories",
     image: "products/mon-asus-proart.webp",
@@ -558,7 +579,7 @@ export const products: Product[] = [
     id: "c0000000-0000-4000-8000-000000000012",
     slug: "intel-core-i9-14900k",
     sku: "CPU-I9-14900K",
-    name: "Intel Core i9-14900K",
+    name: modelName("Intel Core i9-14900K"),
     brand: "Intel",
     category: "components",
     image: "products/cpu-intel-i9-14900k.webp",
