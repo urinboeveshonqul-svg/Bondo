@@ -40,8 +40,9 @@ import { formatDate, formatNumber, formatPrice } from "@/utils/format";
  * that a workflow works, and they find out otherwise on real data.
  */
 const STATE_TONE: Record<ReturnType<typeof publishState>, StatusTone> = {
-  published: "success",
+  active: "success",
   draft: "neutral",
+  archived: "muted",
   hidden: "muted",
   scheduled: "info",
 };
@@ -196,9 +197,12 @@ export function ProductsTable({
         {
           id: "status",
           label: t("filters.status"),
-          options: (["published", "draft", "hidden", "scheduled"] as const).map(
-            (state) => ({ value: state, label: tAdmin(`status.${state}`) }),
-          ),
+          options: (
+            ["active", "draft", "hidden", "scheduled", "archived"] as const
+          ).map((state) => ({
+            value: state,
+            label: tAdmin(`status.${state}`),
+          })),
           match: (product, value) => publishState(product) === value,
         },
         {

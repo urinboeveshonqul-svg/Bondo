@@ -17,6 +17,7 @@
  */
 
 import type { Locale } from "@/lib/site-config";
+import type { Enums } from "@/types/database";
 
 /**
  * Catalog copy, held per locale on the record itself.
@@ -98,15 +99,22 @@ export type Product = ProductSummary & {
 };
 
 /**
- * Publishing state.
+ * Publishing state — **derived from the database**, not re-typed (CLAUDE.md § 12).
  *
- * Three states rather than a boolean because they answer different questions.
- * `draft` is unfinished work, `published` is live, and `hidden` is finished work
- * deliberately withheld — an end-of-line product kept for its URL, or a launch
- * staged behind a date. Collapsing hidden into draft loses the distinction
- * between "not ready" and "ready, not now".
+ * This was a hand-written `"draft" | "published" | "hidden"` union until the
+ * generated types arrived and showed the schema disagreeing on both counts
+ * (**K-16**): the real enum is `draft | active | archived`, and whether a
+ * product is *reachable* is a second column entirely.
+ *
+ * That separation is the schema being right. "Is this finished?" and "should
+ * anyone see it?" are different questions: an `active` product set to `hidden`
+ * is a live listing withheld — an end-of-line item kept for its URL, or a launch
+ * staged behind a date — which one combined field cannot express.
  */
-export type ProductStatus = "draft" | "published" | "hidden";
+export type ProductStatus = Enums<"product_status">;
+
+/** Whether a finished product is reachable. Orthogonal to `ProductStatus`. */
+export type ProductVisibility = Enums<"product_visibility">;
 
 /**
  * A product image. `position` orders the gallery and `isPrimary` picks the one

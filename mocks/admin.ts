@@ -373,17 +373,35 @@ const VARIANTS: Record<
   },
 };
 
-/** Products the merchandiser has not finished, so the list has real drafts. */
+/**
+ * Products in a state other than plainly live, so the list has real variety.
+ *
+ * `status` and `visibility` are the two separate columns the schema actually has
+ * (**K-16**): "Razer, finished but withheld" is `active` + `hidden`, which one
+ * combined field could not express.
+ */
 const STATUS_OVERRIDES: Record<
   string,
-  Pick<AdminProduct, "status" | "scheduledFor">
+  Pick<AdminProduct, "status" | "visibility" | "scheduledFor">
 > = {
-  "razer-deathadder-v3-pro": { status: "hidden", scheduledFor: null },
+  // Finished and deliberately withheld — kept for its URL, not on sale.
+  "razer-deathadder-v3-pro": {
+    status: "active",
+    visibility: "hidden",
+    scheduledFor: null,
+  },
+  // Live, but staged behind a date six days out.
   "asus-proart-display-pa279crv": {
-    status: "published",
+    status: "active",
+    visibility: "public",
     scheduledFor: daysAhead(6),
   },
-  "intel-core-i9-14900k": { status: "draft", scheduledFor: null },
+  // Unfinished work.
+  "intel-core-i9-14900k": {
+    status: "draft",
+    visibility: "hidden",
+    scheduledFor: null,
+  },
 };
 
 /**
@@ -399,7 +417,8 @@ export const adminProducts: AdminProduct[] = products.map((product, index) => {
 
   return {
     ...product,
-    status: override?.status ?? "published",
+    status: override?.status ?? "active",
+    visibility: override?.visibility ?? "public",
     scheduledFor: override?.scheduledFor ?? null,
     publishedAt: override?.status === "draft" ? null : daysAgo(30 + index * 5),
     isFeatured: product.badges.includes("bestseller"),
@@ -605,7 +624,7 @@ export const inventoryMovements: InventoryMovement[] = [
     productId: adminProducts[8]?.id ?? "",
     productName: "Razer DeathAdder V3 Pro",
     sku: "MOU-RAZ-DAV3",
-    reason: "recount",
+    reason: "correction",
     quantityDelta: -1,
     quantityAfter: 0,
     note: "Cycle count: one unit missing from bin B-14",
@@ -629,7 +648,7 @@ export const inventoryMovements: InventoryMovement[] = [
     productId: adminProducts[6]?.id ?? "",
     productName: "Bondo Forge RTX 4080 Gaming PC",
     sku: "PC-FORGE-4080",
-    reason: "damage",
+    reason: "adjustment",
     quantityDelta: -1,
     quantityAfter: 6,
     note: "Chassis damaged in transit, written off",

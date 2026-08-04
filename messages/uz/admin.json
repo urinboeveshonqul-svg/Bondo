@@ -91,14 +91,14 @@
   },
   "status": {
     "draft": "Qoralama",
-    "published": "Chop etilgan",
     "hidden": "Yashirilgan",
     "scheduled": "Rejalashtirilgan",
     "active": "Faol",
     "inactive": "Nofaol",
     "visible": "Ko'rinadi",
     "invisible": "Yashirilgan",
-    "featured": "Tanlangan"
+    "featured": "Tanlangan",
+    "archived": "Arxivlangan"
   },
   "table": {
     "search": "Qidirish",
@@ -151,5 +151,9 @@
   "emptyTitle": "Hozircha bu yerda hech narsa yo'q",
   "updatedBy": "{name} yangiladi",
   "createdBy": "{name} yaratdi",
-  "never": "Hech qachon"
+  "never": "Hech qachon",
+  "visibility": {
+    "public": "Ochiq",
+    "hidden": "Yashirilgan"
+  }
 }

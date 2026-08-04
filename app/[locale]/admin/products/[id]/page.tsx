@@ -57,11 +57,11 @@ export default async function EditProductPage({
           <>
             <StatusBadge
               tone={
-                state === "published"
+                state === "active"
                   ? "success"
                   : state === "scheduled"
                     ? "info"
-                    : state === "hidden"
+                    : state === "hidden" || state === "archived"
                       ? "muted"
                       : "neutral"
               }

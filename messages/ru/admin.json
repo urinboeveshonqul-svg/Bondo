@@ -91,14 +91,14 @@
   },
   "status": {
     "draft": "Черновик",
-    "published": "Опубликован",
     "hidden": "Скрыт",
     "scheduled": "Запланирован",
     "active": "Активен",
     "inactive": "Неактивен",
     "visible": "Виден",
     "invisible": "Скрыт",
-    "featured": "Рекомендуемый"
+    "featured": "Рекомендуемый",
+    "archived": "В архиве"
   },
   "table": {
     "search": "Поиск",
@@ -151,5 +151,9 @@
   "emptyTitle": "Здесь пока пусто",
   "updatedBy": "Изменил: {name}",
   "createdBy": "Создал: {name}",
-  "never": "Никогда"
+  "never": "Никогда",
+  "visibility": {
+    "public": "Публичный",
+    "hidden": "Скрыт"
+  }
 }

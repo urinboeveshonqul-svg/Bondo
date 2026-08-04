@@ -53,8 +53,7 @@
     "sale": "Sale",
     "return": "Return",
     "adjustment": "Adjustment",
-    "damage": "Damage",
-    "recount": "Recount"
+    "correction": "Correction"
   },
   "adjustDialog": {
     "title": "Adjust stock",

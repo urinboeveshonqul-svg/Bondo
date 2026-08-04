@@ -12,6 +12,40 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — database-first policy (CLAUDE.md § 12)
+
+The schema is the source of truth. Before UI changes: the schema must support
+the feature, types are regenerated, services updated, and the UI consumes the
+generated types. No UI state or enum may diverge from database values.
+
+**Enforced, not documented.** `npm run enums:check` — part of `npm run check` —
+parses the `Constants` block the generator emits and fails the build when a
+hand-written union in `types/` either duplicates a database enum or, worse,
+overlaps one while adding values the database would reject. Both failure modes
+are covered; the second is the dangerous one, because it compiles, renders a
+`<Select>`, and fails at the insert on a value the operator was offered.
+
+Vocabularies with no column yet — order status before `orders` exists — are
+allowed but must be declared in `scripts/check-enums.mjs` with a reason and the
+table that will own them, so an honest gap is distinguishable from an omission.
+
+### Fixed — K-16, the divergence the policy exists to catch
+
+Adopting the policy closed it:
+
+- `ProductStatus` was a hand-written `draft | published | hidden`. It now
+  derives from `Enums<"product_status">` — `draft | active | archived`.
+- **`product_visibility` became the separate control the schema always had.**
+  "Is the work finished" and "should anyone see it" are different questions, and
+  collapsing them was what made the interface offer states the database could
+  not store. The product editor now has two selects, and `publishState()`
+  resolves status, visibility and the scheduled date together.
+- `MovementReason` derives from `Enums<"inventory_movement_type">`. The
+  inventory dialog no longer offers `damage` or `recount`, neither of which
+  exists; a write-off is `adjustment` and a miscount is `correction`, which is
+  what the schema calls them.
+- Status, visibility and reason labels realigned across all three locales.
+
 ### Added — Supabase integration (Phase 3B, partial)
 
 **`types/database.ts` is generated. K-3 is closed.** It had blocked every query

@@ -91,14 +91,14 @@
   },
   "status": {
     "draft": "Draft",
-    "published": "Published",
     "hidden": "Hidden",
     "scheduled": "Scheduled",
     "active": "Active",
     "inactive": "Inactive",
     "visible": "Visible",
     "invisible": "Hidden",
-    "featured": "Featured"
+    "featured": "Featured",
+    "archived": "Archived"
   },
   "table": {
     "search": "Search",
@@ -151,5 +151,9 @@
   "emptyTitle": "Nothing here yet",
   "updatedBy": "Updated by {name}",
   "createdBy": "Created by {name}",
-  "never": "Never"
+  "never": "Never",
+  "visibility": {
+    "public": "Public",
+    "hidden": "Hidden"
+  }
 }

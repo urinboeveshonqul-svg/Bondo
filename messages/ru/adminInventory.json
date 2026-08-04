@@ -53,8 +53,7 @@
     "sale": "Продажа",
     "return": "Возврат",
     "adjustment": "Корректировка",
-    "damage": "Брак",
-    "recount": "Пересчёт"
+    "correction": "Пересчёт"
   },
   "adjustDialog": {
     "title": "Корректировка склада",

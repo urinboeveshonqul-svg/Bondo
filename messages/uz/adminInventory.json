@@ -53,8 +53,7 @@
     "sale": "Sotuv",
     "return": "Qaytarish",
     "adjustment": "Tuzatish",
-    "damage": "Shikast",
-    "recount": "Qayta sanoq"
+    "correction": "Qayta hisoblash"
   },
   "adjustDialog": {
     "title": "Omborni tuzatish",

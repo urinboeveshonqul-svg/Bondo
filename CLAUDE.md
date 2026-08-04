@@ -61,20 +61,22 @@ are binding. In particular:
 Server Component / Server Action  →  service  →  Supabase
 ```
 
-| Rule                                                                  | Why                                                           |
-| --------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Components never query Supabase directly                              | A query outside `services/` is a query nobody can find later  |
-| Services never import React                                           | They must stay callable from webhooks, jobs and scripts       |
-| `utils/` never imports env, Supabase or React                         | It is the only folder guaranteed free to import               |
-| `types/` emits no runtime code                                        | Importing from it must provably cost zero bytes               |
-| `lib/logger.ts` never imports `lib/env.ts`                            | ADR-8 — this exact chain shipped 67 kB of Zod to every client |
-| Only `next.config.ts` and `lib/logger.ts` read `process.env` directly | Everything else goes through `lib/env.ts`                     |
-| Every URL comes from `lib/routes.ts`                                  | Hard-coded paths drift silently                               |
-| `lib/routes.ts` paths carry **no** locale prefix                      | `<Link>` from `@/i18n/navigation` adds it — one concern each  |
-| `Link` is imported from `@/i18n/navigation`, never `next/link`        | ESLint-enforced; the wrong one silently resets the locale     |
-| No user-facing string is hardcoded in a component                     | § 11 — a literal ships in one language and no tool sees it    |
-| Money is integer minor units                                          | ADR-2                                                         |
-| RLS before data                                                       | A table never exists without policies, not even briefly       |
+| Rule                                                                  | Why                                                                              |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Components never query Supabase directly                              | A query outside `services/` is a query nobody can find later                     |
+| Services never import React                                           | They must stay callable from webhooks, jobs and scripts                          |
+| `utils/` never imports env, Supabase or React                         | It is the only folder guaranteed free to import                                  |
+| `types/` emits no runtime code                                        | Importing from it must provably cost zero bytes                                  |
+| `lib/logger.ts` never imports `lib/env.ts`                            | ADR-8 — this exact chain shipped 67 kB of Zod to every client                    |
+| Only `next.config.ts` and `lib/logger.ts` read `process.env` directly | Everything else goes through `lib/env.ts`                                        |
+| Every URL comes from `lib/routes.ts`                                  | Hard-coded paths drift silently                                                  |
+| The database schema is the source of truth                            | § 12 — a UI built against an imagined schema collects data that cannot be stored |
+| Enums in `types/` derive from `Enums<"…">`, never a re-typed union    | A hand-written union compiles and then fails at the insert                       |
+| `lib/routes.ts` paths carry **no** locale prefix                      | `<Link>` from `@/i18n/navigation` adds it — one concern each                     |
+| `Link` is imported from `@/i18n/navigation`, never `next/link`        | ESLint-enforced; the wrong one silently resets the locale                        |
+| No user-facing string is hardcoded in a component                     | § 11 — a literal ships in one language and no tool sees it                       |
+| Money is integer minor units                                          | ADR-2                                                                            |
+| RLS before data                                                       | A table never exists without policies, not even briefly                          |
 
 **Before reversing an architectural decision, read the ADR table in
 `PROJECT_STATUS.md`.** Every ADR has a reason attached. If you still believe the
@@ -287,13 +289,65 @@ subsets in `app/[locale]/layout.tsx`. Nothing else hardcodes the list — routin
 
 ---
 
+## 12. Database-first policy
+
+**The database schema is the source of truth.** Not the types, not the mocks,
+not the interface — those describe the schema, and when they disagree with it
+they are the thing that is wrong.
+
+### The order of work
+
+Before creating or changing UI:
+
+1. **The schema must support the feature.** If it cannot store what the screen
+   collects, the migration comes first.
+2. **Regenerate the types.** `npm run db:types`, committed.
+3. **Update the services.** They are the only thing that touches Supabase.
+4. **Then the UI**, consuming the generated types.
+
+Building the interface first produces a screen that collects data with nowhere
+to go. That is not a hypothetical: it is **K-15** and **K-16** in
+`PROJECT_STATUS.md`, both of which exist because a UI was designed against an
+imagined schema and only met the real one later.
+
+### The two invariants
+
+| Rule                                                       | Enforced by                                          |
+| ---------------------------------------------------------- | ---------------------------------------------------- |
+| No UI state or enum may diverge from database values       | `npm run enums:check`, part of `npm run check`       |
+| Every multilingual field uses the translation architecture | The schema — a localized field has a translation row |
+
+An enum in `types/` must be **derived** from `Enums<"…">`, never re-typed as a
+string union. A hand-written union compiles, renders, and then fails at the
+insert — in production, on a value the operator was offered.
+
+### Where a value legitimately has no column
+
+Some vocabularies have no database counterpart yet — order status before
+`orders` exists, an interface-only mode. Those are allowed, and they are
+declared in `scripts/check-enums.mjs` with the reason and the table that will
+own them. An undeclared divergence fails the build; a declared one is a decision
+somebody can find.
+
+### When the schema is wrong
+
+The policy makes the schema authoritative, not correct. If the schema cannot
+express the feature, **change the schema** — write the migration, record the ADR,
+regenerate. Do not model around it in the UI, and do not widen a type to paper
+over the gap.
+
+---
+
 ## Commands
 
 ```bash
 npm run dev          # dev server (Turbopack)
 npm run build        # production build
-npm run check        # typecheck + lint + format + translations — before every commit
+npm run check        # typecheck + lint + format + translations + enums
 npm run i18n:check   # translation parity across uz/ru/en on its own
+npm run enums:check  # UI vocabulary vs the database enums — § 12
+npm run db:verify    # apply migrations to PGlite, assert the schema (no Docker)
+npm run db:types     # regenerate types/database.ts from supabase/migrations
 npm run verify       # check + build — step 1 of the release policy
 npm run db:start     # local Supabase stack (requires Docker)
 npm run db:reset     # drop and replay all migrations locally

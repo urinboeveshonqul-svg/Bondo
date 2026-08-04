@@ -25,7 +25,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import type { Locale } from "@/lib/site-config";
 import type { AdminProduct } from "@/types/admin";
-import type { ProductStatus } from "@/types/catalog";
+import type { ProductStatus, ProductVisibility } from "@/types/catalog";
 import { publishState, totalStock } from "@/utils/admin";
 import { formatNumber } from "@/utils/format";
 
@@ -342,11 +342,11 @@ export function ProductForm({
             aside={
               <StatusBadge
                 tone={
-                  state === "published"
+                  state === "active"
                     ? "success"
                     : state === "scheduled"
                       ? "info"
-                      : state === "hidden"
+                      : state === "hidden" || state === "archived"
                         ? "muted"
                         : "neutral"
                 }
@@ -355,6 +355,12 @@ export function ProductForm({
               </StatusBadge>
             }
           >
+            {/*
+              Two controls, because the schema has two columns. "Is the work
+              finished" and "should anyone see it" are separate questions, and
+              collapsing them into one select is what made the interface offer
+              states the database could not store (K-16).
+            */}
             <div className="space-y-1.5">
               <Label htmlFor="product-status">{t("fields.status")}</Label>
               <Select
@@ -368,9 +374,33 @@ export function ProductForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(["draft", "published", "hidden"] as const).map((value) => (
+                  {(["draft", "active", "archived"] as const).map((value) => (
                     <SelectItem key={value} value={value}>
                       {tAdmin(`status.${value}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="product-visibility">
+                {t("fields.visibility")}
+              </Label>
+              <Select
+                value={draft.visibility}
+                disabled={disabled}
+                onValueChange={(visibility) =>
+                  set("visibility", visibility as ProductVisibility)
+                }
+              >
+                <SelectTrigger id="product-visibility">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["public", "hidden"] as const).map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {tAdmin(`visibility.${value}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -385,7 +415,7 @@ export function ProductForm({
                 id="product-scheduled"
                 type="datetime-local"
                 value={toLocalInput(draft.scheduledFor)}
-                disabled={disabled || draft.status !== "published"}
+                disabled={disabled || draft.status !== "active"}
                 onChange={(event) =>
                   set(
                     "scheduledFor",
@@ -512,6 +542,7 @@ function emptyProduct(): AdminProduct {
     specs: [],
     warrantyMonths: 24,
     status: "draft",
+    visibility: "hidden",
     isFeatured: false,
     scheduledFor: null,
     publishedAt: null,

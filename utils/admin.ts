@@ -1,4 +1,8 @@
-import type { ProductStatus, ProductVariant } from "@/types/catalog";
+import type {
+  ProductStatus,
+  ProductVariant,
+  ProductVisibility,
+} from "@/types/catalog";
 
 /**
  * Derived values for the admin interface. Pure functions, no framework imports
@@ -8,22 +12,38 @@ import type { ProductStatus, ProductVariant } from "@/types/catalog";
 /**
  * What a product's publishing state *actually* is right now.
  *
- * `status` alone is not the answer: a product marked `published` with a
- * `scheduledFor` in the future is not live, and showing it as "Published" is a
- * lie the merchandiser only discovers by checking the storefront. Resolving the
- * two fields in one place means the badge, the filter and the eventual query
- * agree.
+ * Three database fields decide it, and no one of them is the answer:
+ *
+ *  - `status` — is the work finished? (`draft | active | archived`)
+ *  - `visibility` — should anyone see it? (`public | hidden`)
+ *  - `scheduledFor` — from when?
+ *
+ * An `active` product that is `hidden`, or whose date has not arrived, is not
+ * live — and showing it as "Active" is a lie the merchandiser discovers by
+ * checking the storefront. Resolving all three in one place is what keeps the
+ * badge, the filter and the eventual query agreeing.
+ *
+ * The derived states are **not** stored: `scheduled` and `hidden` are readings
+ * of the columns above, which is why this is a function rather than a fourth
+ * enum value the database would have to carry.
  */
-export type PublishState = ProductStatus | "scheduled";
+export type PublishState = ProductStatus | "scheduled" | "hidden";
 
 export function publishState(
-  product: { status: ProductStatus; scheduledFor: string | null },
+  product: {
+    status: ProductStatus;
+    visibility: ProductVisibility;
+    scheduledFor: string | null;
+  },
   now: Date = new Date(),
 ): PublishState {
-  if (product.status !== "published") return product.status;
-  if (!product.scheduledFor) return "published";
+  // Unfinished or retired: visibility is irrelevant, the work state wins.
+  if (product.status !== "active") return product.status;
 
-  return new Date(product.scheduledFor) > now ? "scheduled" : "published";
+  if (product.visibility === "hidden") return "hidden";
+  if (!product.scheduledFor) return "active";
+
+  return new Date(product.scheduledFor) > now ? "scheduled" : "active";
 }
 
 /**

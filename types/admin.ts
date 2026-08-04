@@ -11,12 +11,14 @@
  */
 
 import type { Permission, RoleKey } from "@/lib/admin/permissions";
+import type { Enums } from "@/types/database";
 import type {
   LocalizedText,
   Product,
   ProductImage,
   ProductStatus,
   ProductVariant,
+  ProductVisibility,
   VariantOption,
 } from "@/types/catalog";
 
@@ -29,6 +31,11 @@ import type {
  */
 export type AdminProduct = Product & {
   status: ProductStatus;
+  /**
+   * Separate from `status`, because the schema keeps them separate: "is the work
+   * finished" and "should anyone see it" are different questions (**K-16**).
+   */
+  visibility: ProductVisibility;
   isFeatured: boolean;
   /** ISO 8601. Set and in the future means "publish then" — see `publishState`. */
   scheduledFor: string | null;
@@ -85,9 +92,16 @@ export type AdminRole = {
 // -----------------------------------------------------------------------------
 
 /**
- * Order status. No `orders` table exists yet — it arrives with checkout — so
- * this is the vocabulary the dashboard and order list render against, chosen to
- * match the transitions checkout will need rather than invented for the UI.
+ * Order status.
+ *
+ * **A declared exception to CLAUDE.md § 12**: there is no `orders` table and no
+ * `order_status` enum, because orders arrive with checkout. This union is the
+ * vocabulary the dashboard renders against until then, chosen to match the
+ * transitions checkout will need rather than invented for the UI.
+ *
+ * Registered in `scripts/check-enums.mjs` so the exception is visible and
+ * expires — when the table lands, this becomes `Enums<"order_status">` and the
+ * checker stops allowing it.
  */
 export type OrderStatus =
   "pending" | "paid" | "fulfilled" | "cancelled" | "refunded";
@@ -119,11 +133,16 @@ export type AdminCustomer = {
 // -----------------------------------------------------------------------------
 
 /**
- * Mirrors `public.inventory_movements.reason`. The ledger is append-only and
- * trigger-enforced (ADR-27): stock is never overwritten, only moved.
+ * Why stock moved — **derived from the database** (CLAUDE.md § 12).
+ *
+ * Previously a hand-written union offering `damage` and `recount`, neither of
+ * which the enum has, while missing `correction`, which it does (**K-16**). The
+ * interface was offering an operator two reasons the insert would have rejected.
+ *
+ * The ledger is append-only and trigger-enforced (ADR-27): stock is never
+ * overwritten, only moved, so the reason *is* the audit trail.
  */
-export type MovementReason =
-  "purchase" | "sale" | "return" | "adjustment" | "damage" | "recount";
+export type MovementReason = Enums<"inventory_movement_type">;
 
 export type InventoryMovement = {
   id: string;

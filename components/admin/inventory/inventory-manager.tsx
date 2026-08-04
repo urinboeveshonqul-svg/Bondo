@@ -53,12 +53,21 @@ import { formatDate, formatNumber } from "@/utils/format";
  * nothing writes it until checkout lands (**D-10**); showing it now with a note
  * is more honest than hiding a column that will appear later.
  */
+/**
+ * Reasons an operator may choose.
+ *
+ * `sale` is excluded deliberately — it is written by checkout, not by hand — but
+ * the list is otherwise the database enum. It previously offered `damage` and
+ * `recount`, neither of which exists, so the insert would have been rejected
+ * after the operator filled in the form (**K-16**). A write-off is now
+ * `adjustment` and a miscount is `correction`, which is what the schema calls
+ * them.
+ */
 const REASONS: readonly MovementReason[] = [
   "purchase",
   "return",
   "adjustment",
-  "damage",
-  "recount",
+  "correction",
 ];
 
 function stockTone(record: InventoryRecord): StatusTone {
