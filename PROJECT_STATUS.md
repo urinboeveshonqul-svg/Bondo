@@ -16,17 +16,20 @@ plus a folder.
 | Item             | Value                                                    |
 | ---------------- | -------------------------------------------------------- |
 | Latest tag       | **v0.1.0** — `7caf0ce`, released 2026-08-01              |
-| Working version  | **v0.3.0**, Phase 3A — **not tagged**                    |
+| Working version  | **v0.4.0**, Phase 3D — **not tagged**                    |
 | Phase 2 commit   | `c6c3e5b`                                                |
 | Phase 3A commit  | `e1ee841`                                                |
+| Phase 3C commit  | `3023545`                                                |
+| Phase 3D commit  | `87fa730`                                                |
 | Branch           | `main`                                                   |
 | Remote           | `origin` → https://github.com/urinboeveshonqul-svg/Bondo |
 | GitHub sync      | ✅ synchronised                                          |
 | Unpushed commits | none                                                     |
 
-Neither v0.2.0 nor Phase 3A is tagged: step 6 of the release policy tags only
-when instructed. Tagging v0.2.0 before **K-3** is closed would publish a version
-whose generated types do not match its schema.
+Nothing since v0.1.0 is tagged: step 6 of the release policy tags only when
+instructed. **K-3 is now closed**, so the original reason not to tag v0.2.0 —
+generated types that did not match the schema — no longer applies. Tagging is
+waiting on the instruction, not on a blocker.
 
 ---
 
