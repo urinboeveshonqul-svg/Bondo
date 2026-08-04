@@ -13,6 +13,7 @@ import type {
   HomepageSection,
   InventoryMovement,
   InventoryRecord,
+  SeoFields,
   SeriesPoint,
   StoreSettings,
 } from "@/types/admin";
@@ -434,9 +435,21 @@ export const adminProducts: AdminProduct[] = products.map((product, index) => {
     variantOptions: variantData?.variantOptions ?? [],
     variants: variantData?.variants ?? [],
     seo: {
+      // One slug repeated, because `Product.slug` is still a single string on
+      // the storefront type. The schema has been per-locale since ADR-52; the
+      // view model catches up when the pages are wired (**D-19**).
+      slug: { uz: product.slug, ru: product.slug, en: product.slug },
       metaTitle: product.shortDescription,
       metaDescription: product.description,
       keywords: [product.brand.toLowerCase(), product.category],
+      // Empty by design: the fallback chain resolves these from the meta fields
+      // and then from the record itself, so a product with nothing written here
+      // still emits a complete share card.
+      canonicalUrl: { uz: "", ru: "", en: "" },
+      ogTitle: { uz: "", ru: "", en: "" },
+      ogDescription: { uz: "", ru: "", en: "" },
+      ogImagePath: null,
+      twitterCard: null,
     },
     searchKeywords: [product.sku.toLowerCase(), product.brand.toLowerCase()],
     createdAt: daysAgo(120 - index * 3),
@@ -844,10 +857,16 @@ export const homepageSections: HomepageSection[] = [
   },
 ];
 
-const EMPTY_SEO = {
+const EMPTY_SEO: SeoFields = {
+  slug: { uz: "", ru: "", en: "" },
   metaTitle: { uz: "", ru: "", en: "" },
   metaDescription: { uz: "", ru: "", en: "" },
-  keywords: [] as string[],
+  keywords: [],
+  canonicalUrl: { uz: "", ru: "", en: "" },
+  ogTitle: { uz: "", ru: "", en: "" },
+  ogDescription: { uz: "", ru: "", en: "" },
+  ogImagePath: null,
+  twitterCard: null,
 };
 
 /**

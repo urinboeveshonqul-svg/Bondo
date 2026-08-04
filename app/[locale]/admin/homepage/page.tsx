@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { HomepageManager } from "@/components/admin/content/homepage-manager";
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { PageHeader } from "@/components/admin/shared/page-header";
-import { can } from "@/lib/admin/permissions";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import {
+  ModuleReadOnlyNotice,
+  guardModule,
+} from "@/components/admin/module/module-permission-guard";
+import { HomepageManager } from "@/components/admin/modules/homepage/homepage-manager";
 import { banners, getAdminSession, homepageSections } from "@/mocks/admin";
 import type { PageParams } from "@/types";
 
@@ -20,19 +21,24 @@ export default async function AdminHomepagePage({
   setRequestLocale(locale);
 
   const { permissions } = getAdminSession();
-  if (!can(permissions, ["banners.read", "banners.manage"])) notFound();
+  const capabilities = await guardModule("homepage", permissions);
 
   const t = await getTranslations("adminContent.homepage");
 
   return (
     <>
-      <AdminBreadcrumbs items={[{ label: t("title") }]} />
-      <PageHeader title={t("title")} description={t("subtitle")} />
+      <ModuleHeader
+        breadcrumbs={[{ label: t("title") }]}
+        title={t("title")}
+        description={t("subtitle")}
+      />
+
+      <ModuleReadOnlyNotice id="homepage" permissions={permissions} />
 
       <HomepageManager
         sections={homepageSections}
         banners={banners}
-        canManage={can(permissions, "banners.manage")}
+        capabilities={capabilities}
       />
     </>
   );

@@ -118,7 +118,10 @@
     "previous": "Previous page",
     "next": "Next page",
     "showing": "Showing {from}–{to} of {total}",
-    "rowActions": "Row actions"
+    "rowActions": "Row actions",
+    "columns": "Columns",
+    "columnsHint": "Show or hide columns",
+    "clearSelection": "Clear selection"
   },
   "localized": {
     "label": "Translations",
@@ -128,17 +131,40 @@
   },
   "seo": {
     "title": "Search engine listing",
-    "description": "How this appears in search results. Left empty, the name and description are used.",
+    "description": "How this appears in search results and when someone shares the link. Left empty, each field falls back to the one above it.",
     "metaTitle": "Meta title",
     "metaDescription": "Meta description",
     "keywords": "Keywords",
-    "keywordsHint": "Search terms, not translated. Press Enter to add."
+    "keywordsHint": "Search terms, not translated. Press Enter to add.",
+    "slug": "URL slug",
+    "slugHint": "The address segment for this language. Changing it breaks existing links.",
+    "metaTitleHint": "Falls back to the record's name.",
+    "metaDescriptionHint": "Falls back to the record's description.",
+    "canonical": "Canonical URL",
+    "canonicalHint": "Absolute, starting with https://. Leave empty unless this page duplicates another.",
+    "social": "Sharing card",
+    "socialDescription": "What appears when the link is posted to a social network or a messenger.",
+    "ogTitle": "Share title",
+    "ogTitleHint": "Falls back to the meta title.",
+    "ogDescription": "Share description",
+    "ogDescriptionHint": "Falls back to the meta description.",
+    "ogImage": "Share image",
+    "ogImageHint": "A storage path inside this module's bucket, not a URL. Falls back to the primary image.",
+    "twitterCard": "Card layout",
+    "twitterCardHint": "Applies to every language. A large image in one and a small one in another is an inconsistency, not a translation.",
+    "cards": {
+      "default": "Store default",
+      "summary": "Small image",
+      "summary_large_image": "Large image"
+    }
   },
   "confirm": {
     "deleteTitle": "Delete {name}?",
     "deleteBody": "This cannot be undone.",
     "confirm": "Delete",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "deleteManyTitle": "Delete {count, plural, one {# record} other {# records}}?",
+    "typeToConfirm": "Type {name} to confirm"
   },
   "readOnly": {
     "badge": "Read only",
@@ -155,5 +181,47 @@
   "visibility": {
     "public": "Public",
     "hidden": "Hidden"
+  },
+  "details": {
+    "description": "Everything recorded about this row. Editing opens the full editor."
+  },
+  "history": {
+    "title": "History",
+    "description": "Every change to this record, newest first.",
+    "emptyTitle": "No history yet",
+    "emptyDescription": "Changes appear here as soon as someone makes one.",
+    "by": "by {name}",
+    "actions": {
+      "create": "Created",
+      "update": "Updated",
+      "delete": "Deleted",
+      "login": "Signed in",
+      "adjust": "Adjusted"
+    }
+  },
+  "media": {
+    "count": "{count, plural, =0 {No files} one {# file} other {# files}}",
+    "add": "Add image",
+    "unavailable": "Uploading needs Supabase Storage, which is not connected yet. Existing files can be reordered and described.",
+    "empty": "No images yet.",
+    "primary": "Primary",
+    "altLabel": "Alt text",
+    "altHint": "Describe the image for someone who cannot see it. Translated, because a screen reader reads it in the visitor's language.",
+    "moveEarlier": "Move earlier",
+    "moveLater": "Move later",
+    "setPrimary": "Make primary",
+    "remove": "Remove"
+  },
+  "form": {
+    "sections": {
+      "general": "General",
+      "media": "Media",
+      "pricing": "Pricing",
+      "inventory": "Inventory",
+      "seo": "SEO",
+      "localization": "Localization",
+      "advanced": "Advanced",
+      "publish": "Publish"
+    }
   }
 }

@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 
-import { PageForm } from "@/components/admin/content/page-form";
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { PageHeader } from "@/components/admin/shared/page-header";
-import { can } from "@/lib/admin/permissions";
+import { PageForm } from "@/components/admin/modules/content/page-form";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import {
+  ModuleReadOnlyNotice,
+  guardModule,
+} from "@/components/admin/module/module-permission-guard";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
 import { getAdminSession, getContentPage } from "@/mocks/admin";
@@ -22,7 +24,7 @@ export default async function AdminContentEditorPage({
   setRequestLocale(locale);
 
   const { permissions } = getAdminSession();
-  if (!can(permissions, ["banners.read", "banners.manage"])) notFound();
+  const capabilities = await guardModule("content", permissions);
 
   const page = getContentPage(slug);
   if (!page) notFound();
@@ -32,19 +34,18 @@ export default async function AdminContentEditorPage({
 
   return (
     <>
-      <AdminBreadcrumbs
-        items={[
+      <ModuleHeader
+        breadcrumbs={[
           { label: t("title"), href: routes.admin.content },
           { label: page.title[activeLocale] },
         ]}
-      />
-
-      <PageHeader
         title={page.title[activeLocale]}
         description={`/${page.slug}`}
       />
 
-      <PageForm page={page} canManage={can(permissions, "banners.manage")} />
+      <ModuleReadOnlyNotice id="content" permissions={permissions} />
+
+      <PageForm page={page} capabilities={capabilities} />
     </>
   );
 }

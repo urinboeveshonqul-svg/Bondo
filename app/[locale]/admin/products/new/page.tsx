@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 
-import { ProductForm } from "@/components/admin/catalog/product-form";
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { PageHeader } from "@/components/admin/shared/page-header";
-import { can } from "@/lib/admin/permissions";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import { guardModule } from "@/components/admin/module/module-permission-guard";
+import { ProductForm } from "@/components/admin/modules/products/product-form";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
 import { getAdminSession } from "@/mocks/admin";
@@ -22,26 +20,26 @@ export default async function NewProductPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
+  // `create`, not the module's view permission: reaching the products list is
+  // not the same as being allowed to add to it.
   const { permissions } = getAdminSession();
-  if (!can(permissions, "products.create")) notFound();
+  const capabilities = await guardModule("products", permissions, "create");
 
   const t = await getTranslations("adminCatalog");
   const activeLocale = (await getLocale()) as Locale;
 
   return (
     <>
-      <AdminBreadcrumbs
-        items={[
+      <ModuleHeader
+        breadcrumbs={[
           { label: t("products.title"), href: routes.admin.products },
           { label: t("editor.newTitle") },
         ]}
+        title={t("editor.newTitle")}
       />
-
-      <PageHeader title={t("editor.newTitle")} />
 
       <ProductForm
         product={null}
-        canEdit
         categoryOptions={categories.map((category) => ({
           value: category.slug,
           label: category.name[activeLocale],
@@ -50,6 +48,7 @@ export default async function NewProductPage({
           value: brand.name,
           label: brand.name,
         }))}
+        capabilities={capabilities}
       />
     </>
   );

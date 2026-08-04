@@ -76,7 +76,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 10,
+  migrationCount === 11,
   `${migrationCount} files`,
 );
 
@@ -479,6 +479,84 @@ check(
   localeValues.join(",") === "uz,ru,en",
   localeValues.join(", ") || "absent",
 );
+
+// -----------------------------------------------------------------------------
+// Social and canonical metadata (20260805001000_social_metadata.sql)
+// -----------------------------------------------------------------------------
+// The reusable SEO panel renders these columns. Asserting them here is what
+// keeps the panel and the schema from drifting: a column dropped or renamed in a
+// later migration fails the build rather than the save.
+// -----------------------------------------------------------------------------
+const SOCIAL_COLUMNS = [
+  "canonical_url",
+  "og_title",
+  "og_description",
+  "og_image_path",
+  "twitter_card",
+];
+
+for (const table of [
+  "product_translations",
+  "category_translations",
+  "brand_translations",
+  "content_page_translations",
+]) {
+  const columns = (
+    await db.query(
+      `
+        select column_name
+        from information_schema.columns
+        where table_schema = 'public' and table_name = $1
+      `,
+      [table],
+    )
+  ).rows.map((r) => r.column_name);
+
+  const missing = SOCIAL_COLUMNS.filter((c) => !columns.includes(c));
+
+  check(
+    `${table} carries the social metadata columns`,
+    missing.length === 0,
+    missing.length
+      ? `missing ${missing.join(", ")}`
+      : SOCIAL_COLUMNS.join(", "),
+  );
+}
+
+const twitterCardValues = (
+  await db.query(`
+    select e.enumlabel
+    from pg_type t
+    join pg_enum e on e.enumtypid = t.oid
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public' and t.typname = 'twitter_card'
+    order by e.enumsortorder
+  `)
+).rows.map((r) => r.enumlabel);
+
+check(
+  "twitter_card enum is exactly summary, summary_large_image",
+  twitterCardValues.join(",") === "summary,summary_large_image",
+  twitterCardValues.join(", ") || "absent",
+);
+
+// A relative canonical resolves against whichever page emitted it, so every
+// locale would declare itself canonical for a different address. Proven, not
+// assumed — a check constraint that was written but never exercised is a
+// comment.
+const canonicalRejected = await db
+  .query(
+    `
+      insert into public.product_translations (product_id, locale, name, canonical_url)
+      values (gen_random_uuid(), 'en', 'x', '/products/x')
+    `,
+  )
+  .then(
+    () => false,
+    () => true,
+  );
+
+check("a relative canonical_url is rejected", canonicalRejected);
 
 // -----------------------------------------------------------------------------
 // The seed must still apply. It writes catalog rows, and this phase moved every

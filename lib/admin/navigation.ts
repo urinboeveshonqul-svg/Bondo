@@ -1,20 +1,28 @@
-import { routes } from "@/lib/routes";
-import { can, type Permission } from "@/lib/admin/permissions";
+import {
+  MODULE_NAV_SECTIONS,
+  canOpenModule,
+  moduleViewPermissions,
+  type AdminModule,
+  type ModuleNavSection,
+} from "@/lib/admin/module";
+import { ADMIN_MODULES } from "@/lib/admin/modules";
+import type { Permission } from "@/lib/admin/permissions";
 
 /**
  * The admin navigation tree.
  *
- * One declaration drives the sidebar, the mobile drawer, the breadcrumb trail
- * and the command palette. Three components rendering three hand-maintained
- * copies of the same list is how a module ends up reachable from search but
- * missing from the sidebar for one role.
+ * **Derived from `ADMIN_MODULES`, not maintained beside it.** This file used to
+ * hold its own copy of every module's href, icon and permission list, which is
+ * how a module ends up reachable from the command palette but missing from the
+ * sidebar for one role — two lists, one of them edited. Now the registry is the
+ * only place a module is described, and the sidebar, the drawer, the palette
+ * and the breadcrumb root all read the same record.
  *
- * `labelKey` is a key into the `admin` namespace, never a label — § 11.
- * `icon` is a lucide icon *name*, resolved by the component that renders it, so
- * this module stays free of React and can be imported by anything.
+ * The exported shape is unchanged, so nothing that renders navigation had to
+ * learn about modules.
  */
 export type AdminNavItem = {
-  /** Stable id — used for breadcrumbs, palette keys and active matching. */
+  /** Stable id — the module's id. Used for palette keys and active matching. */
   id: string;
   labelKey: string;
   href: string;
@@ -22,121 +30,36 @@ export type AdminNavItem = {
   /**
    * Any-of. An item appears when the admin holds at least one of these, which
    * is the right test for "is this screen worth showing at all" — the controls
-   * inside it check their own permissions individually.
+   * inside it check their own capabilities individually.
    */
   permissions: readonly Permission[];
 };
 
 export type AdminNavSection = {
-  id: string;
+  id: ModuleNavSection;
   labelKey: string;
   items: readonly AdminNavItem[];
 };
 
-export const ADMIN_NAV: readonly AdminNavSection[] = [
-  {
-    id: "overview",
-    labelKey: "nav.sections.overview",
-    items: [
-      {
-        id: "dashboard",
-        labelKey: "nav.dashboard",
-        href: routes.admin.index,
-        icon: "LayoutDashboard",
-        // Every admin has at least one read permission, so the dashboard is
-        // visible to all of them; its individual widgets gate themselves.
-        permissions: [
-          "products.read",
-          "inventory.read",
-          "users.read",
-          "settings.read",
-          "banners.read",
-        ],
-      },
-    ],
-  },
-  {
-    id: "catalog",
-    labelKey: "nav.sections.catalog",
-    items: [
-      {
-        id: "products",
-        labelKey: "nav.products",
-        href: routes.admin.products,
-        icon: "Package",
-        permissions: ["products.read"],
-      },
-      {
-        id: "categories",
-        labelKey: "nav.categories",
-        href: routes.admin.categories,
-        icon: "FolderTree",
-        permissions: ["categories.read", "categories.manage"],
-      },
-      {
-        id: "brands",
-        labelKey: "nav.brands",
-        href: routes.admin.brands,
-        icon: "Tag",
-        permissions: ["brands.read", "brands.manage"],
-      },
-      {
-        id: "inventory",
-        labelKey: "nav.inventory",
-        href: routes.admin.inventory,
-        icon: "Boxes",
-        permissions: ["inventory.read", "inventory.adjust"],
-      },
-    ],
-  },
-  {
-    id: "storefront",
-    labelKey: "nav.sections.storefront",
-    items: [
-      {
-        id: "homepage",
-        labelKey: "nav.homepage",
-        href: routes.admin.homepage,
-        icon: "LayoutTemplate",
-        permissions: ["banners.read", "banners.manage"],
-      },
-      {
-        id: "content",
-        labelKey: "nav.content",
-        href: routes.admin.content,
-        icon: "FileText",
-        permissions: ["banners.read", "banners.manage"],
-      },
-    ],
-  },
-  {
-    id: "administration",
-    labelKey: "nav.sections.administration",
-    items: [
-      {
-        id: "users",
-        labelKey: "nav.users",
-        href: routes.admin.users,
-        icon: "Users",
-        permissions: ["users.read", "admins.manage", "roles.manage"],
-      },
-      {
-        id: "audit",
-        labelKey: "nav.audit",
-        href: routes.admin.audit,
-        icon: "ScrollText",
-        permissions: ["audit.read"],
-      },
-      {
-        id: "settings",
-        labelKey: "nav.settings",
-        href: routes.admin.settings,
-        icon: "Settings",
-        permissions: ["settings.read", "settings.update"],
-      },
-    ],
-  },
-];
+function toNavItem(module: AdminModule): AdminNavItem {
+  return {
+    id: module.id,
+    labelKey: module.labelKey,
+    href: module.href,
+    icon: module.icon,
+    permissions: moduleViewPermissions(module),
+  };
+}
+
+export const ADMIN_NAV: readonly AdminNavSection[] = MODULE_NAV_SECTIONS.map(
+  (section) => ({
+    id: section,
+    labelKey: `nav.sections.${section}`,
+    items: ADMIN_MODULES.filter((module) => module.navSection === section).map(
+      toNavItem,
+    ),
+  }),
+).filter((section) => section.items.length > 0);
 
 /**
  * Filters the tree to what an admin may see, dropping sections left empty.
@@ -148,9 +71,13 @@ export const ADMIN_NAV: readonly AdminNavSection[] = [
 export function visibleNav(
   granted: ReadonlySet<Permission>,
 ): AdminNavSection[] {
-  return ADMIN_NAV.map((section) => ({
-    ...section,
-    items: section.items.filter((item) => can(granted, item.permissions)),
+  return MODULE_NAV_SECTIONS.map((section) => ({
+    id: section,
+    labelKey: `nav.sections.${section}`,
+    items: ADMIN_MODULES.filter(
+      (module) =>
+        module.navSection === section && canOpenModule(granted, module),
+    ).map(toNavItem),
   })).filter((section) => section.items.length > 0);
 }
 

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Plus } from "lucide-react";
 
-import { BrandsManager } from "@/components/admin/catalog/brands-manager";
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { PageHeader } from "@/components/admin/shared/page-header";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import {
+  ModuleReadOnlyNotice,
+  guardModule,
+} from "@/components/admin/module/module-permission-guard";
+import { BrandsManager } from "@/components/admin/modules/brands/brands-manager";
 import { Button } from "@/components/ui/button";
-import { can } from "@/lib/admin/permissions";
 import { getAdminSession } from "@/mocks/admin";
 import { brands } from "@/mocks/catalog";
 import type { PageParams } from "@/types";
@@ -23,20 +24,18 @@ export default async function AdminBrandsPage({
   setRequestLocale(locale);
 
   const { permissions } = getAdminSession();
-  if (!can(permissions, ["brands.read", "brands.manage"])) notFound();
+  const capabilities = await guardModule("brands", permissions);
 
   const t = await getTranslations("adminCatalog.brands");
-  const canManage = can(permissions, "brands.manage");
 
   return (
     <>
-      <AdminBreadcrumbs items={[{ label: t("title") }]} />
-
-      <PageHeader
+      <ModuleHeader
+        breadcrumbs={[{ label: t("title") }]}
         title={t("title")}
         description={t("subtitle")}
         actions={
-          canManage ? (
+          capabilities.create ? (
             <Button disabled>
               <Plus aria-hidden="true" />
               {t("new")}
@@ -45,7 +44,9 @@ export default async function AdminBrandsPage({
         }
       />
 
-      <BrandsManager brands={brands} canManage={canManage} />
+      <ModuleReadOnlyNotice id="brands" permissions={permissions} />
+
+      <BrandsManager brands={brands} capabilities={capabilities} />
     </>
   );
 }

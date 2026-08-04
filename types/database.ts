@@ -158,37 +158,52 @@ export type Database = {
       brand_translations: {
         Row: {
           brand_id: string
+          canonical_url: string | null
           created_at: string
           created_by: string | null
           description: string | null
           locale: Database["public"]["Enums"]["locale"]
+          og_description: string | null
+          og_image_path: string | null
+          og_title: string | null
           seo_description: string | null
           seo_keywords: string[]
           seo_title: string | null
+          twitter_card: Database["public"]["Enums"]["twitter_card"] | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           brand_id: string
+          canonical_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           locale: Database["public"]["Enums"]["locale"]
+          og_description?: string | null
+          og_image_path?: string | null
+          og_title?: string | null
           seo_description?: string | null
           seo_keywords?: string[]
           seo_title?: string | null
+          twitter_card?: Database["public"]["Enums"]["twitter_card"] | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           brand_id?: string
+          canonical_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           locale?: Database["public"]["Enums"]["locale"]
+          og_description?: string | null
+          og_image_path?: string | null
+          og_title?: string | null
           seo_description?: string | null
           seo_keywords?: string[]
           seo_title?: string | null
+          twitter_card?: Database["public"]["Enums"]["twitter_card"] | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -302,44 +317,59 @@ export type Database = {
       }
       category_translations: {
         Row: {
+          canonical_url: string | null
           category_id: string
           created_at: string
           created_by: string | null
           description: string | null
           locale: Database["public"]["Enums"]["locale"]
           name: string
+          og_description: string | null
+          og_image_path: string | null
+          og_title: string | null
           seo_description: string | null
           seo_keywords: string[]
           seo_title: string | null
           slug: string | null
+          twitter_card: Database["public"]["Enums"]["twitter_card"] | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          canonical_url?: string | null
           category_id: string
           created_at?: string
           created_by?: string | null
           description?: string | null
           locale: Database["public"]["Enums"]["locale"]
           name: string
+          og_description?: string | null
+          og_image_path?: string | null
+          og_title?: string | null
           seo_description?: string | null
           seo_keywords?: string[]
           seo_title?: string | null
           slug?: string | null
+          twitter_card?: Database["public"]["Enums"]["twitter_card"] | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          canonical_url?: string | null
           category_id?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
           locale?: Database["public"]["Enums"]["locale"]
           name?: string
+          og_description?: string | null
+          og_image_path?: string | null
+          og_title?: string | null
           seo_description?: string | null
           seo_keywords?: string[]
           seo_title?: string | null
           slug?: string | null
+          twitter_card?: Database["public"]["Enums"]["twitter_card"] | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -356,10 +386,14 @@ export type Database = {
       content_page_translations: {
         Row: {
           body: string | null
+          canonical_url: string | null
           created_at: string
           created_by: string | null
           excerpt: string | null
           locale: Database["public"]["Enums"]["locale"]
+          og_description: string | null
+          og_image_path: string | null
+          og_title: string | null
           page_id: string
           search_vector: unknown
           seo_description: string | null
@@ -367,15 +401,20 @@ export type Database = {
           seo_title: string | null
           slug: string | null
           title: string
+          twitter_card: Database["public"]["Enums"]["twitter_card"] | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           body?: string | null
+          canonical_url?: string | null
           created_at?: string
           created_by?: string | null
           excerpt?: string | null
           locale: Database["public"]["Enums"]["locale"]
+          og_description?: string | null
+          og_image_path?: string | null
+          og_title?: string | null
           page_id: string
           search_vector?: unknown
           seo_description?: string | null
@@ -383,15 +422,20 @@ export type Database = {
           seo_title?: string | null
           slug?: string | null
           title: string
+          twitter_card?: Database["public"]["Enums"]["twitter_card"] | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           body?: string | null
+          canonical_url?: string | null
           created_at?: string
           created_by?: string | null
           excerpt?: string | null
           locale?: Database["public"]["Enums"]["locale"]
+          og_description?: string | null
+          og_image_path?: string | null
+          og_title?: string | null
           page_id?: string
           search_vector?: unknown
           seo_description?: string | null
@@ -399,6 +443,7 @@ export type Database = {
           seo_title?: string | null
           slug?: string | null
           title?: string
+          twitter_card?: Database["public"]["Enums"]["twitter_card"] | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -650,11 +695,15 @@ export type Database = {
       }
       product_translations: {
         Row: {
+          canonical_url: string | null
           created_at: string
           created_by: string | null
           description: string | null
           locale: Database["public"]["Enums"]["locale"]
           name: string
+          og_description: string | null
+          og_image_path: string | null
+          og_title: string | null
           product_id: string
           search_vector: unknown
           seo_description: string | null
@@ -662,15 +711,20 @@ export type Database = {
           seo_title: string | null
           short_description: string | null
           slug: string | null
+          twitter_card: Database["public"]["Enums"]["twitter_card"] | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          canonical_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           locale: Database["public"]["Enums"]["locale"]
           name: string
+          og_description?: string | null
+          og_image_path?: string | null
+          og_title?: string | null
           product_id: string
           search_vector?: unknown
           seo_description?: string | null
@@ -678,15 +732,20 @@ export type Database = {
           seo_title?: string | null
           short_description?: string | null
           slug?: string | null
+          twitter_card?: Database["public"]["Enums"]["twitter_card"] | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          canonical_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           locale?: Database["public"]["Enums"]["locale"]
           name?: string
+          og_description?: string | null
+          og_image_path?: string | null
+          og_title?: string | null
           product_id?: string
           search_vector?: unknown
           seo_description?: string | null
@@ -694,6 +753,7 @@ export type Database = {
           seo_title?: string | null
           short_description?: string | null
           slug?: string | null
+          twitter_card?: Database["public"]["Enums"]["twitter_card"] | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1126,6 +1186,7 @@ export type Database = {
       locale: "uz" | "ru" | "en"
       product_status: "draft" | "active" | "archived"
       product_visibility: "public" | "hidden"
+      twitter_card: "summary" | "summary_large_image"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1266,6 +1327,7 @@ export const Constants = {
       locale: ["uz", "ru", "en"],
       product_status: ["draft", "active", "archived"],
       product_visibility: ["public", "hidden"],
+      twitter_card: ["summary", "summary_large_image"],
     },
   },
 } as const

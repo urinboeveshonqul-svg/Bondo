@@ -4,23 +4,26 @@ Nine phases from foundation to launch. Current state always lives in
 [PROJECT_STATUS.md](PROJECT_STATUS.md) — this file is the plan, that file is the
 truth.
 
-**Current position:** Phase 3A complete, plus internationalization (uz/ru/en)
-delivered as a cross-cutting change. Phase 3B is next, gated on **K-3**.
+**Current position:** Phase 3A, internationalization, the localization schema
+(3C) and the admin module architecture (3D) are complete. Phase 3B is the
+remainder — wiring the pages — and needs a live Supabase project, not more code.
 
 **Internationalization is not a phase.** It moved out of "explicitly out of
 scope" and into every phase: from now on a feature is not complete until Uzbek,
 Russian and English all exist for it, enforced by `npm run check`. See
 [CLAUDE.md § 11](CLAUDE.md#11-internationalization-policy).
 
-**Overall progress:** ~48%
+**Overall progress:** ~66%
 
 ```
 Phase 1  Foundation                ████████████████████ 100%   ✅ complete
-Phase 2  Database Foundation       ████████████████████ 100%   ✅ complete (K-3 open)
+Phase 2  Database Foundation       ████████████████████ 100%   ✅ complete
 Phase 3A Premium UI (mock data)    ████████████████████ 100%   ✅ complete
          Internationalization      ████████████████████ 100%   ✅ complete (uz/ru/en)
          Admin panel (mock data)   ████████████████████ 100%   ✅ complete — out of order, ADR-46
-Phase 3B Storefront Data Wiring    ░░░░░░░░░░░░░░░░░░░░   0%   ← next (needs K-3)
+Phase 3B Storefront Data Wiring    ██████████████░░░░░░  70%   (needs a Supabase project)
+         Localization in the DB    ████████████████████ 100%   ✅ complete (3C — K-15, K-16)
+         Admin module architecture ████████████████████ 100%   ✅ complete (3D — ADR-54…58)
 Phase 4  Cart & Checkout           ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5  Customer Accounts         ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 6  Admin — data + auth       ░░░░░░░░░░░░░░░░░░░░   0%   (UI done; needs services, auth, orders)
@@ -188,10 +191,10 @@ services, which moved out of Phase 2 when it was scoped to the database only.
 
 ### Done
 
-- [x] **K-3** — `types/database.ts` generated and committed, 18 tables
+- [x] **K-3** — `types/database.ts` generated and committed, 25 tables
       (**ADR-48**, no Docker required)
 - [x] **D-7** — schema verification harness committed as `npm run db:verify`,
-      33 assertions, now part of `npm run verify`
+      **76 assertions**, now part of `npm run verify`
 - [x] Service layer: products, categories, brands, inventory, storage, settings,
       audit — with in-query filtering, sorting and pagination
 - [x] `lib/supabase-error.ts` — Postgres codes mapped to `AppError`
@@ -348,6 +351,9 @@ Built for 10+ concurrent admins.
 
 ### Done
 
+- [x] **Module architecture** — one registry, one component kit, one form layout,
+      one permission model; adding a module is a record plus a folder
+      (**ADR-54…58**, `docs/admin/`)
 - [x] Admin layout — sidebar, top bar, breadcrumbs, notifications, user menu
 - [x] Permission-aware navigation, filtered server-side from the Phase 2 model
 - [x] Product list and editor, including variants (**D-8** now has a UI shape)

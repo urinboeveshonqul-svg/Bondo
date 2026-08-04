@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { UserPlus } from "lucide-react";
 
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { PageHeader } from "@/components/admin/shared/page-header";
-import { TeamManager } from "@/components/admin/system/team-manager";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import { guardModule } from "@/components/admin/module/module-permission-guard";
+import { TeamManager } from "@/components/admin/modules/users/team-manager";
 import { Button } from "@/components/ui/button";
-import { can } from "@/lib/admin/permissions";
 import { adminRoles, adminUsers, getAdminSession } from "@/mocks/admin";
 import type { PageParams } from "@/types";
 
@@ -22,22 +20,18 @@ export default async function AdminUsersPage({
   setRequestLocale(locale);
 
   const { permissions } = getAdminSession();
-  if (!can(permissions, ["users.read", "admins.manage", "roles.manage"])) {
-    notFound();
-  }
+  const capabilities = await guardModule("users", permissions);
 
   const t = await getTranslations("adminSystem.users");
-  const canManage = can(permissions, "admins.manage");
 
   return (
     <>
-      <AdminBreadcrumbs items={[{ label: t("title") }]} />
-
-      <PageHeader
+      <ModuleHeader
+        breadcrumbs={[{ label: t("title") }]}
         title={t("title")}
         description={t("subtitle")}
         actions={
-          canManage ? (
+          capabilities.create ? (
             // Disabled with a stated reason rather than hidden: the capability
             // exists, the dependency does not.
             <Button disabled title={t("inviteUnavailable")}>
@@ -48,7 +42,7 @@ export default async function AdminUsersPage({
         }
       />
 
-      {canManage ? (
+      {capabilities.create ? (
         <p className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
           {t("inviteUnavailable")}
         </p>
@@ -57,7 +51,7 @@ export default async function AdminUsersPage({
       <TeamManager
         members={adminUsers}
         roles={adminRoles}
-        canManage={canManage}
+        capabilities={capabilities}
       />
     </>
   );

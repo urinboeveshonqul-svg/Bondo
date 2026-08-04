@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Boxes, PackageX, ShieldQuestion, TriangleAlert } from "lucide-react";
 
-import { InventoryManager } from "@/components/admin/inventory/inventory-manager";
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { PageHeader } from "@/components/admin/shared/page-header";
-import { StatCard } from "@/components/admin/shared/stat-card";
-import { can } from "@/lib/admin/permissions";
+import { InventoryManager } from "@/components/admin/modules/inventory/inventory-manager";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import {
+  ModuleReadOnlyNotice,
+  guardModule,
+} from "@/components/admin/module/module-permission-guard";
+import {
+  StatCard,
+  StatisticsCards,
+} from "@/components/admin/module/statistics-cards";
 import type { Locale } from "@/lib/site-config";
 import {
   getAdminSession,
@@ -28,7 +32,7 @@ export default async function AdminInventoryPage({
   setRequestLocale(locale);
 
   const { permissions } = getAdminSession();
-  if (!can(permissions, ["inventory.read", "inventory.adjust"])) notFound();
+  const capabilities = await guardModule("inventory", permissions);
 
   const t = await getTranslations("adminInventory");
   const activeLocale = (await getLocale()) as Locale;
@@ -54,10 +58,15 @@ export default async function AdminInventoryPage({
 
   return (
     <>
-      <AdminBreadcrumbs items={[{ label: t("title") }]} />
-      <PageHeader title={t("title")} description={t("subtitle")} />
+      <ModuleHeader
+        breadcrumbs={[{ label: t("title") }]}
+        title={t("title")}
+        description={t("subtitle")}
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <ModuleReadOnlyNotice id="inventory" permissions={permissions} />
+
+      <StatisticsCards>
         <StatCard
           label={t("stats.unitsOnHand")}
           value={number(unitsOnHand)}
@@ -83,12 +92,12 @@ export default async function AdminInventoryPage({
           icon={ShieldQuestion}
           footnote={t("reservedNote")}
         />
-      </div>
+      </StatisticsCards>
 
       <InventoryManager
         records={inventoryRecords}
         movements={inventoryMovements}
-        canAdjust={can(permissions, "inventory.adjust")}
+        capabilities={capabilities}
       />
     </>
   );

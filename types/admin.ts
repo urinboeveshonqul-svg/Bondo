@@ -304,11 +304,48 @@ export type AdminNotification = {
 // Shared editor shapes
 // -----------------------------------------------------------------------------
 
+/**
+ * Twitter/X card layout — **derived from the database** (CLAUDE.md § 12).
+ *
+ * `null` on a record means "inherit the store default", which is what the
+ * nullable column means too.
+ */
+export type TwitterCard = Enums<"twitter_card">;
+
+/**
+ * Everything a crawler or a share card reads, for one record.
+ *
+ * Every field here is a column on that record's **translation** row, added by
+ * `20260804001000_localization.sql` and `20260805001000_social_metadata.sql`.
+ * The shape is one panel's worth of fields rather than one table's, because
+ * `ModuleSeoPanel` renders all of it and four modules use that panel.
+ *
+ * `slug` is `null` for modules whose records carry a single shared slug on the
+ * parent row — brands, where the name is a trademark and identical in all three
+ * languages.
+ *
+ * `ogImagePath` and `twitterCard` are single values even though the schema
+ * stores them per locale: a large card in English and a small one in Russian is
+ * an inconsistency rather than a translation. The service writes the same value
+ * to each translation row, and the columns stay per-locale so the distinction is
+ * available the day a store needs it.
+ */
 export type SeoFields = {
+  /** Per-locale URL segment, or `null` when the module has one shared slug. */
+  slug: LocalizedText | null;
   metaTitle: LocalizedText;
   metaDescription: LocalizedText;
   /** Free-form keywords, one per entry. Not localized — they are search terms. */
   keywords: readonly string[];
+  /** Absolute, or empty to let the storefront emit its own self-referential one. */
+  canonicalUrl: LocalizedText;
+  /** Falls back to `metaTitle`, then to the record's name. */
+  ogTitle: LocalizedText;
+  /** Falls back to `metaDescription`, then to the record's description. */
+  ogDescription: LocalizedText;
+  /** A storage object path inside the module's bucket, never a URL. */
+  ogImagePath: string | null;
+  twitterCard: TwitterCard | null;
 };
 
 /** A point in a time series, used by the dashboard charts. */

@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { PageHeader } from "@/components/admin/shared/page-header";
-import { AuditTable } from "@/components/admin/system/audit-table";
-import { can } from "@/lib/admin/permissions";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import { guardModule } from "@/components/admin/module/module-permission-guard";
+import { AuditTable } from "@/components/admin/modules/audit/audit-table";
 import { auditEntries, getAdminSession } from "@/mocks/admin";
 import type { PageParams } from "@/types";
 
@@ -19,15 +17,21 @@ export default async function AdminAuditPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
+  // Every module route opens the same three lines: resolve the session, guard
+  // the module, render against the capabilities that come back. The audit log
+  // grants none beyond reading, so there is nothing to hold on to.
   const { permissions } = getAdminSession();
-  if (!can(permissions, "audit.read")) notFound();
+  await guardModule("audit", permissions);
 
   const t = await getTranslations("adminSystem.audit");
 
   return (
     <>
-      <AdminBreadcrumbs items={[{ label: t("title") }]} />
-      <PageHeader title={t("title")} description={t("subtitle")} />
+      <ModuleHeader
+        breadcrumbs={[{ label: t("title") }]}
+        title={t("title")}
+        description={t("subtitle")}
+      />
 
       <p className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
         {t("appendOnly")}

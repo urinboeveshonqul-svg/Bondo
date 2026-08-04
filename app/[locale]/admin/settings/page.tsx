@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { PageHeader } from "@/components/admin/shared/page-header";
-import { SettingsForm } from "@/components/admin/system/settings-form";
-import { can } from "@/lib/admin/permissions";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import {
+  ModuleReadOnlyNotice,
+  guardModule,
+} from "@/components/admin/module/module-permission-guard";
+import { SettingsForm } from "@/components/admin/modules/settings/settings-form";
 import { getAdminSession, storeSettings } from "@/mocks/admin";
 import type { PageParams } from "@/types";
 
@@ -20,19 +21,21 @@ export default async function AdminSettingsPage({
   setRequestLocale(locale);
 
   const { permissions } = getAdminSession();
-  if (!can(permissions, ["settings.read", "settings.update"])) notFound();
+  const capabilities = await guardModule("settings", permissions);
 
   const t = await getTranslations("adminSystem.settings");
 
   return (
     <>
-      <AdminBreadcrumbs items={[{ label: t("title") }]} />
-      <PageHeader title={t("title")} description={t("subtitle")} />
-
-      <SettingsForm
-        settings={storeSettings}
-        canUpdate={can(permissions, "settings.update")}
+      <ModuleHeader
+        breadcrumbs={[{ label: t("title") }]}
+        title={t("title")}
+        description={t("subtitle")}
       />
+
+      <ModuleReadOnlyNotice id="settings" permissions={permissions} />
+
+      <SettingsForm settings={storeSettings} capabilities={capabilities} />
     </>
   );
 }

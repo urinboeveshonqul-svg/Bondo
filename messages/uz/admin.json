@@ -118,7 +118,10 @@
     "previous": "Oldingi sahifa",
     "next": "Keyingi sahifa",
     "showing": "{total} tadan {from}–{to} ko'rsatilmoqda",
-    "rowActions": "Qator amallari"
+    "rowActions": "Qator amallari",
+    "columns": "Ustunlar",
+    "columnsHint": "Ustunlarni ko'rsatish yoki yashirish",
+    "clearSelection": "Tanlovni bekor qilish"
   },
   "localized": {
     "label": "Tarjimalar",
@@ -128,17 +131,40 @@
   },
   "seo": {
     "title": "Qidiruv tizimidagi ko'rinish",
-    "description": "Qidiruv natijalarida qanday ko'rinishi. Bo'sh qoldirilsa, nom va tavsif ishlatiladi.",
+    "description": "Qidiruv natijalarida va havola ulashilganda qanday ko'rinishi. Bo'sh qoldirilsa, har bir maydon yuqoridagisidan oladi.",
     "metaTitle": "Meta sarlavha",
     "metaDescription": "Meta tavsif",
     "keywords": "Kalit so'zlar",
-    "keywordsHint": "Qidiruv so'zlari, tarjima qilinmaydi. Qo'shish uchun Enter bosing."
+    "keywordsHint": "Qidiruv so'zlari, tarjima qilinmaydi. Qo'shish uchun Enter bosing.",
+    "slug": "URL manzili",
+    "slugHint": "Ushbu til uchun manzil qismi. O'zgartirilsa, mavjud havolalar ishlamay qoladi.",
+    "metaTitleHint": "Bo'sh bo'lsa, yozuv nomi ishlatiladi.",
+    "metaDescriptionHint": "Bo'sh bo'lsa, yozuv tavsifi ishlatiladi.",
+    "canonical": "Kanonik URL",
+    "canonicalHint": "To'liq manzil, https:// bilan boshlanadi. Sahifa boshqasini takrorlamasa, bo'sh qoldiring.",
+    "social": "Ulashish kartasi",
+    "socialDescription": "Havola ijtimoiy tarmoqqa yoki messenjerga joylanganda nima ko'rinishi.",
+    "ogTitle": "Ulashish sarlavhasi",
+    "ogTitleHint": "Bo'sh bo'lsa, meta sarlavha ishlatiladi.",
+    "ogDescription": "Ulashish tavsifi",
+    "ogDescriptionHint": "Bo'sh bo'lsa, meta tavsif ishlatiladi.",
+    "ogImage": "Ulashish rasmi",
+    "ogImageHint": "Modul bucket'idagi fayl yo'li, URL emas. Bo'sh bo'lsa, asosiy rasm ishlatiladi.",
+    "twitterCard": "Karta ko'rinishi",
+    "twitterCardHint": "Barcha tillarga tegishli. Bir tilda katta, boshqasida kichik rasm — bu tarjima emas, nomuvofiqlik.",
+    "cards": {
+      "default": "Do'kon sozlamasi",
+      "summary": "Kichik rasm",
+      "summary_large_image": "Katta rasm"
+    }
   },
   "confirm": {
     "deleteTitle": "{name} o'chirilsinmi?",
     "deleteBody": "Buni qaytarib bo'lmaydi.",
     "confirm": "O'chirish",
-    "cancel": "Bekor qilish"
+    "cancel": "Bekor qilish",
+    "deleteManyTitle": "{count, plural, one {# ta yozuv} other {# ta yozuv}} o'chirilsinmi?",
+    "typeToConfirm": "Tasdiqlash uchun {name} deb yozing"
   },
   "readOnly": {
     "badge": "Faqat o'qish",
@@ -155,5 +181,47 @@
   "visibility": {
     "public": "Ochiq",
     "hidden": "Yashirilgan"
+  },
+  "details": {
+    "description": "Ushbu qator haqida yozib olingan hamma narsa. Tahrirlash to'liq muharrirni ochadi."
+  },
+  "history": {
+    "title": "Tarix",
+    "description": "Ushbu yozuvdagi har bir o'zgarish, eng yangisi birinchi.",
+    "emptyTitle": "Hozircha tarix yo'q",
+    "emptyDescription": "Kimdir o'zgartirish kiritishi bilanoq bu yerda ko'rinadi.",
+    "by": "{name} tomonidan",
+    "actions": {
+      "create": "Yaratildi",
+      "update": "Yangilandi",
+      "delete": "O'chirildi",
+      "login": "Kirdi",
+      "adjust": "Tuzatildi"
+    }
+  },
+  "media": {
+    "count": "{count, plural, =0 {Fayl yo'q} one {# ta fayl} other {# ta fayl}}",
+    "add": "Rasm qo'shish",
+    "unavailable": "Yuklash uchun Supabase Storage kerak, u hali ulanmagan. Mavjud fayllarni tartiblash va tavsiflash mumkin.",
+    "empty": "Hozircha rasm yo'q.",
+    "primary": "Asosiy",
+    "altLabel": "Alt matni",
+    "altHint": "Rasmni ko'ra olmaydigan odam uchun tasvirlang. Tarjima qilinadi, chunki ekran o'quvchisi uni tashrifchining tilida o'qiydi.",
+    "moveEarlier": "Oldinga surish",
+    "moveLater": "Orqaga surish",
+    "setPrimary": "Asosiy qilish",
+    "remove": "O'chirish"
+  },
+  "form": {
+    "sections": {
+      "general": "Umumiy",
+      "media": "Media",
+      "pricing": "Narxlar",
+      "inventory": "Ombor",
+      "seo": "SEO",
+      "localization": "Tarjimalar",
+      "advanced": "Qo'shimcha",
+      "publish": "Chop etish"
+    }
   }
 }

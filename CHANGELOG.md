@@ -12,6 +12,134 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — Phase 3D: one architecture for every admin module
+
+**A module is now a record, not a screen.** `lib/admin/modules.ts` holds one
+entry per module — route, icon, navigation group, capability grants, form
+sections, whether it is localized, whether it carries SEO, whether it has an
+audit trail — and the sidebar, the mobile drawer, the breadcrumb root, the
+command palette, the route guard and the form's section order are all derived
+from it (**ADR-54**).
+
+`lib/admin/navigation.ts` used to hold a second hand-written copy of every
+module's href, icon and permission list. Two lists, one of them edited, is how a
+module ends up reachable from the command palette and missing from the sidebar
+for one role. It is now generated. **Verified**: the derived navigation was
+compared against the previous lists for all five system roles and the visible set
+is identical.
+
+**Capabilities, without inventing permissions** (**ADR-55**). Every screen asks
+the same seven questions — `view`, `create`, `update`, `delete`, `publish`,
+`settings`, `export` — and each module's `grants` table answers them by naming an
+existing database permission or `null`. `null` means the module does not offer
+that capability **to anybody**, super admin included, which is exactly true of
+`audit.create` and `inventory.delete`: a trigger refuses those writes regardless
+of policy (ADR-24, ADR-27), so they render as absent controls rather than buttons
+the insert would reject. ADR-44 still holds — not one permission was invented.
+
+`guardModule()` resolves the set once per route, server-side, and answers 404
+rather than 403, because a 403 confirms which module to go phishing for. Every
+client component takes the same `capabilities` prop, so the permission model
+never reaches the browser and a screen cannot invent its own rule.
+
+**One component kit** in `components/admin/module/`: `ModuleHeader`,
+`ModuleToolbar`, `ModuleSearch`, `ModuleFilters`, `ModuleColumnVisibility`,
+`ModuleTable`, `ModuleBulkActions`, `ModulePagination`, `ModuleStatusBadge`,
+`ModuleEmptyState`, `ModuleLoadingState`, `ModuleDeleteDialog`,
+`ModuleDetailsDrawer`, `ModuleForm`, `ModuleTabs`, `ModuleCard`,
+`ModuleMediaManager`, `ModuleImageUploader`, `ModuleLanguageTabs`,
+`ModuleSeoPanel`, `ModuleAuditHistory`, `ModulePermissionGuard`,
+`StatisticsCards` and the charts.
+
+The table was decomposed rather than rewritten: search, filters, column
+visibility, bulk actions and pagination are now components in their own right,
+because three admin screens are not tables — the category tree, the homepage
+composer, the page grid — and they needed the same search box without borrowing a
+table to get it. **Column visibility is new**; the last visible column cannot be
+hidden, because a table of checkboxes is unrecoverable without finding the menu
+again in an empty page.
+
+**One form layout** (**ADR-56**):
+`general → media → pricing → inventory → seo → localization → advanced → publish`.
+A module declares a subset and fills it in; it cannot reorder or invent a
+section, because `sections` is keyed by the canonical union and rendered in the
+order the contract defines. Section titles default to `admin.form.sections.*`, so
+"General" is translated once rather than shipping as "Basics", "Details" and
+"Overview" in three modules. The product editor was rebuilt onto it.
+
+**One media manager**, with localized alt text on every file, keyboard
+reordering (WCAG 2.2 SC 2.5.7 — a keyboard user has no drag at all), and a
+primary that is promoted rather than orphaned when the current one is removed.
+Uploading is disabled with the reason stated: Storage is not connected (**D-12**),
+and a file input that accepts a drop and discards it teaches an operator that the
+workflow works.
+
+**One settings architecture.** `lib/admin/settings-sections.ts` is the registry;
+the tab strip is derived from it. `shipping` and `taxes` are deliberately absent
+and the omission is documented at the definition: tax rate and delivery
+thresholds are already fields inside `commerce`, and Shipping in the sense a
+store needs — zones, rates, carriers — needs tables that arrive with Phase 8.
+Declaring the tab now would put an empty screen behind a real-looking label.
+
+**One folder convention** (**ADR-58**), spanning layers rather than collapsing
+them: screens in `components/admin/modules/<id>/`, data access in `services/`,
+mutations in `actions/`. The brief proposed colocating services and actions under
+each module; that is refused and recorded, because a service nested in a route
+folder is one somebody eventually imports React into, and scattered Server
+Actions make "is every one validated" unanswerable by inspection.
+
+### Added — canonical and social metadata in the schema
+
+The brief specifies canonical, Open Graph and Twitter fields in the shared SEO
+panel, and the schema had none of them. CLAUDE.md § 12 decides the order, so
+`20260805001000_social_metadata.sql` came first: `canonical_url`, `og_title`,
+`og_description`, `og_image_path` and a `twitter_card` enum on
+`product_`, `category_`, `brand_` and `content_page_translations`.
+
+Per locale, like `seo_title`, because a share card carries a headline and usually
+an image with words baked into it. Five columns rather than nine, with a
+resolution chain — `twitter:title → og_title → seo_title → the record's name` —
+so a store that writes nothing still emits complete cards and the same sentence
+is not stored in three places to drift apart (**ADR-57**). A relative
+`canonical_url` is rejected by a check constraint, proven by an assertion rather
+than assumed.
+
+`SeoFields` gained slug, canonical, Open Graph and card type; the panel renders
+them all and reads its card options from `Constants.public.Enums.twitter_card`,
+so the select cannot offer a value the insert rejects.
+
+### Added — admin architecture documentation
+
+**[docs/admin/](docs/admin/)** — why the modules share one architecture, a
+start-to-finish checklist for adding one, the component reference, how
+permissions resolve, and how localization works end to end. `adding-a-module.md`
+is written as a checklist against the registry, in the database-first order:
+migration, types, service, route, screens, strings, verify.
+
+### Verified
+
+`npm run db:verify` grew from 70 to **76 assertions** — the social metadata
+columns on all four translation tables, the `twitter_card` enum, and a rejected
+relative canonical. `npm run verify` passes: typecheck, lint, format,
+translations (14 namespaces × 3 locales, **747 keys each**), enums, 76 schema
+assertions and the production build. Heaviest admin route 195 kB first load,
+shared JS 103 kB, middleware 105 kB — unchanged by the refactor.
+
+### Not done — and why
+
+No new module was built. Orders, customers and reviews were explicitly out of
+scope for this phase, and orders in particular still needs a table that arrives
+with checkout.
+
+The runtime audits were **not** re-run. The i18n and admin audits in
+`PROJECT_STATUS.md` describe the pre-refactor panel; no browser was driven in
+this session (**D-20**, alongside **D-13**).
+
+Four components in the kit have no caller yet — the delete dialog, the details
+drawer, the loading state and the single-image uploader. They exist because the
+brief specifies them and the modules that need them are one phase away, but an
+unused component is an unproven one (**D-21**).
+
 ### Added — Phase 3C: localization is first-class in the database
 
 **K-15 is closed.** Migration `20260804001000_localization.sql` replaces the

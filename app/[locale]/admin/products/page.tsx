@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { Plus } from "lucide-react";
 
-import { ProductsTable } from "@/components/admin/catalog/products-table";
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { PageHeader } from "@/components/admin/shared/page-header";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import {
+  ModuleReadOnlyNotice,
+  guardModule,
+} from "@/components/admin/module/module-permission-guard";
+import { ProductsTable } from "@/components/admin/modules/products/products-table";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { can } from "@/lib/admin/permissions";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
 import { adminProducts, getAdminSession } from "@/mocks/admin";
@@ -25,25 +26,23 @@ export default async function AdminProductsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { permissions } = getAdminSession();
-
   // Defence in depth. The sidebar already hides this route from anyone without
   // the permission, but a URL typed directly must not render the list — hiding
   // navigation is a usability measure, not an access control.
-  if (!can(permissions, "products.read")) notFound();
+  const { permissions } = getAdminSession();
+  const capabilities = await guardModule("products", permissions);
 
   const t = await getTranslations("adminCatalog.products");
   const activeLocale = (await getLocale()) as Locale;
 
   return (
     <>
-      <AdminBreadcrumbs items={[{ label: t("title") }]} />
-
-      <PageHeader
+      <ModuleHeader
+        breadcrumbs={[{ label: t("title") }]}
         title={t("title")}
         description={t("subtitle", { count: adminProducts.length })}
         actions={
-          can(permissions, "products.create") ? (
+          capabilities.create ? (
             <Button asChild>
               <Link href={routes.admin.productNew}>
                 <Plus aria-hidden="true" />
@@ -53,6 +52,8 @@ export default async function AdminProductsPage({
           ) : null
         }
       />
+
+      <ModuleReadOnlyNotice id="products" permissions={permissions} />
 
       <ProductsTable
         products={adminProducts}
@@ -64,8 +65,7 @@ export default async function AdminProductsPage({
           value: brand.name,
           label: brand.name,
         }))}
-        canUpdate={can(permissions, "products.update")}
-        canDelete={can(permissions, "products.delete")}
+        capabilities={capabilities}
       />
     </>
   );

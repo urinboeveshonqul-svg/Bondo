@@ -9,11 +9,14 @@ import {
   Users,
 } from "lucide-react";
 
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { BarChart, LineChart } from "@/components/admin/shared/chart";
-import { PageHeader } from "@/components/admin/shared/page-header";
-import { StatCard } from "@/components/admin/shared/stat-card";
-import { StatusBadge } from "@/components/admin/shared/status-badge";
+import { BarChart, LineChart } from "@/components/admin/module/charts";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import { guardModule } from "@/components/admin/module/module-permission-guard";
+import {
+  StatCard,
+  StatisticsCards,
+} from "@/components/admin/module/statistics-cards";
+import { ModuleStatusBadge } from "@/components/admin/module/module-status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -70,6 +73,7 @@ export default async function AdminDashboardPage({
   const tAdmin = await getTranslations("admin");
   const activeLocale = (await getLocale()) as Locale;
   const { permissions } = getAdminSession();
+  await guardModule("dashboard", permissions);
 
   // Split the series in half to get a comparable previous period, rather than
   // inventing a "last month" figure that nothing produced.
@@ -111,9 +115,11 @@ export default async function AdminDashboardPage({
 
   return (
     <>
-      <AdminBreadcrumbs items={[{ label: t("title") }]} />
-
-      <PageHeader title={t("title")} description={t("subtitle")} />
+      <ModuleHeader
+        breadcrumbs={[{ label: t("title") }]}
+        title={t("title")}
+        description={t("subtitle")}
+      />
 
       <p className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
         <span className="font-medium text-foreground">
@@ -122,7 +128,7 @@ export default async function AdminDashboardPage({
         {t("notWired.body")}
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <StatisticsCards>
         {canSeeCommerce ? (
           <>
             <StatCard
@@ -175,7 +181,7 @@ export default async function AdminDashboardPage({
           icon={MessageSquare}
           footnote={t("pendingReviews.emptyDescription")}
         />
-      </div>
+      </StatisticsCards>
 
       {canSeeCommerce ? (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -289,9 +295,9 @@ export default async function AdminDashboardPage({
                           </span>
                         </td>
                         <td className="px-5 py-3">
-                          <StatusBadge tone={ORDER_TONE[order.status]}>
+                          <ModuleStatusBadge tone={ORDER_TONE[order.status]}>
                             {t(`orderStatus.${order.status}`)}
-                          </StatusBadge>
+                          </ModuleStatusBadge>
                         </td>
                         <td className="px-5 py-3 text-end tabular-nums">
                           {money(order.totalCents)}
@@ -341,7 +347,7 @@ export default async function AdminDashboardPage({
                           {record.sku}
                         </span>
                       </span>
-                      <StatusBadge
+                      <ModuleStatusBadge
                         tone={
                           record.quantityOnHand === 0 ? "danger" : "warning"
                         }
@@ -352,7 +358,7 @@ export default async function AdminDashboardPage({
                             activeLocale,
                           ),
                         })}
-                      </StatusBadge>
+                      </ModuleStatusBadge>
                     </li>
                   ))}
                 </ul>

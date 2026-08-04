@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 
-import { ProductForm } from "@/components/admin/catalog/product-form";
-import { AdminBreadcrumbs } from "@/components/admin/layout/admin-breadcrumbs";
-import { PageHeader } from "@/components/admin/shared/page-header";
-import { StatusBadge } from "@/components/admin/shared/status-badge";
+import { ProductForm } from "@/components/admin/modules/products/product-form";
+import { ModuleHeader } from "@/components/admin/module/module-header";
+import { ModuleAuditHistory } from "@/components/admin/module/module-audit-history";
+import { guardModule } from "@/components/admin/module/module-permission-guard";
+import { ModuleStatusBadge } from "@/components/admin/module/module-status-badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { can } from "@/lib/admin/permissions";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { getAdminProduct, getAdminSession } from "@/mocks/admin";
+import { auditEntries, getAdminProduct, getAdminSession } from "@/mocks/admin";
 import { brands, categories } from "@/mocks/catalog";
 import type { PageParams } from "@/types";
 import { publishState } from "@/utils/admin";
@@ -28,7 +28,7 @@ export default async function EditProductPage({
   setRequestLocale(locale);
 
   const { permissions } = getAdminSession();
-  if (!can(permissions, "products.read")) notFound();
+  const capabilities = await guardModule("products", permissions);
 
   const product = getAdminProduct(id);
   if (!product) notFound();
@@ -40,14 +40,11 @@ export default async function EditProductPage({
 
   return (
     <>
-      <AdminBreadcrumbs
-        items={[
+      <ModuleHeader
+        breadcrumbs={[
           { label: t("products.title"), href: routes.admin.products },
           { label: product.name[activeLocale] },
         ]}
-      />
-
-      <PageHeader
         title={product.name[activeLocale]}
         description={`${tAdmin("updatedBy", { name: product.updatedBy })} · ${formatDate(
           product.updatedAt,
@@ -55,7 +52,7 @@ export default async function EditProductPage({
         )}`}
         actions={
           <>
-            <StatusBadge
+            <ModuleStatusBadge
               tone={
                 state === "active"
                   ? "success"
@@ -67,7 +64,7 @@ export default async function EditProductPage({
               }
             >
               {tAdmin(`status.${state}`)}
-            </StatusBadge>
+            </ModuleStatusBadge>
             <Button asChild variant="outline">
               <Link href={routes.catalog.detail(product.slug)}>
                 {tAdmin("actions.view")}
@@ -79,7 +76,6 @@ export default async function EditProductPage({
 
       <ProductForm
         product={product}
-        canEdit={can(permissions, "products.update")}
         categoryOptions={categories.map((category) => ({
           value: category.slug,
           label: category.name[activeLocale],
@@ -88,6 +84,16 @@ export default async function EditProductPage({
           value: brand.name,
           label: brand.name,
         }))}
+        capabilities={capabilities}
+      />
+
+      {/* Declared `audit: true` in the registry, so the module shows its trail.
+          Filtered to this entity type rather than this row, because the mock log
+          predates the products it describes — with a service it is one
+          `entity_id` filter. */}
+      <ModuleAuditHistory
+        entries={auditEntries.filter((entry) => entry.entityType === "product")}
+        limit={5}
       />
     </>
   );
