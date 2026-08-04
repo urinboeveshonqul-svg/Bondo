@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { useLocale, useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ProductGrid } from "@/components/home/product-grid";
@@ -9,9 +8,8 @@ import { Link } from "@/i18n/navigation";
 import { localeAlternates } from "@/i18n/metadata";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { categories, products } from "@/mocks/catalog";
+import { listCategories, listProducts } from "@/services/catalog.reads";
 import type { PageParams, PageSearchParams } from "@/types";
-import type { ProductSummary } from "@/types/catalog";
 
 export async function generateMetadata({
   params,
@@ -31,48 +29,13 @@ export async function generateMetadata({
 /**
  * Catalog listing.
  *
- * Exists in this phase so the home page's product cards and category menu have
- * somewhere real to go — the project does not ship links to routes that 404.
- * It is deliberately the simple version: filter by category, filter by search
- * term, and an empty state. Sorting, faceting and keyset pagination arrive with
- * the catalog service, where they can be done in the query rather than in
- * memory (D-2).
- *
- * Filtering happens on the server from `searchParams`, so a filtered view is a
- * real URL that can be shared, bookmarked and opened in a new tab — in the
- * language the sharer was reading, because the locale is part of the path.
+ * **Filtering and search now happen in the database.** The previous version
+ * filtered an array in memory, which was fine for twelve fixtures and does not
+ * survive 50,000 products (**D-2**). The search term goes through the
+ * translation row for the reader's locale, using that locale's dictionary —
+ * so a Russian query is stemmed with the Russian dictionary rather than
+ * silently matching nothing.
  */
-function filterProducts(
-  category: string | undefined,
-  query: string | undefined,
-  locale: Locale,
-): ProductSummary[] {
-  let result: ProductSummary[] = products;
-
-  if (category) {
-    result = result.filter((p) => p.category === category);
-  }
-
-  if (query) {
-    // Matches the fields the database's `search_vector` weights highest — name,
-    // SKU and brand — so results here resemble what the real query returns.
-    //
-    // `toLocaleLowerCase(locale)` rather than `toLowerCase()`: the latter is
-    // locale-independent and gets Turkish-style dotted/dotless I wrong. It makes
-    // no difference for these three locales today, and costs nothing to get
-    // right before a fourth is added.
-    const needle = query.toLocaleLowerCase(locale);
-    result = result.filter(
-      (p) =>
-        p.name[locale].toLocaleLowerCase(locale).includes(needle) ||
-        p.sku.toLocaleLowerCase(locale).includes(needle) ||
-        p.brand.toLocaleLowerCase(locale).includes(needle),
-    );
-  }
-
-  return result;
-}
-
 export default async function ProductsPage({
   params,
   searchParams,
@@ -84,28 +47,23 @@ export default async function ProductsPage({
   setRequestLocale(locale);
 
   const resolved = await searchParams;
-  const category =
+  const categorySlug =
     typeof resolved.category === "string" ? resolved.category : undefined;
   const query = typeof resolved.q === "string" ? resolved.q : undefined;
 
-  return <ProductsListing category={category} query={query} />;
-}
+  const activeLocale = locale as Locale;
+  const t = await getTranslations("catalog");
 
-function ProductsListing({
-  category,
-  query,
-}: {
-  category: string | undefined;
-  query: string | undefined;
-}) {
-  const t = useTranslations("catalog");
-  const locale = useLocale() as Locale;
+  const [categories, results] = await Promise.all([
+    listCategories(activeLocale),
+    listProducts(activeLocale, { categorySlug, query }),
+  ]);
 
-  const activeCategory = categories.find((c) => c.slug === category);
-  const results = filterProducts(category, query, locale);
-
-  const heading = activeCategory ? activeCategory.name[locale] : t("title");
-  const description = activeCategory?.description[locale];
+  const activeCategory = categories.find((c) => c.slug === categorySlug);
+  const heading = activeCategory
+    ? activeCategory.name[activeLocale]
+    : t("title");
+  const description = activeCategory?.description[activeLocale];
 
   return (
     <Container className="py-10 sm:py-14">
@@ -127,18 +85,22 @@ function ProductsListing({
         aria-label={t("filterByCategory")}
         className="mb-8 flex flex-wrap gap-2"
       >
-        <Button asChild size="sm" variant={category ? "outline" : "default"}>
+        <Button
+          asChild
+          size="sm"
+          variant={categorySlug ? "outline" : "default"}
+        >
           <Link href={routes.catalog.index}>{t("all")}</Link>
         </Button>
-        {categories.map((c) => (
+        {categories.map((category) => (
           <Button
-            key={c.slug}
+            key={category.slug}
             asChild
             size="sm"
-            variant={category === c.slug ? "default" : "outline"}
+            variant={categorySlug === category.slug ? "default" : "outline"}
           >
-            <Link href={routes.catalog.byCategory(c.slug)}>
-              {c.name[locale]}
+            <Link href={routes.catalog.byCategory(category.slug)}>
+              {category.name[activeLocale]}
             </Link>
           </Button>
         ))}

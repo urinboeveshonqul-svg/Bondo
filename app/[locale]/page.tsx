@@ -1,5 +1,4 @@
-import { useLocale, useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { BrandStrip } from "@/components/home/brand-strip";
 import { Hero } from "@/components/home/hero";
@@ -10,28 +9,25 @@ import { ValueProps } from "@/components/home/value-props";
 import { Section } from "@/components/layout/section";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import type { PageParams } from "@/types";
 import {
-  brands,
-  categories,
-  dealProducts,
-  featuredProducts,
-  getProductsByCategory,
-  reviews,
-} from "@/mocks/catalog";
+  listBrands,
+  listCategories,
+  listDealProducts,
+  listFeaturedProducts,
+  listProductsByCategory,
+} from "@/services/catalog.reads";
+import type { PageParams } from "@/types";
 
 /**
  * Home page.
  *
- * A Server Component with no data dependencies, so it prerenders as static HTML
- * at build time — once per locale, three times in total. The only JavaScript the
- * visitor downloads is for the header's interactive controls and the newsletter
- * form; the sections themselves ship as markup (ADR-6).
+ * Every section now reads through `services/catalog.reads` — no page in the
+ * storefront imports `mocks/` any more. The components below are unchanged:
+ * the facade maps database rows onto the same view models they already took,
+ * which is what `types/catalog.ts` existed to make possible.
  *
- * Every section reads from `mocks/catalog` today. When the catalog service
- * lands, each `getProductsByCategory` call becomes an awaited service call and
- * nothing else on this page changes: the components are typed against
- * `types/catalog.ts`, not against the mock module.
+ * The rails are fetched **concurrently**. Sequential awaits would make the page
+ * as slow as the sum of its sections rather than its slowest one.
  */
 export default async function HomePage({
   params,
@@ -39,27 +35,27 @@ export default async function HomePage({
   params: PageParams<{ locale: string }>;
 }) {
   const { locale } = await params;
-
-  // Keeps this page static rather than dynamic. Without it, reading a
-  // translation below opts the whole route into dynamic rendering.
   setRequestLocale(locale);
 
-  return <HomeSections />;
-}
+  const activeLocale = locale as Locale;
+  const [t, tCommon] = await Promise.all([
+    getTranslations("home"),
+    getTranslations("common"),
+  ]);
 
-/**
- * Split out because the sections read translations with `useTranslations`,
- * which is a hook and cannot be called from the `async` component above.
- */
-function HomeSections() {
-  const t = useTranslations("home");
-  const tCommon = useTranslations("common");
-  const locale = useLocale() as Locale;
+  const [categories, featured, deals, brands] = await Promise.all([
+    listCategories(activeLocale),
+    listFeaturedProducts(activeLocale),
+    listDealProducts(activeLocale),
+    listBrands(),
+  ]);
 
-  const categoryRails = categories.map((category) => ({
-    category,
-    products: getProductsByCategory(category.slug),
-  }));
+  const rails = await Promise.all(
+    categories.map(async (category) => ({
+      category,
+      products: await listProductsByCategory(activeLocale, category.slug),
+    })),
+  );
 
   return (
     <>
@@ -72,28 +68,21 @@ function HomeSections() {
         href={routes.catalog.index}
         linkLabel={tCommon("viewAllProducts")}
       >
-        <ProductGrid products={featuredProducts} />
+        <ProductGrid products={featured} />
       </Section>
 
       <BrandStrip brands={brands} />
 
-      {categoryRails.map(({ category, products }, index) => (
+      {rails.map(({ category, products }, index) => (
         <Section
           key={category.slug}
-          // The slug, not the translated name: a section id has to be stable
-          // across languages, and `category.name[locale]` would produce a
-          // different anchor per locale for the same section.
           id={category.slug}
-          title={category.name[locale]}
-          description={category.description[locale]}
+          title={category.name[activeLocale]}
+          description={category.description[activeLocale]}
           href={routes.catalog.byCategory(category.slug)}
-          // Uzbek and Russian both inflect the category name after "All", and
-          // lowercasing it is an English-only convention — so the whole phrase
-          // is a translated template rather than a concatenation.
           linkLabel={t("category.linkLabel", {
-            category: category.name[locale],
+            category: category.name[activeLocale],
           })}
-          // Alternating surfaces separate the rails without adding rules.
           muted={index % 2 === 1}
         >
           <ProductGrid products={products} />
@@ -109,7 +98,7 @@ function HomeSections() {
         muted
       >
         <ProductGrid
-          products={dealProducts}
+          products={deals}
           emptyTitle={t("deals.emptyTitle")}
           emptyDescription={t("deals.emptyDescription")}
         />
@@ -117,7 +106,13 @@ function HomeSections() {
 
       <ValueProps />
 
-      <Reviews reviews={reviews} />
+      {/*
+        Reviews are still fixtures: there is no `reviews` table (K-17). Passing
+        an empty list would render the section's empty state, which is a
+        truthful "no reviews yet" — but the section is marketing copy standing
+        in for real reviews, so it keeps its fixtures until the table exists.
+      */}
+      <Reviews reviews={(await import("@/mocks/catalog")).reviews} />
 
       <NewsletterSection />
     </>

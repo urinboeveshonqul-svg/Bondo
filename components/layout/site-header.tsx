@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
 import { siteConfig } from "@/lib/site-config";
-import { categories } from "@/mocks/catalog";
+import type { Category } from "@/types/catalog";
 
 /**
  * Site header.
@@ -28,7 +28,12 @@ import { categories } from "@/mocks/catalog";
  * The account control is a button rather than a link: sign-in does not exist
  * until the auth phase, and the project does not ship links to routes that 404.
  */
-export function SiteHeader() {
+/**
+ * Categories are passed in by the layout rather than fetched here: the header
+ * is rendered on every page, and a component that fetches its own navigation
+ * turns one query into one per render tree.
+ */
+export function SiteHeader({ categories }: { categories: Category[] }) {
   const t = useTranslations("header");
   const tCommon = useTranslations("common");
 

@@ -1,7 +1,6 @@
 import { Fragment } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Heart, ShieldCheck, ShoppingCart, Truck } from "lucide-react";
 
@@ -17,15 +16,13 @@ import { Separator } from "@/components/ui/separator";
 import { Link } from "@/i18n/navigation";
 import { localeAlternates } from "@/i18n/metadata";
 import { routes } from "@/lib/routes";
-import { locales, type Locale } from "@/lib/site-config";
+import type { Locale } from "@/lib/site-config";
 import {
-  categories,
   getProductBySlug,
-  getProductsByCategory,
-  products,
-} from "@/mocks/catalog";
+  listCategories,
+  listProductsByCategory,
+} from "@/services/catalog.reads";
 import type { PageParams } from "@/types";
-import type { Product } from "@/types/catalog";
 import { getStockLevel } from "@/utils/catalog";
 import { formatPrice } from "@/utils/format";
 
@@ -35,63 +32,41 @@ const FREE_DELIVERY_THRESHOLD_CENTS = 15000;
 /**
  * Product detail.
  *
- * `generateStaticParams` prerenders every product in every locale at build time
- * — 12 products × 3 languages = 36 routes. That is right for a fixed mock set
- * and stays right for a real catalog of this size; at 50,000 products it becomes
- * `dynamicParams` with on-demand ISR, which is a change to this function alone.
- * Note that the multiplier is the reason the threshold arrives sooner than it
- * would have with one language.
- */
-export function generateStaticParams() {
-  return locales.flatMap((locale) =>
-    products.map((product) => ({ locale, slug: product.slug })),
-  );
-}
-
-/**
- * A slug outside `generateStaticParams` is a 404, decided before rendering.
+ * **Rendered on demand, no longer prerendered.** `generateStaticParams` used to
+ * enumerate every product at build time; with the catalog in the database that
+ * would mean querying during the build, which fails when no project is reachable
+ * and does not scale to 50,000 products in any case. On-demand rendering plus
+ * ISR is where a catalog this size belongs — the revalidation window is the one
+ * decision left, and it wants a real project to measure against.
  *
- * This is not just an optimisation — it is what makes the status code correct.
- * `products/loading.tsx` puts a Suspense boundary above this route, so with
- * `dynamicParams` left at its default the response shell flushes with **200**
- * before the page body runs, and the `notFound()` below can no longer change
- * it. The visitor got the right page and Google got a soft 404: an unknown
- * product returning 200 invites the URL into the index.
- *
- * Refusing unknown params up front means Next.js answers 404 without starting
- * to stream. Correct for a fully prerendered catalog; when the catalog outgrows
- * build-time prerendering this becomes `true` plus on-demand ISR, and the soft
- * 404 has to be solved again — most likely by moving `loading.tsx` off this
- * route so nothing flushes before the lookup.
+ * The slug is **per locale** now (ADR-52), so the lookup is `(locale, slug)`.
  */
-export const dynamicParams = false;
-
 export async function generateMetadata({
   params,
 }: {
   params: PageParams<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { locale, slug } = await params;
-  const product = getProductBySlug(slug);
   const t = await getTranslations({ locale, namespace: "product" });
+  const product = await getProductBySlug(locale as Locale, slug);
 
   if (!product) return { title: t("notFound") };
 
-  const description = product.shortDescription[locale as Locale];
+  const activeLocale = locale as Locale;
+  const description = product.shortDescription[activeLocale];
 
   return {
-    title: product.name[locale as Locale],
+    title: product.name[activeLocale],
     description,
     // Per-page canonical and `hreflang`, never on the root layout — a root
     // canonical would tell crawlers the whole catalog duplicates one URL
-    // (ADR-15). The slug is shared across locales, so the same product in three
-    // languages is three URLs that correctly point at each other.
+    // (ADR-15).
     alternates: localeAlternates(
-      locale as Locale,
+      activeLocale,
       routes.catalog.detail(product.slug),
     ),
     openGraph: {
-      title: product.name[locale as Locale],
+      title: product.name[activeLocale],
       description,
       type: "website",
     },
@@ -106,27 +81,22 @@ export default async function ProductPage({
   const { locale, slug } = await params;
   setRequestLocale(locale);
 
-  const product = getProductBySlug(slug);
+  const activeLocale = locale as Locale;
+  const product = await getProductBySlug(activeLocale, slug);
   if (!product) notFound();
 
-  return <ProductDetail product={product} />;
-}
-
-function ProductDetail({ product }: { product: Product }) {
-  const t = useTranslations("product");
-  const tCommon = useTranslations("common");
-  const locale = useLocale() as Locale;
+  const [t, tCommon, categories, siblings] = await Promise.all([
+    getTranslations("product"),
+    getTranslations("common"),
+    listCategories(activeLocale),
+    listProductsByCategory(activeLocale, product.category),
+  ]);
 
   const isOutOfStock = getStockLevel(product.stock) === "out-of-stock";
-  const related = getProductsByCategory(product.category)
-    .filter((p) => p.slug !== product.slug)
-    .slice(0, 4);
+  const related = siblings.filter((p) => p.slug !== product.slug).slice(0, 4);
 
-  // The category's translated name, looked up by slug. The old code derived a
-  // label from the slug itself (`"gaming-pcs".replace(/-/g, " ")`), which is
-  // English-shaped and produced "gaming pcs" in all three languages.
   const categoryName =
-    categories.find((c) => c.slug === product.category)?.name[locale] ??
+    categories.find((c) => c.slug === product.category)?.name[activeLocale] ??
     product.category;
 
   // Specs arrive flat and are grouped for display, matching how
@@ -169,14 +139,14 @@ function ProductDetail({ product }: { product: Product }) {
           </li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="font-medium text-foreground">
-            {product.name[locale]}
+            {product.name[activeLocale]}
           </li>
         </ol>
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
         <ProductImage
-          name={product.imageAlt[locale]}
+          name={product.imageAlt[activeLocale]}
           brand={product.brand}
           className="rounded-xl border"
           priority
@@ -188,10 +158,10 @@ function ProductDetail({ product }: { product: Product }) {
               {product.brand}
             </p>
             <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {product.name[locale]}
+              {product.name[activeLocale]}
             </h1>
             <p className="text-pretty text-muted-foreground">
-              {product.shortDescription[locale]}
+              {product.shortDescription[activeLocale]}
             </p>
           </div>
 
@@ -235,7 +205,10 @@ function ProductDetail({ product }: { product: Product }) {
             <li className="flex items-center gap-2">
               <Truck className="size-4 shrink-0" aria-hidden="true" />
               {t("freeDelivery", {
-                amount: formatPrice(FREE_DELIVERY_THRESHOLD_CENTS, locale),
+                amount: formatPrice(
+                  FREE_DELIVERY_THRESHOLD_CENTS,
+                  activeLocale,
+                ),
               })}
             </li>
           </ul>
@@ -251,7 +224,7 @@ function ProductDetail({ product }: { product: Product }) {
             {t("about")}
           </h2>
           <p className="text-pretty text-muted-foreground">
-            {product.description[locale]}
+            {product.description[activeLocale]}
           </p>
         </section>
 
@@ -265,7 +238,7 @@ function ProductDetail({ product }: { product: Product }) {
           <div className="overflow-hidden rounded-xl border">
             <table className="w-full text-sm">
               <caption className="sr-only">
-                {t("specsCaption", { name: product.name[locale] })}
+                {t("specsCaption", { name: product.name[activeLocale] })}
               </caption>
               <tbody>
                 {Object.entries(specGroups).map(([group, specs]) => (
@@ -294,7 +267,7 @@ function ProductDetail({ product }: { product: Product }) {
                               three languages. See `ProductSpec`. */}
                           {typeof spec.value === "string"
                             ? spec.value
-                            : spec.value[locale]}
+                            : spec.value[activeLocale]}
                           {spec.unit ? ` ${spec.unit}` : ""}
                         </td>
                       </tr>

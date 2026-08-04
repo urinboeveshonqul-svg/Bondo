@@ -12,7 +12,13 @@ import { localeAlternates } from "@/i18n/metadata";
 import { routing } from "@/i18n/routing";
 import { env } from "@/lib/env";
 import { routes } from "@/lib/routes";
-import { localeConfig, locales, siteConfig } from "@/lib/site-config";
+import {
+  localeConfig,
+  locales,
+  siteConfig,
+  type Locale,
+} from "@/lib/site-config";
+import { listCategories } from "@/services/catalog.reads";
 import "@/styles/globals.css";
 
 /**
@@ -131,6 +137,10 @@ export default async function LocaleLayout({
 
   const t = await getTranslations("common");
 
+  // Fetched once, here, and handed to both the header and the footer. Each
+  // fetching for itself would be two identical queries on every page.
+  const categories = await listCategories(locale as Locale);
+
   // The font variables belong on <html>, not <body>: globals.css applies
   // `font-sans` to the html element, so the custom property has to be defined
   // there or it resolves to nothing and the browser falls back to a serif.
@@ -162,11 +172,11 @@ export default async function LocaleLayout({
               {t("skipToContent")}
             </a>
 
-            <SiteHeader />
+            <SiteHeader categories={categories} />
             <main id="main" className="flex-1">
               {children}
             </main>
-            <SiteFooter />
+            <SiteFooter categories={categories} />
             <Toaster />
           </ThemeProvider>
         </NextIntlClientProvider>

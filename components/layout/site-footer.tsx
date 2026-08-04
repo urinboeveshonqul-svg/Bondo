@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Link } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
 import { siteConfig, type Locale } from "@/lib/site-config";
-import { categories } from "@/mocks/catalog";
+import type { Category } from "@/types/catalog";
 
 /**
  * Site footer.
@@ -46,7 +46,8 @@ const COMPANY_ITEMS = ["about", "buildService", "business", "careers"] as const;
  */
 const SOCIAL_CHANNELS = ["X", "YouTube", "LinkedIn", "GitHub"] as const;
 
-export function SiteFooter() {
+/** Categories come from the layout — see the note on `SiteHeader`. */
+export function SiteFooter({ categories }: { categories: Category[] }) {
   const t = useTranslations("footer");
   const tCommon = useTranslations("common");
   const locale = useLocale() as Locale;
