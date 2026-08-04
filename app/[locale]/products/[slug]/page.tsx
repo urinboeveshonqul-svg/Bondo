@@ -17,10 +17,12 @@ import { Link } from "@/i18n/navigation";
 import { localeAlternates } from "@/i18n/metadata";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
+import { CatalogUnavailable } from "@/components/shared/catalog-unavailable";
 import {
   getProductBySlug,
   listCategories,
   listProductsByCategory,
+  readCatalog,
 } from "@/services/catalog.reads";
 import type { PageParams } from "@/types";
 import { getStockLevel } from "@/utils/catalog";
@@ -82,14 +84,31 @@ export default async function ProductPage({
   setRequestLocale(locale);
 
   const activeLocale = locale as Locale;
-  const product = await getProductBySlug(activeLocale, slug);
-  if (!product) notFound();
 
-  const [t, tCommon, categories, siblings] = await Promise.all([
+  // Two different failures with two different answers. A slug that matches no
+  // row is a 404 — `getProductBySlug` returns null and `notFound()` is raised
+  // inside the wrapper, where `unstable_rethrow` lets it through untouched. An
+  // unreachable catalog is not a 404, so it renders the unavailable state
+  // rather than telling a crawler this product no longer exists (**K-19**).
+  const data = await readCatalog(async () => {
+    const product = await getProductBySlug(activeLocale, slug);
+    if (!product) notFound();
+
+    const [categories, siblings] = await Promise.all([
+      listCategories(activeLocale),
+      listProductsByCategory(activeLocale, product.category),
+    ]);
+
+    return { product, categories, siblings };
+  });
+
+  if (!data) return <CatalogUnavailable />;
+
+  const { product, categories, siblings } = data;
+
+  const [t, tCommon] = await Promise.all([
     getTranslations("product"),
     getTranslations("common"),
-    listCategories(activeLocale),
-    listProductsByCategory(activeLocale, product.category),
   ]);
 
   const isOutOfStock = getStockLevel(product.stock) === "out-of-stock";

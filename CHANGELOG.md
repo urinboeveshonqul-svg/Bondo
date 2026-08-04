@@ -12,6 +12,83 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Fixed — every route returned 500 in production (K-18)
+
+**One query in a layout took down the entire site.**
+`app/[locale]/layout.tsx` awaited `listCategories()` to build the header's
+category menu. That layout renders on every route beneath it, and **a layout's
+own `error.tsx` cannot catch it** — `app/[locale]/error.tsx` renders _inside_
+the layout, so React escalated past it to `app/global-error.tsx`, which replaces
+the whole document. An unreachable database therefore returned 500 for `/`,
+`/uz`, `/ru`, `/en`, every product page **and the 404 page**, which is why it
+looked like a localization bug and was not one.
+
+Found by reproduction, not by reading: `next start` against the same
+configuration, then a probe of `/uz/definitely-not-a-page` — a route whose page
+only calls `notFound()` — which returned 500 with exactly one logged exception.
+That isolated the layout as the sole cause.
+
+`listNavigationCategories()` replaces it: the same read, but chrome-scoped and
+unable to throw. The rule it encodes is that **page content fails loudly and
+chrome degrades** — a category menu is navigation, and losing a dropdown must
+not cost a visitor the whole site, including its ability to serve a 404.
+
+**A second bug was introduced and caught during the same fix.** The first
+version of that catch swallowed Next.js's `DynamicServerError` — the control-flow
+signal `cookies()` raises during prerendering so a route can bail out to dynamic
+rendering. Catching it told the build "no categories" instead of "render on
+demand", and an empty menu was baked into the prerendered HTML permanently. Both
+catches now call `unstable_rethrow()` first, exactly as `createAction()` does for
+`redirect()` and `notFound()` (ADR-13). Caught by rebuilding and reading the
+log, not by reasoning about it.
+
+### Fixed — a page that throws replaces the whole document (K-19)
+
+With the layout fixed, `/uz` still answered with the unbranded global boundary,
+and `/uz/products` answered **200 with an empty skeleton** — a permanent soft
+error, the exact failure ADR-41 exists to prevent, applied to exceptions instead
+of 404s.
+
+Probed rather than assumed: a bare `throw new Error()` at the top of the home
+page produced `<html id="__next_error__">`, never `app/[locale]/error.tsx`. An
+exception in a Server Component aborts the shell before it flushes, so there is
+no document for the route boundary to render into; and the only thing that
+changes that — a Suspense boundary above the throw, which `products/loading.tsx`
+provides — converts the 500 into a 200 that lies.
+
+So storefront pages no longer throw. They read through `readCatalog()`, which
+returns `null` when the catalog is unreachable, and render `CatalogUnavailable`:
+localized, inside the site chrome, with the navigation working and the real
+exception in the server log with its stack.
+
+It does **not** show fixtures, and it does **not** say "no products" — an empty
+catalog and an unreachable one are different facts and only one of them is true.
+A slug that matches no row is still a 404: `notFound()` passes through
+`unstable_rethrow()` untouched.
+
+### Verified
+
+Against `next start` with an unreachable database, before and after:
+
+| Route                    | Before           | After                         |
+| ------------------------ | ---------------- | ----------------------------- |
+| `/`, `/uz`, `/ru`, `/en` | 500 global error | 200, localized catalog notice |
+| `/uz/products`           | 200, empty shell | 200, localized catalog notice |
+| `/uz/products/<slug>`    | 500 global error | 200, localized catalog notice |
+| `/uz/<unknown>`          | 500 global error | 404                           |
+
+### Found — the localized 404 does not render in production (K-20)
+
+`/uz/<unknown>` returns the correct 404 **status** with the framework's built-in
+document: no `<html lang>`, no chrome, no translated copy. The same URL under
+`next dev` renders `app/[locale]/not-found.tsx` correctly. Same shell-abort
+family as K-19, and pre-existing — it was unobservable because K-18 made every
+URL 500 before it could 404.
+
+Not fixed in this pass, deliberately: the obvious remedy reverses ADR-42, and a
+speculative change to the root layout is how the 200-with-empty-body defect got
+introduced in the first place.
+
 ### Added — Phase 3D: one architecture for every admin module
 
 **A module is now a record, not a screen.** `lib/admin/modules.ts` holds one

@@ -10,5 +10,9 @@
     "description": "We hit an unexpected error. Trying again often resolves it.",
     "reference": "Reference: {digest}",
     "tryAgain": "Try again"
+  },
+  "catalogUnavailable": {
+    "title": "We could not load the catalogue",
+    "description": "The product database did not answer. Nothing is wrong with your connection — this is on our side, and it is already logged. Please try again in a few minutes."
   }
 }

@@ -18,7 +18,7 @@ import {
   siteConfig,
   type Locale,
 } from "@/lib/site-config";
-import { listCategories } from "@/services/catalog.reads";
+import { listNavigationCategories } from "@/services/catalog.reads";
 import "@/styles/globals.css";
 
 /**
@@ -139,7 +139,16 @@ export default async function LocaleLayout({
 
   // Fetched once, here, and handed to both the header and the footer. Each
   // fetching for itself would be two identical queries on every page.
-  const categories = await listCategories(locale as Locale);
+  //
+  // `listNavigationCategories` and not `listCategories`, and the difference is
+  // load-bearing: **a layout may not throw.** `app/[locale]/error.tsx` renders
+  // inside this layout, so it cannot catch an error thrown by it — React
+  // escalates to `app/global-error.tsx` and replaces the whole document. When
+  // this line called the throwing read, one unreachable query returned 500 for
+  // every URL on the site, the 404 page included (**K-18**). The menu now
+  // degrades to empty and the failure is logged; pages still fail loudly on
+  // their own content.
+  const categories = await listNavigationCategories(locale as Locale);
 
   // The font variables belong on <html>, not <body>: globals.css applies
   // `font-sans` to the html element, so the custom property has to be defined

@@ -10,5 +10,9 @@
     "description": "Kutilmagan xatolik yuz berdi. Ko'pincha qayta urinish yordam beradi.",
     "reference": "Xatolik kodi: {digest}",
     "tryAgain": "Qayta urinish"
+  },
+  "catalogUnavailable": {
+    "title": "Katalogni yuklab bo'lmadi",
+    "description": "Mahsulotlar ma'lumotlar bazasi javob bermadi. Aloqangizda muammo yo'q — bu bizning tomondagi nosozlik va u allaqachon qayd etildi. Bir necha daqiqadan so'ng qayta urinib ko'ring."
   }
 }

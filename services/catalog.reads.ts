@@ -1,5 +1,7 @@
 import "server-only";
 
+import { unstable_rethrow } from "next/navigation";
+
 import { createClient } from "@/supabase/server";
 import { pick } from "@/lib/i18n/translations";
 import { logger } from "@/lib/logger";
@@ -59,6 +61,13 @@ async function withFixtureFallback<T>(
   try {
     return await read();
   } catch (error) {
+    // Next.js control-flow signals are thrown, not returned — including
+    // `DynamicServerError`, which `cookies()` raises during prerendering so the
+    // route can bail out to dynamic rendering. Returning fixtures for one would
+    // prerender a page that must not be prerendered. Production rethrows
+    // everything anyway; this is what makes development behave the same way.
+    unstable_rethrow(error);
+
     if (IS_PRODUCTION) throw error;
 
     logger.warn(
@@ -305,4 +314,105 @@ export async function listProductsByCategory(
   categorySlug: string,
 ): Promise<ProductSummary[]> {
   return listProducts(locale, { categorySlug });
+}
+
+/**
+ * Runs a page's catalog reads, returning `null` when the catalog is unavailable.
+ *
+ * **Why a page may not simply `await` and throw.** An exception escaping a
+ * Server Component during the initial render aborts the shell before it flushes,
+ * and React cannot then render the segment's `error.tsx` into a document that
+ * does not exist — Next falls back to `app/global-error.tsx`, which replaces the
+ * whole page with an unbranded, unlocalized document. Verified by probe: a bare
+ * `throw new Error()` at the top of `app/[locale]/page.tsx` produced
+ * `<html id="__next_error__">`, never the route boundary.
+ *
+ * The one thing that changes that is a Suspense boundary above the throw — and
+ * that is worse, not better: `app/[locale]/products/loading.tsx` opens one, so
+ * the failing listing flushed its skeleton and answered **200** with no content
+ * at all. A permanent 200 on a broken page is the soft-error ADR-41 exists to
+ * prevent, applied to errors instead of 404s.
+ *
+ * So the failure is handled where it happens. A page that gets `null` renders
+ * `CatalogUnavailable` — inside its own chrome, in the visitor's language, with
+ * the navigation still working — and the real exception goes to the server log
+ * with its stack.
+ *
+ * **This is not the fixture fallback and does not weaken it.** Nothing here
+ * renders mock data, and nothing claims the shop is empty: "we could not load
+ * the catalog" and "we have no products" are different sentences, and only the
+ * first one is true when the database is unreachable.
+ */
+export async function readCatalog<T>(
+  read: () => Promise<T>,
+): Promise<T | null> {
+  try {
+    return await read();
+  } catch (error) {
+    // Control flow first, always — `notFound()` from a page inside `read` is a
+    // 404 and must not be turned into "the catalog is down" (ADR-13).
+    unstable_rethrow(error);
+
+    logger.error(
+      "[catalog] page read failed — rendering the unavailable state",
+      error,
+    );
+
+    return null;
+  }
+}
+
+/**
+ * Categories for the site **chrome** — the header's menu and the footer column.
+ *
+ * This is the one read in the storefront that **cannot throw**, and the
+ * exception is deliberate rather than a softening of the rule above it.
+ *
+ * `app/[locale]/layout.tsx` renders on every route under `/[locale]`: the home
+ * page, the catalog, the admin, the account pages and the 404. An exception
+ * thrown in a layout **cannot be caught by the error boundary beside it** —
+ * `app/[locale]/error.tsx` renders *inside* this layout, so React escalates
+ * past it to `app/global-error.tsx`, which replaces the entire document. One
+ * failing query in the navigation menu therefore returned 500 for every URL on
+ * the site, including pages that need no database at all. That is what happened;
+ * see the entry in PROJECT_STATUS.md § Known issues (**K-18**).
+ *
+ * So the rule is scoped by what the data is *for*:
+ *
+ *  * **Page content fails loudly.** A catalog page that cannot reach the catalog
+ *    is broken and says so, in the route boundary, inside the site chrome. It
+ *    must not render an empty shop, because "we have no products" and "we cannot
+ *    reach the database" are different sentences and only one of them is true.
+ *  * **Chrome degrades.** A category menu is navigation, not content. Losing it
+ *    costs a visitor a dropdown; taking the document down with it costs them the
+ *    whole site, and costs the 404 page its ability to be a 404.
+ *
+ * The failure is logged at `error`, not swallowed at `warn`: an empty menu in
+ * production means the database is unreachable, and nothing else on the page
+ * will say so.
+ */
+export async function listNavigationCategories(
+  locale: Locale,
+): Promise<Category[]> {
+  try {
+    return await listCategories(locale);
+  } catch (error) {
+    // **Before anything else.** Next.js signals control flow by throwing:
+    // `notFound()`, `redirect()`, and — the one that bit here —
+    // `DynamicServerError`, raised when `cookies()` is reached during static
+    // prerendering so the route can bail out to dynamic rendering. Catching it
+    // told the build "no categories" instead of "render this on demand", and
+    // the empty menu was then baked into the prerendered HTML permanently.
+    // Same failure as ADR-13, one layer down. Caught by rebuilding and reading
+    // the log, not by reasoning.
+    unstable_rethrow(error);
+
+    logger.error(
+      "[catalog] navigation categories unavailable — rendering the chrome without the menu",
+      error,
+      { locale },
+    );
+
+    return [];
+  }
 }

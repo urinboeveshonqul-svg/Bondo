@@ -8,7 +8,12 @@ import { Link } from "@/i18n/navigation";
 import { localeAlternates } from "@/i18n/metadata";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { listCategories, listProducts } from "@/services/catalog.reads";
+import { CatalogUnavailable } from "@/components/shared/catalog-unavailable";
+import {
+  listCategories,
+  listProducts,
+  readCatalog,
+} from "@/services/catalog.reads";
 import type { PageParams, PageSearchParams } from "@/types";
 
 export async function generateMetadata({
@@ -54,10 +59,21 @@ export default async function ProductsPage({
   const activeLocale = locale as Locale;
   const t = await getTranslations("catalog");
 
-  const [categories, results] = await Promise.all([
-    listCategories(activeLocale),
-    listProducts(activeLocale, { categorySlug, query }),
-  ]);
+  // See `readCatalog` — a throw here would abort the shell, and the Suspense
+  // boundary that `loading.tsx` opens above this route would turn that into a
+  // permanent **200** with an empty skeleton (**K-19**).
+  const data = await readCatalog(async () => {
+    const [categories, results] = await Promise.all([
+      listCategories(activeLocale),
+      listProducts(activeLocale, { categorySlug, query }),
+    ]);
+
+    return { categories, results };
+  });
+
+  if (!data) return <CatalogUnavailable />;
+
+  const { categories, results } = data;
 
   const activeCategory = categories.find((c) => c.slug === categorySlug);
   const heading = activeCategory

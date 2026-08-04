@@ -9,12 +9,14 @@ import { ValueProps } from "@/components/home/value-props";
 import { Section } from "@/components/layout/section";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
+import { CatalogUnavailable } from "@/components/shared/catalog-unavailable";
 import {
   listBrands,
   listCategories,
   listDealProducts,
   listFeaturedProducts,
   listProductsByCategory,
+  readCatalog,
 } from "@/services/catalog.reads";
 import type { PageParams } from "@/types";
 
@@ -43,19 +45,31 @@ export default async function HomePage({
     getTranslations("common"),
   ]);
 
-  const [categories, featured, deals, brands] = await Promise.all([
-    listCategories(activeLocale),
-    listFeaturedProducts(activeLocale),
-    listDealProducts(activeLocale),
-    listBrands(),
-  ]);
+  // Wrapped, because an exception escaping here does not reach
+  // `app/[locale]/error.tsx` — it aborts the shell and Next replaces the whole
+  // document with the global boundary (**K-19**). `null` means the catalog is
+  // unreachable, which is a different thing from the catalog being empty.
+  const data = await readCatalog(async () => {
+    const [categories, featured, deals, brands] = await Promise.all([
+      listCategories(activeLocale),
+      listFeaturedProducts(activeLocale),
+      listDealProducts(activeLocale),
+      listBrands(),
+    ]);
 
-  const rails = await Promise.all(
-    categories.map(async (category) => ({
-      category,
-      products: await listProductsByCategory(activeLocale, category.slug),
-    })),
-  );
+    const rails = await Promise.all(
+      categories.map(async (category) => ({
+        category,
+        products: await listProductsByCategory(activeLocale, category.slug),
+      })),
+    );
+
+    return { featured, deals, brands, rails };
+  });
+
+  if (!data) return <CatalogUnavailable />;
+
+  const { featured, deals, brands, rails } = data;
 
   return (
     <>
