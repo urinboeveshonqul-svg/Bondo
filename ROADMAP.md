@@ -261,11 +261,18 @@ migration:
 - [ ] Product photography into the `products` bucket; `ProductImage` becomes
       `next/image` behind the same wrapper (**D-12**)
 
-### Auth flow (moved from Phase 2)
+### Auth flow (moved from Phase 2, now Phase 4A)
 
-- [ ] Sign-in, sign-up, sign-out
+- [x] `services/auth.service.ts` — every GoTrue call, with stable error codes
+- [x] `services/authorization.service.ts` — roles and permissions from the database
+- [x] Profile **and default wishlist** created in the signup transaction (ADR-59)
+- [ ] Server Actions over those services
+- [ ] Sign-in, sign-up, sign-out pages
 - [ ] `/auth/callback` route handler
-- [ ] Password reset
+- [ ] Password reset and change
+- [ ] Account pages — profile, security
+- [ ] Admin role check + delete `isAdminPreview` (resolves **K-1**)
+- [ ] Admin bootstrap command
 - [ ] Resolves **K-2** (redirect currently lands on a 404)
 
 ### Services (moved from Phase 2)

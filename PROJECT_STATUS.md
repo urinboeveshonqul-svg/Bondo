@@ -705,20 +705,44 @@ grants. See **D-7** for committing it properly.
 
 ## Authentication status
 
-🟡 **Plumbing complete, no flow.**
+🟡 **Service layer complete, no flow.** Phase 4A is **partially delivered**.
 
-| Item                                   | Status |
-| -------------------------------------- | ------ |
-| Supabase Auth clients wired            | ✅     |
-| Session refresh in middleware          | ✅     |
-| Protected-route redirect               | ✅     |
-| `getCurrentUser()` with JWT validation | ✅     |
-| Sign-in page                           | ❌     |
-| Sign-up page                           | ❌     |
-| Sign-out action                        | ❌     |
-| OAuth callback handler                 | ❌     |
-| Password reset                         | ❌     |
-| User roles                             | ❌     |
+| Item                                   | Status                                                  |
+| -------------------------------------- | ------------------------------------------------------- |
+| Supabase Auth clients wired            | ✅                                                      |
+| Session refresh in middleware          | ✅                                                      |
+| Protected-route redirect               | ✅                                                      |
+| `getCurrentUser()` with JWT validation | ✅                                                      |
+| `services/auth.service.ts`             | ✅ sign-up/in/out, reset, update, resend, code exchange |
+| `services/authorization.service.ts`    | ✅ roles and permissions read from the database         |
+| Profile + wishlist on registration     | ✅ trigger, in the signup transaction                   |
+| Server Actions over the services       | ❌                                                      |
+| Sign-in / sign-up pages                | ❌ **K-2**                                              |
+| Forgot / reset password pages          | ❌                                                      |
+| `/auth/callback` route handler         | ❌                                                      |
+| Account pages                          | ❌                                                      |
+| Admin role check (**K-1**)             | ❌ still open                                           |
+| Admin bootstrap command                | ❌                                                      |
+
+**Why the boundary is here.** Closing K-1 means deleting `isAdminPreview`
+(ADR-45), and deleting it before a `/sign-in` page exists makes the admin panel
+unreachable in development as well as production. The role check and the
+sign-in page have to land together, so neither is in this slice.
+
+`lib/admin/permissions.ts` remains the transcribed constant the admin renders
+against. `authorizationFor()` is its database-backed replacement and nothing
+calls it yet; the swap happens when the admin layout gets its real check.
+-------------------------------------- | ------ |
+| Supabase Auth clients wired | ✅ |
+| Session refresh in middleware | ✅ |
+| Protected-route redirect | ✅ |
+| `getCurrentUser()` with JWT validation | ✅ |
+| Sign-in page | ❌ |
+| Sign-up page | ❌ |
+| Sign-out action | ❌ |
+| OAuth callback handler | ❌ |
+| Password reset | ❌ |
+| User roles | ❌ |
 
 `lib/routes.ts` declares `/sign-in`, `/sign-up`, `/sign-out`,
 `/forgot-password` and `/auth/callback`. None of those pages exist yet, so the
@@ -922,6 +946,7 @@ reversal here.**
 
 | ID     | Decision                                                                                                                                                                                                                                                                                                                      | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ADR-59 | **Registration creates a profile and a default wishlist, and does not assign a "customer" role.** Both rows are written by `handle_new_user()` inside the signup transaction.                                                                                                                                                 | The Phase 4A brief asks for a default customer role and this schema has none, deliberately, since Phase 2. Roles exist to carry _staff_ permissions (ADR-21); a customer holds none, and every customer-facing policy keys off `auth.uid() = user_id` rather than a role (ADR-22). A permissionless `customer` row would grant nothing, be read by no policy, and be assumed load-bearing by the next person to see it — the same class of mistake as ADR-44, where the brief's role names did not match the schema's. Being a customer is the absence of an `admins` row. The wishlist, by contrast, is a real table with a real first use, so it is created — in the trigger rather than in application code, because a second call after `signUp()` can fail and leave the orphan the phase exists to prevent.   |
 | ADR-58 | **The per-module folder convention spans layers rather than collapsing them.** Screens live in `components/admin/modules/<id>/`; data access stays in `services/`, mutations in `actions/`, view models in `types/`, strings in `messages/`.                                                                                  | The Phase 3D brief proposed colocating `services/` and `actions/` inside each module folder. Two layer rules make that unsafe rather than merely unconventional: a service must never import React and must stay callable from a webhook, a job or a script, and a service nested in a route folder is one somebody eventually imports a component into; and Server Actions are public HTTP endpoints validated centrally through `createAction()`, so scattering them under `app/` makes "is every action validated" a question nobody can answer by looking. The convention is still identical for every module, which is what the brief was actually asking for — it just spans four folders instead of one. Recorded rather than resolved silently, because the next person reading the brief will ask why.     |
 | ADR-57 | **Canonical, Open Graph and card-type columns live on the translation row, and Twitter inherits from Open Graph rather than duplicating it.** Five columns per table — `canonical_url`, `og_title`, `og_description`, `og_image_path`, `twitter_card` — on `product_`, `category_`, `brand_` and `content_page_translations`. | The brief specifies canonical, Open Graph and Twitter fields in the shared SEO panel and the schema had none of them, so CLAUDE.md § 12 decides the order: migration first, then types, then the panel. Building the panel first is precisely **K-15** again — a form collecting data with nowhere to go. They are per-locale for the same reason `seo_title` is: a share card carries a headline and usually an image with words baked into it. Nine columns would be the naive shape; five plus a resolution chain (`twitter:title → og_title → seo_title → name`) is fewer places for the same sentence to drift, and a store that writes nothing still emits complete cards. `twitter_card` is an enum so `Enums<"twitter_card">` reaches the select and the interface cannot offer a value the insert rejects. |
 | ADR-56 | **One form layout for every module**: `general → media → pricing → inventory → seo → localization → advanced → publish`. A module declares a subset; it never reorders and never invents.                                                                                                                                     | Enforced by the type rather than by review — `ModuleForm`'s `sections` prop is keyed by the canonical union and rendered in the order declared in `lib/admin/module.ts`, so writing them in a different order in the source changes nothing. The order runs from what the thing _is_ to whether the world can _see_ it, which puts the decisions with consequences last and identically placed in every module. Section titles default to `admin.form.sections.*`, so "General" is translated once instead of appearing as "Basics", "Details" and "Overview" across three modules. The product editor was rebuilt onto it as the worked example.                                                                                                                                                                   |

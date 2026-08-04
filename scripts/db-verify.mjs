@@ -76,7 +76,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 11,
+  migrationCount === 12,
   `${migrationCount} files`,
 );
 

@@ -12,6 +12,60 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — Phase 4A groundwork: authorization and the auth service layer
+
+**Partial. The phase is not complete** — see "Not done" below. What landed is
+the server-side core, which is the part where a mistake is dangerous.
+
+**Registration can no longer orphan a user.**
+`20260806001000_registration_defaults.sql` extends `handle_new_user()` to create
+the default wishlist alongside the profile, in the **same trigger and the same
+transaction as the signup**. Doing it in application code after `signUp()`
+returns would leave an `auth.users` row with nothing attached whenever the
+second call failed, and the application cannot retry it. Includes a backfill for
+accounts registered before it — no rows today, but a migration that only works
+on an empty database is one that fails the first time it matters.
+
+**Authorization now reads the database.** `services/authorization.service.ts`
+resolves `admins`, `user_roles`, `roles`, `role_permissions` and `permissions`
+for a user through the RLS-enforced client, memoised per request (ADR-12). It
+replaces the `getAdminSession()` fixture the admin panel has rendered against
+since Phase 3D. A deactivated administrator (`is_active = false`) resolves to
+zero roles _and_ zero permissions, so the interface cannot show a role beside a
+panel that refuses every action.
+
+**Every Supabase Auth call is behind one service.** `services/auth.service.ts`
+covers sign-up, sign-in, sign-out (local and global), password reset request,
+password update, current-password verification, verification resend, and the
+code exchange used by every email link. No custom authentication: GoTrue hashes,
+compares, rotates and rate-limits.
+
+GoTrue's errors are re-mapped onto **stable codes** — `invalid_credentials`,
+`email_taken`, `email_not_verified`, `weak_password`, `expired_link`,
+`same_password`, `rate_limited` — matched on `error.code` first and prose only as
+a fallback. Upstream messages are English-only and untranslatable by a UI that
+sees a string, so the wording becomes a translation decision instead of an
+upstream one.
+
+**Password reset and verification-resend do not confirm whether an address
+exists.** Both resolve either way; only rate-limiting surfaces, because silently
+succeeding teaches somebody to keep clicking a button that is doing nothing.
+
+### Not done — the rest of Phase 4A
+
+No UI, no Server Actions, no bootstrap command, and **K-1 is still open**. The
+services compile and are typechecked against the live schema; nothing calls them
+yet. That boundary is deliberate rather than convenient: closing K-1 means
+deleting `isAdminPreview` (ADR-45), and deleting it before a `/sign-in` page
+exists makes the admin panel unreachable in development too — the two have to
+land together.
+
+Remaining, in the order it should be built: Server Actions over these services;
+sign-in, sign-up, forgot-password, reset-password, verify-email and the
+`/auth/callback` route handler; the account pages; the admin layout's real role
+check plus removal of `isAdminPreview`; the bootstrap command; and the `auth`
+and `account` message namespaces in all three locales.
+
 ### Changed — the application talks to a real Supabase project
 
 A hosted project exists and is linked: **`pgxqnezwrwfgrmamlxhs`**, `ap-southeast-1`,
