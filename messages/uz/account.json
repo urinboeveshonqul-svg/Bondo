@@ -7,7 +7,8 @@
     "label": "Hisob bo'limlari",
     "overview": "Umumiy",
     "profile": "Profil",
-    "security": "Xavfsizlik"
+    "security": "Xavfsizlik",
+    "admin": "Admin panel"
   },
   "overview": {
     "identity": "Maʼlumotlaringiz",
@@ -17,7 +18,10 @@
     "language": "Interfeys tili",
     "memberSince": "Ro'yxatdan o'tgan sana",
     "editProfile": "Profilni tahrirlash",
-    "security": "Xavfsizlik"
+    "security": "Xavfsizlik",
+    "adminTitle": "Sizda administrator huquqi bor",
+    "adminBody": "{roles} sifatida kirgansiz. Mahsulotlar, buyurtmalar va sozlamalar do'kon panelida.",
+    "adminLink": "Panelni ochish"
   },
   "profile": {
     "title": "Profil",

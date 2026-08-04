@@ -7,7 +7,8 @@
     "label": "Account sections",
     "overview": "Overview",
     "profile": "Profile",
-    "security": "Security"
+    "security": "Security",
+    "admin": "Admin panel"
   },
   "overview": {
     "identity": "Your details",
@@ -17,7 +18,10 @@
     "language": "Interface language",
     "memberSince": "Member since",
     "editProfile": "Edit profile",
-    "security": "Security"
+    "security": "Security",
+    "adminTitle": "You have administrator access",
+    "adminBody": "Signed in as {roles}. The store panel is where products, orders and settings live.",
+    "adminLink": "Open the panel"
   },
   "profile": {
     "title": "Profile",

@@ -35,7 +35,10 @@ export default async function AccountLayout({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  await requireUser(routes.account.index);
+  // The guard already resolved roles for this request, so telling the nav
+  // whether to show the admin entry is free — no second query, and no auth read
+  // added to the storefront header, which renders on every page (ADR-11).
+  const { authorization } = await requireUser(routes.account.index);
 
   const t = await getTranslations("account");
 
@@ -47,7 +50,7 @@ export default async function AccountLayout({
       <p className="mt-2 text-pretty text-muted-foreground">{t("subtitle")}</p>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <AccountNav />
+        <AccountNav isAdmin={authorization.isAdmin} />
         <div className="min-w-0">{children}</div>
       </div>
     </Container>

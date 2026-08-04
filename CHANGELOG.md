@@ -57,6 +57,24 @@ the `admins` row, grants `super_admin`, reads the grant back, and writes an
 administrator already exists unless `--force` is passed. A script and never a
 route: behind HTTP, "create the first admin" is "create an admin".
 
+### Fixed — an administrator had no way into the panel
+
+Nothing outside `/admin` linked to it, so the only route in was typing the URL.
+The entry now appears on `/account` — a card naming the roles held, with a
+button — and in the account sidebar, for an active administrator only.
+
+**On `/account` rather than in the site header**, deliberately. The header
+renders on every storefront page, so an admin link there would mean asking "who
+is this, and are they staff" on every product view for every visitor: a GoTrue
+round trip plus two queries that ADR-11 exists to avoid. The account layout's
+guard has already resolved roles for that request, so showing it there costs
+nothing extra.
+
+It is a shortcut, not a gate — `requireAdmin()` and RLS still decide what opens.
+Verified with real sessions: the administrator sees it in Uzbek and Russian and
+it points at the locale-correct `/admin`; a plain customer's `/account` contains
+no admin entry and no `/admin` href at all.
+
 ### Fixed — a password-reset enumeration oracle (ADR-60)
 
 Found by measurement rather than review. The service surfaces rate limiting so a

@@ -56,6 +56,37 @@ export default async function AccountPage({
 
   return (
     <div className="space-y-6">
+      {/*
+        The way into the panel, for staff only. `isAdmin` was resolved by the
+        layout's guard for this request, so showing it costs nothing extra — and
+        it is a shortcut, not a gate: `requireAdmin()` and RLS decide what
+        actually opens.
+      */}
+      {session.authorization.isAdmin ? (
+        <section
+          aria-labelledby="account-admin"
+          className="flex flex-wrap items-center gap-4 rounded-xl border bg-card p-5 sm:p-6"
+        >
+          <ShieldCheck
+            className="size-5 shrink-0 text-primary"
+            aria-hidden="true"
+          />
+          <div className="min-w-0 flex-1">
+            <h2 id="account-admin" className="font-semibold tracking-tight">
+              {t("adminTitle")}
+            </h2>
+            <p className="text-sm text-pretty text-muted-foreground">
+              {t("adminBody", {
+                roles: session.authorization.roles.join(", "),
+              })}
+            </p>
+          </div>
+          <Button asChild>
+            <Link href={routes.admin.index}>{t("adminLink")}</Link>
+          </Button>
+        </section>
+      ) : null}
+
       {!session.isVerified ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed px-4 py-3">
           <MailWarning
