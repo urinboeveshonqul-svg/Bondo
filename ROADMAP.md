@@ -181,21 +181,51 @@ status in all three languages.
 
 ## Phase 3B — Storefront Data Wiring
 
-**Status:** Next · **Target version:** v0.4.0
+**Status:** 🟡 In progress · **Target version:** v0.4.0
 
 The shopping experience, read-only. Now also carries the auth flow and the first
 services, which moved out of Phase 2 when it was scoped to the database only.
 
-> **Blocked until K-3 is closed.** `types/database.ts` still describes an empty
-> schema, so `supabase.from("products")` will not compile. Run
-> `npm run db:start && npm run db:reset && npm run db:types` on a machine with
-> Docker and commit the result before starting.
+### Done
 
-### Prerequisites
+- [x] **K-3** — `types/database.ts` generated and committed, 18 tables
+      (**ADR-48**, no Docker required)
+- [x] **D-7** — schema verification harness committed as `npm run db:verify`,
+      33 assertions, now part of `npm run verify`
+- [x] Service layer: products, categories, brands, inventory, storage, settings,
+      audit — with in-query filtering, sorting and pagination
+- [x] `lib/supabase-error.ts` — Postgres codes mapped to `AppError`
+- [x] Supabase integration audit: four clients, middleware, session handling
 
-- [ ] **K-3** — generate and commit `types/database.ts`
+### Blocked
+
+- [ ] **K-15** — the schema is single-language and cannot store `LocalizedText`.
+      **This gates everything below it.** See § "Translated content in the
+      database" for the design
+- [ ] **K-16** — reconcile the admin's publishing and inventory vocabulary with
+      `product_status`, `product_visibility` and `inventory_movement_type`
+- [ ] A Supabase project: `.env.local`, `supabase link`, `db push`. Without one
+      nothing can be executed, only compiled
+
+### Prerequisites still open
+
 - [ ] **K-8** — verify storage RLS at runtime, especially avatar folder scoping
 - [ ] **K-9** — confirm the seed's `auth.users` inserts work against real GoTrue
+
+### To verify once a project exists (**D-18**)
+
+Nothing below has ever run. Each is an assertion to make, not a claim:
+
+- [ ] Every service function against real data — create, read, update, soft
+      delete, restore, duplicate
+- [ ] Search, filtering, sorting and pagination return what the admin expects
+- [ ] Anonymous sees only `status = 'active' and visibility = 'public'`
+- [ ] A customer can read their own profile and no one else's
+- [ ] Each of the five roles is allowed exactly its granted permissions
+- [ ] A write refused by RLS surfaces as `forbidden`, not as a crash
+- [ ] Upload, replace, reorder and delete against the five buckets
+- [ ] A stock movement updates `quantity_on_hand`; a direct write is rejected
+- [ ] `audit_logs` rejects update and delete, service role included
 
 ### Replacing the mock layer (D-11)
 

@@ -19,9 +19,12 @@
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff -f",
     "db:push": "supabase db push",
-    "db:types": "supabase gen types typescript --local --schema public > types/database.ts",
+    "db:verify": "node scripts/db-verify.mjs",
+    "db:serve": "node scripts/db-serve.mjs",
+    "db:types": "node scripts/db-types.mjs",
+    "db:types:local": "supabase gen types typescript --local --schema public > types/database.ts",
     "db:types:remote": "supabase gen types typescript --linked --schema public > types/database.ts",
-    "verify": "npm run check && npm run build"
+    "verify": "npm run check && npm run db:verify && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
@@ -43,7 +46,10 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
+    "@electric-sql/pglite-socket": "^0.2.7",
     "@eslint/eslintrc": "^3",
+    "@supabase/postgres-meta": "^0.96.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
