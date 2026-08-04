@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { requireAdmin } from "@/lib/auth/guards";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { UserPlus } from "lucide-react";
 
@@ -6,7 +7,7 @@ import { ModuleHeader } from "@/components/admin/module/module-header";
 import { guardModule } from "@/components/admin/module/module-permission-guard";
 import { TeamManager } from "@/components/admin/modules/users/team-manager";
 import { Button } from "@/components/ui/button";
-import { adminRoles, adminUsers, getAdminSession } from "@/mocks/admin";
+import { adminRoles, adminUsers } from "@/mocks/admin";
 import type { PageParams } from "@/types";
 
 export const metadata: Metadata = { title: "Team" };
@@ -19,7 +20,8 @@ export default async function AdminUsersPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { permissions } = getAdminSession();
+  const { authorization } = await requireAdmin();
+  const { permissions } = authorization;
   const capabilities = await guardModule("users", permissions);
 
   const t = await getTranslations("adminSystem.users");

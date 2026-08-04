@@ -8,9 +8,10 @@ import {
   ModuleReadOnlyNotice,
   guardModule,
 } from "@/components/admin/module/module-permission-guard";
+import { requireAdmin } from "@/lib/auth/guards";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { getAdminSession, getContentPage } from "@/mocks/admin";
+import { getContentPage } from "@/mocks/admin";
 import type { PageParams } from "@/types";
 
 export const metadata: Metadata = { title: "Edit page" };
@@ -23,7 +24,8 @@ export default async function AdminContentEditorPage({
   const { locale, slug } = await params;
   setRequestLocale(locale);
 
-  const { permissions } = getAdminSession();
+  const { authorization } = await requireAdmin();
+  const { permissions } = authorization;
   const capabilities = await guardModule("content", permissions);
 
   const page = getContentPage(slug);

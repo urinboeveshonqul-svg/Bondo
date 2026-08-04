@@ -16,6 +16,9 @@ import {
   type QuickAction,
 } from "@/components/admin/layout/quick-actions";
 import { can } from "@/lib/admin/permissions";
+import { requireAdmin } from "@/lib/auth/guards";
+import { touchAdminLastSeen } from "@/services/authorization.service";
+import { createClient } from "@/supabase/server";
 import { navItems, visibleNav } from "@/lib/admin/navigation";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
@@ -26,7 +29,6 @@ import {
   adminProducts,
   adminRoles,
   contentPages,
-  getAdminSession,
 } from "@/mocks/admin";
 import { brands, categories } from "@/mocks/catalog";
 import type { PageParams } from "@/types";
@@ -45,21 +47,24 @@ export const metadata: Metadata = {
  *
  * Two jobs, both server-side:
  *
- * 1. **Resolve who is signed in and what they may do.** Today that is a fixture
- *    (`getAdminSession()`); it becomes an awaited Supabase query with a role
- *    check, and this is the line it replaces. Permissions are resolved once here
- *    and everything below receives the *result* — no component recomputes them,
- *    and the permission model never reaches the browser.
+ * 1. **Resolve who is signed in and what they may do.** `requireAdmin()` reads
+ *    the `admins` register and the role graph for the signed-in user. Roles and
+ *    permissions are resolved **once** here and everything below receives the
+ *    *result* — no component recomputes them, and the permission model never
+ *    reaches the browser.
  *
  * 2. **Filter the navigation before it is rendered.** A module an admin cannot
  *    use is absent, not disabled: a greyed-out "Settings" advertises exactly
  *    which capability to go looking for.
  *
- * > **K-1 is not closed by this file.** Middleware proves a session exists; it
- * > does not check roles. The real gate is a database read plus RLS, and it
- * > lands with the auth phase. Until then the panel is reachable in development
- * > only — see `isAdminPreview` in `supabase/session.ts` — and every screen
- * > carries a banner saying so.
+ * > **K-1 is closed by this file.** The `NODE_ENV` preview gate (ADR-45) and
+ * > `isAdminPreview` are deleted; a signed-in customer who types `/admin` now
+ * > gets a 404, and an anonymous visitor is sent to sign-in. The panel is
+ * > unreachable until an administrator exists — which is what
+ * > `npm run admin:bootstrap` is for.
+ * >
+ * > RLS remains the authorisation boundary (ADR-4). This gate decides which
+ * > screens open; the policies decide which rows come back.
  */
 export default async function AdminLayout({
   children,
@@ -71,8 +76,38 @@ export default async function AdminLayout({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const session = getAdminSession();
-  const { permissions, user } = session;
+  // **K-1 closes here.** The panel is no longer reachable on a NODE_ENV check:
+  // this is a real query for an active `admins` row, and a signed-in customer
+  // who guesses the URL gets a 404 rather than a 403 that would confirm the
+  // route exists. RLS refuses every admin query underneath it regardless
+  // (ADR-4) — this is the layer that keeps people out of screens, not the layer
+  // that keeps data safe.
+  const { user: authUser, authorization } = await requireAdmin();
+  const { permissions } = authorization;
+
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", authUser.id)
+    .maybeSingle();
+
+  // Records that this administrator was seen, for the team screen. Deliberately
+  // not awaited into the critical path, and unable to fail the render.
+  void touchAdminLastSeen(supabase, authUser.id);
+
+  const displayName = profile?.full_name?.trim() || (authUser.email ?? "");
+  const user = {
+    fullName: displayName,
+    email: authUser.email ?? "",
+    initials:
+      displayName
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join("") || "?",
+    roles: authorization.roles,
+  };
 
   const sections = visibleNav(permissions);
   const items = navItems(permissions);

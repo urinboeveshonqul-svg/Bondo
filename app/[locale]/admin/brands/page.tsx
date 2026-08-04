@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { requireAdmin } from "@/lib/auth/guards";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Plus } from "lucide-react";
 
@@ -9,7 +10,6 @@ import {
 } from "@/components/admin/module/module-permission-guard";
 import { BrandsManager } from "@/components/admin/modules/brands/brands-manager";
 import { Button } from "@/components/ui/button";
-import { getAdminSession } from "@/mocks/admin";
 import { brands } from "@/mocks/catalog";
 import type { PageParams } from "@/types";
 
@@ -23,7 +23,8 @@ export default async function AdminBrandsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { permissions } = getAdminSession();
+  const { authorization } = await requireAdmin();
+  const { permissions } = authorization;
   const capabilities = await guardModule("brands", permissions);
 
   const t = await getTranslations("adminCatalog.brands");

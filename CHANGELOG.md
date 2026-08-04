@@ -12,6 +12,80 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — Phase 4A: authentication, complete (K-1 and K-2 closed)
+
+**The panel is no longer open.** `requireAdmin()` reads the `admins` register
+and the role graph for the signed-in user; `isAdminPreview` and the `NODE_ENV`
+gate (ADR-45) are deleted. Verified with real session cookies against
+`next start`: a signed-in customer gets **404** at `/admin` and at a deep admin
+route, and the bootstrapped administrator gets 200. A 404 rather than a 403,
+because a 403 confirms the route exists and is worth attacking.
+
+All thirteen admin routes now resolve permissions from the database instead of
+`getAdminSession()`, the fixture they had rendered against since Phase 3D.
+
+**Nine pages**, all localized in uz/ru/en: sign-in, sign-up, forgot-password,
+reset-password, verify-email, the `/auth/callback` route handler, and account
+overview / profile / security.
+
+**Eight Server Actions**, every one through `createAction()` with a Zod schema —
+a Server Action is a public HTTP endpoint and the form is not the only thing that
+can POST to it. No component touches Supabase or the auth service directly.
+
+**Errors are translation keys, not sentences.** GoTrue's messages are
+English-only and untranslatable by a UI that sees a string, so the service maps
+them to stable codes and one table in the actions layer maps those to keys. The
+services were not modified to do it.
+
+**One page for every email link.** `/auth/callback` exchanges the code and
+forwards; an expired or replayed link redirects to `/verify-email` with a reason
+rather than throwing, because an expired link is Tuesday, not an exception
+(K-19).
+
+**Passwords.** A shared contract in `lib/auth/password.ts` drives both the Zod
+schema and the strength meter, so the meter cannot call a password acceptable
+that the action then rejects. Ten characters and three of four character classes;
+length weighted above class count, because length is what resists an offline
+attack. Changing a password **requires the current one** — Supabase does not ask,
+which means an unattended logged-in browser is otherwise enough to take an
+account over.
+
+**The bootstrap command.** `npm run admin:bootstrap -- --email you@example.com`
+creates the auth user, asserts the trigger made the profile and wishlist, inserts
+the `admins` row, grants `super_admin`, reads the grant back, and writes an
+`audit_logs` entry. Idempotent, and it refuses to run when an active
+administrator already exists unless `--force` is passed. A script and never a
+route: behind HTTP, "create the first admin" is "create an admin".
+
+### Fixed — a password-reset enumeration oracle (ADR-60)
+
+Found by measurement rather than review. The service surfaces rate limiting so a
+caller is never left clicking a dead button — but on the reset endpoint that
+distinguishes a registered address (mail attempted, quota consumed, error) from
+an unknown one (no mail, clean return). It appeared against the live project
+exactly when the mail quota was exhausted, which is when an attacker would be
+probing. That one action now swallows the rate limit and logs it without the
+address; every other action still surfaces it.
+
+### Found — transactional email is the built-in mailer (K-21)
+
+A live registration was accepted and then failed at the mail step with
+`email rate limit exceeded`. Supabase's built-in SMTP allows a handful of
+messages an hour and is explicitly not for production; confirmation, resend and
+password reset all depend on it. **This gates launch** and is invisible until a
+real user cannot register.
+
+### Verified — against the hosted project, not mocked
+
+Registration through the public anon path, profile and default wishlist created
+by the trigger, a customer holding no role and no admin row, sign-in after
+confirmation, wrong password rejected, RLS reading own profile and refusing
+another's, self-granting a role refused (`42501`), sign-out clearing the session,
+the bootstrapped admin resolving all 20 permissions, and user deletion cascading
+the profile. Route protection was driven over HTTP in all three locales:
+`/account`, `/admin` and `/checkout` all answer `307` to a localized sign-in
+carrying `redirectTo`.
+
 ### Added — Phase 4A groundwork: authorization and the auth service layer
 
 **Partial. The phase is not complete** — see "Not done" below. What landed is

@@ -11,9 +11,10 @@ import {
 import { ModuleStatusBadge } from "@/components/admin/module/module-status-badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { requireAdmin } from "@/lib/auth/guards";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { contentPages, getAdminSession } from "@/mocks/admin";
+import { contentPages } from "@/mocks/admin";
 import type { PageParams } from "@/types";
 import { formatDate } from "@/utils/format";
 
@@ -27,7 +28,8 @@ export default async function AdminContentPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { permissions } = getAdminSession();
+  const { authorization } = await requireAdmin();
+  const { permissions } = authorization;
   await guardModule("content", permissions);
 
   const t = await getTranslations("adminContent.pages");

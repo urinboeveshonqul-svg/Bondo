@@ -9,9 +9,10 @@ import { guardModule } from "@/components/admin/module/module-permission-guard";
 import { ModuleStatusBadge } from "@/components/admin/module/module-status-badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { requireAdmin } from "@/lib/auth/guards";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { auditEntries, getAdminProduct, getAdminSession } from "@/mocks/admin";
+import { auditEntries, getAdminProduct } from "@/mocks/admin";
 import { brands, categories } from "@/mocks/catalog";
 import type { PageParams } from "@/types";
 import { publishState } from "@/utils/admin";
@@ -27,7 +28,8 @@ export default async function EditProductPage({
   const { locale, id } = await params;
   setRequestLocale(locale);
 
-  const { permissions } = getAdminSession();
+  const { authorization } = await requireAdmin();
+  const { permissions } = authorization;
   const capabilities = await guardModule("products", permissions);
 
   const product = getAdminProduct(id);

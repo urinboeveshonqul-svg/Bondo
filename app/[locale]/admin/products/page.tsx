@@ -10,9 +10,10 @@ import {
 import { ProductsTable } from "@/components/admin/modules/products/products-table";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { requireAdmin } from "@/lib/auth/guards";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { adminProducts, getAdminSession } from "@/mocks/admin";
+import { adminProducts } from "@/mocks/admin";
 import { brands, categories } from "@/mocks/catalog";
 import type { PageParams } from "@/types";
 
@@ -29,7 +30,8 @@ export default async function AdminProductsPage({
   // Defence in depth. The sidebar already hides this route from anyone without
   // the permission, but a URL typed directly must not render the list — hiding
   // navigation is a usability measure, not an access control.
-  const { permissions } = getAdminSession();
+  const { authorization } = await requireAdmin();
+  const { permissions } = authorization;
   const capabilities = await guardModule("products", permissions);
 
   const t = await getTranslations("adminCatalog.products");

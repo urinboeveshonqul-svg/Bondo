@@ -25,8 +25,10 @@ import type { Category } from "@/types/catalog";
  * a long listing. `z-50` puts it above page content but below the sheet
  * overlays it opens.
  *
- * The account control is a button rather than a link: sign-in does not exist
- * until the auth phase, and the project does not ship links to routes that 404.
+ * The account control links to `/account`. Anonymous visitors are redirected to
+ * sign-in by the middleware, carrying `redirectTo`, so the header does not need
+ * to know who is signed in — which keeps it out of the per-request auth read
+ * that would otherwise run on every page (ADR-11).
  */
 /**
  * Categories are passed in by the layout rather than fetched here: the header
@@ -70,13 +72,10 @@ export function SiteHeader({ categories }: { categories: Category[] }) {
             <LanguageSwitcher />
             <ThemeToggle />
             <WishlistSheet />
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t("account")}
-              disabled
-            >
-              <User />
+            <Button variant="ghost" size="icon" asChild>
+              <Link href={routes.account.index} aria-label={t("account")}>
+                <User />
+              </Link>
             </Button>
             <BasketSheet />
           </div>

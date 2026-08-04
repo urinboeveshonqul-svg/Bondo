@@ -1,0 +1,57 @@
+{
+  "title": "Mening hisobim",
+  "subtitle": "Maʼlumotlaringiz, xavfsizligingiz va sozlamalaringiz.",
+  "signOut": "Chiqish",
+  "signingOut": "Chiqilmoqda…",
+  "nav": {
+    "label": "Hisob bo'limlari",
+    "overview": "Umumiy",
+    "profile": "Profil",
+    "security": "Xavfsizlik"
+  },
+  "overview": {
+    "identity": "Maʼlumotlaringiz",
+    "verified": "Tasdiqlangan",
+    "unverified": "Elektron pochtangiz hali tasdiqlanmagan.",
+    "verifyNow": "Hozir tasdiqlash",
+    "language": "Interfeys tili",
+    "memberSince": "Ro'yxatdan o'tgan sana",
+    "editProfile": "Profilni tahrirlash",
+    "security": "Xavfsizlik"
+  },
+  "profile": {
+    "title": "Profil",
+    "subtitle": "Sizga qanday murojaat qilishimiz va buyurtma bo'yicha qanday bog'lanishimiz.",
+    "email": "Elektron pochta",
+    "emailLocked": "Pochtani o'zgartirish qayta tasdiqlashni talab qiladi, shuning uchun u alohida jarayonda — hisob bosqichida keladi.",
+    "fullName": "To'liq ism",
+    "phone": "Telefon raqami",
+    "phoneHint": "Ixtiyoriy. Faqat yetkazib berish savollari uchun.",
+    "save": "O'zgarishlarni saqlash",
+    "saved": "Profilingiz saqlandi."
+  },
+  "language": {
+    "title": "Til",
+    "subtitle": "Interfeys tili siz o'qiyotgan manzilga bog'liq. Bu yerda almashtirish uni hamma joyda o'zgartiradi.",
+    "current": "Hozirgi"
+  },
+  "security": {
+    "title": "Parol",
+    "subtitle": "Xohlagan vaqtda o'zgartiring. Joriy parolni so'raymiz.",
+    "currentPassword": "Joriy parol",
+    "newPassword": "Yangi parol",
+    "confirmPassword": "Yangi parolni tasdiqlang",
+    "updatePassword": "Parolni yangilash",
+    "passwordChanged": "Parolingiz o'zgartirildi.",
+    "signOutEverywhere": "Barcha boshqa qurilmalardan chiqish",
+    "emailTitle": "Elektron pochta",
+    "emailVerified": "Tasdiqlangan",
+    "emailUnverified": "Hali tasdiqlanmagan",
+    "verifyEmail": "Tasdiqlash",
+    "sessionsTitle": "Qayerda kirgansiz",
+    "sessionsSubtitle": "Ushbu qurilmani ko'rsatib, boshqa barcha seanslarni yakunlay olamiz. To'liq qurilmalar ro'yxatini hisob o'qiy olmaydi.",
+    "thisDevice": "Ushbu qurilma",
+    "signedIn": "Kirgansiz",
+    "signedInAt": "{when} da kirgansiz"
+  }
+}

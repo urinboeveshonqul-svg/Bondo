@@ -21,6 +21,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { requireAdmin } from "@/lib/auth/guards";
 import { can } from "@/lib/admin/permissions";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
@@ -29,7 +30,6 @@ import {
   adminOrders,
   adminProducts,
   auditEntries,
-  getAdminSession,
   inventoryRecords,
   ordersSeries,
   revenueSeries,
@@ -72,7 +72,8 @@ export default async function AdminDashboardPage({
   const t = await getTranslations("adminDashboard");
   const tAdmin = await getTranslations("admin");
   const activeLocale = (await getLocale()) as Locale;
-  const { permissions } = getAdminSession();
+  const { authorization } = await requireAdmin();
+  const { permissions } = authorization;
   await guardModule("dashboard", permissions);
 
   // Split the series in half to get a comparable previous period, rather than

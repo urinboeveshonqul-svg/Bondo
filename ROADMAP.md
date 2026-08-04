@@ -13,7 +13,7 @@ scope" and into every phase: from now on a feature is not complete until Uzbek,
 Russian and English all exist for it, enforced by `npm run check`. See
 [CLAUDE.md § 11](CLAUDE.md#11-internationalization-policy).
 
-**Overall progress:** ~66%
+**Overall progress:** ~72%
 
 ```
 Phase 1  Foundation                ████████████████████ 100%   ✅ complete
@@ -24,6 +24,7 @@ Phase 3A Premium UI (mock data)    ███████████████
 Phase 3B Storefront Data Wiring    ██████████████░░░░░░  70%   (needs a Supabase project)
          Localization in the DB    ████████████████████ 100%   ✅ complete (3C — K-15, K-16)
          Admin module architecture ████████████████████ 100%   ✅ complete (3D — ADR-54…58)
+Phase 4A Authentication            ████████████████████ 100%   ✅ complete (K-1, K-2 closed)
 Phase 4  Cart & Checkout           ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5  Customer Accounts         ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 6  Admin — data + auth       ░░░░░░░░░░░░░░░░░░░░   0%   (UI done; needs services, auth, orders)
@@ -261,19 +262,21 @@ migration:
 - [ ] Product photography into the `products` bucket; `ProductImage` becomes
       `next/image` behind the same wrapper (**D-12**)
 
-### Auth flow (moved from Phase 2, now Phase 4A)
+### Auth flow — **Phase 4A, complete**
 
 - [x] `services/auth.service.ts` — every GoTrue call, with stable error codes
 - [x] `services/authorization.service.ts` — roles and permissions from the database
 - [x] Profile **and default wishlist** created in the signup transaction (ADR-59)
-- [ ] Server Actions over those services
-- [ ] Sign-in, sign-up, sign-out pages
-- [ ] `/auth/callback` route handler
-- [ ] Password reset and change
-- [ ] Account pages — profile, security
-- [ ] Admin role check + delete `isAdminPreview` (resolves **K-1**)
-- [ ] Admin bootstrap command
-- [ ] Resolves **K-2** (redirect currently lands on a 404)
+- [x] Eight Server Actions over those services, Zod-validated through `createAction()`
+- [x] Sign-in, sign-up, sign-out
+- [x] `/auth/callback` route handler — one exchange for every link type
+- [x] Forgot password, reset password, change password
+- [x] Email verification and resend
+- [x] Account pages — overview, profile, security
+- [x] Admin role check + `isAdminPreview` deleted (**closes K-1**)
+- [x] Admin bootstrap command (`npm run admin:bootstrap`)
+- [x] Localized in uz / ru / en
+- [x] **Closes K-2**
 
 ### Services (moved from Phase 2)
 

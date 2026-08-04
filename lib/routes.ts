@@ -42,8 +42,16 @@ export const routes = {
     signIn: "/sign-in",
     signUp: "/sign-up",
     signOut: "/sign-out",
+    /**
+     * Where every email link lands. It exchanges the `code` for a session and
+     * then forwards, so no page has to know how a link becomes a session.
+     */
     callback: "/auth/callback",
     forgotPassword: "/forgot-password",
+    /** Reached from the recovery email, via the callback. */
+    resetPassword: "/reset-password",
+    /** "Check your inbox", and where an unverified account is sent. */
+    verifyEmail: "/verify-email",
   },
 
   account: {
@@ -52,6 +60,7 @@ export const routes = {
     order: (id: string) => `/account/orders/${id}`,
     addresses: "/account/addresses",
     profile: "/account/profile",
+    security: "/account/security",
   },
 
   admin: {

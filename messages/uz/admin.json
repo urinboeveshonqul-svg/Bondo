@@ -2,8 +2,8 @@
   "title": "Boshqaruv paneli",
   "backToStore": "Do'konga qaytish",
   "preview": {
-    "label": "Ko'rib chiqish rejimi",
-    "body": "Autentifikatsiya hali yo'q, shuning uchun bu panel himoyalanmagan va faqat ishlab chiqish rejimida ochiladi. Bu yerdagi barcha ma'lumotlar namunaviy, o'zgarishlar saqlanmaydi."
+    "label": "Namoyish maʼlumotlari",
+    "body": "Autentifikatsiya ishlaydi, lekin admin hali namunaviy maʼlumotlarni koʻrsatadi — bu yerdagi oʻzgarishlar hali saqlanmaydi."
   },
   "nav": {
     "label": "Boshqaruv navigatsiyasi",

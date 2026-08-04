@@ -2,8 +2,8 @@
   "title": "Admin",
   "backToStore": "Back to store",
   "preview": {
-    "label": "Preview mode",
-    "body": "No authentication exists yet, so this panel is unprotected and reachable in development only. Everything you see is mock data and nothing you change is saved."
+    "label": "Preview data",
+    "body": "Authentication is live, but the admin still renders fixtures — nothing you change here is saved yet."
   },
   "nav": {
     "label": "Admin navigation",

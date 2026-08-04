@@ -21,6 +21,8 @@ export const namespaces = [
   "product",
   "newsletter",
   "errors",
+  "auth",
+  "account",
   // Admin. Split from the storefront namespaces because they are a different
   // audience with a different vocabulary — and because a shopper's bundle has
   // no reason to carry the word "Bulk actions" in three languages.

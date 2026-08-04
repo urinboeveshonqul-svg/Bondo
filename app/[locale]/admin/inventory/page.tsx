@@ -12,12 +12,9 @@ import {
   StatCard,
   StatisticsCards,
 } from "@/components/admin/module/statistics-cards";
+import { requireAdmin } from "@/lib/auth/guards";
 import type { Locale } from "@/lib/site-config";
-import {
-  getAdminSession,
-  inventoryMovements,
-  inventoryRecords,
-} from "@/mocks/admin";
+import { inventoryMovements, inventoryRecords } from "@/mocks/admin";
 import type { PageParams } from "@/types";
 import { formatNumber } from "@/utils/format";
 
@@ -31,7 +28,8 @@ export default async function AdminInventoryPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { permissions } = getAdminSession();
+  const { authorization } = await requireAdmin();
+  const { permissions } = authorization;
   const capabilities = await guardModule("inventory", permissions);
 
   const t = await getTranslations("adminInventory");

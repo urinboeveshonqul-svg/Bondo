@@ -4,9 +4,9 @@ import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { ModuleHeader } from "@/components/admin/module/module-header";
 import { guardModule } from "@/components/admin/module/module-permission-guard";
 import { ProductForm } from "@/components/admin/modules/products/product-form";
+import { requireAdmin } from "@/lib/auth/guards";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { getAdminSession } from "@/mocks/admin";
 import { brands, categories } from "@/mocks/catalog";
 import type { PageParams } from "@/types";
 
@@ -22,7 +22,8 @@ export default async function NewProductPage({
 
   // `create`, not the module's view permission: reaching the products list is
   // not the same as being allowed to add to it.
-  const { permissions } = getAdminSession();
+  const { authorization } = await requireAdmin();
+  const { permissions } = authorization;
   const capabilities = await guardModule("products", permissions, "create");
 
   const t = await getTranslations("adminCatalog");

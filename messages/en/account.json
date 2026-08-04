@@ -1,0 +1,57 @@
+{
+  "title": "My account",
+  "subtitle": "Your details, your security, your preferences.",
+  "signOut": "Sign out",
+  "signingOut": "Signing out…",
+  "nav": {
+    "label": "Account sections",
+    "overview": "Overview",
+    "profile": "Profile",
+    "security": "Security"
+  },
+  "overview": {
+    "identity": "Your details",
+    "verified": "Verified",
+    "unverified": "Your email address is not confirmed yet.",
+    "verifyNow": "Confirm now",
+    "language": "Interface language",
+    "memberSince": "Member since",
+    "editProfile": "Edit profile",
+    "security": "Security"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "How we address you, and how we reach you about an order.",
+    "email": "Email address",
+    "emailLocked": "Changing your email needs re-confirmation, so it has its own flow — coming with the account phase.",
+    "fullName": "Full name",
+    "phone": "Phone number",
+    "phoneHint": "Optional. Used only for delivery questions.",
+    "save": "Save changes",
+    "saved": "Your profile has been saved."
+  },
+  "language": {
+    "title": "Language",
+    "subtitle": "The interface language follows the address you are reading. Switching here changes it everywhere.",
+    "current": "Currently"
+  },
+  "security": {
+    "title": "Password",
+    "subtitle": "Change it whenever you like. We will ask for the current one.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "updatePassword": "Update password",
+    "passwordChanged": "Your password has been changed.",
+    "signOutEverywhere": "Sign out of all other devices",
+    "emailTitle": "Email address",
+    "emailVerified": "Confirmed",
+    "emailUnverified": "Not confirmed yet",
+    "verifyEmail": "Confirm",
+    "sessionsTitle": "Where you are signed in",
+    "sessionsSubtitle": "We can show this device and end every other session. A full device list is not something the account can read.",
+    "thisDevice": "This device",
+    "signedIn": "Signed in",
+    "signedInAt": "Signed in {when}"
+  }
+}
