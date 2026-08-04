@@ -107,35 +107,85 @@ where r.key = 'super_admin';
 -- -----------------------------------------------------------------------------
 -- Three levels, to exercise the nesting trigger rather than to be a finished
 -- taxonomy. Ids are fixed so later inserts can reference them without lookups.
-insert into public.categories (id, parent_id, slug, name, description, display_order) values
-  ('a0000000-0000-4000-8000-000000000001', null, 'laptops',     'Laptops',     'Portable computers.', 1),
-  ('a0000000-0000-4000-8000-000000000002', null, 'desktops',    'Desktops',    'Tower and small-form-factor systems.', 2),
-  ('a0000000-0000-4000-8000-000000000003', null, 'components',  'Components',  'Parts for building and upgrading.', 3),
-  ('a0000000-0000-4000-8000-000000000004', null, 'peripherals', 'Peripherals', 'Everything you plug in.', 4);
+insert into public.categories (
+  id, parent_id, display_order
+) values
+  ('a0000000-0000-4000-8000-000000000001', null, 1),
+  ('a0000000-0000-4000-8000-000000000002', null, 2),
+  ('a0000000-0000-4000-8000-000000000003', null, 3),
+  ('a0000000-0000-4000-8000-000000000004', null, 4);
 
-insert into public.categories (id, parent_id, slug, name, display_order) values
-  ('a0000000-0000-4000-8000-000000000011', 'a0000000-0000-4000-8000-000000000001', 'gaming-laptops',    'Gaming laptops', 1),
-  ('a0000000-0000-4000-8000-000000000012', 'a0000000-0000-4000-8000-000000000001', 'ultrabooks',        'Ultrabooks', 2),
-  ('a0000000-0000-4000-8000-000000000021', 'a0000000-0000-4000-8000-000000000003', 'graphics-cards',    'Graphics cards', 1),
-  ('a0000000-0000-4000-8000-000000000022', 'a0000000-0000-4000-8000-000000000003', 'processors',        'Processors', 2),
-  ('a0000000-0000-4000-8000-000000000023', 'a0000000-0000-4000-8000-000000000003', 'memory',            'Memory', 3),
-  ('a0000000-0000-4000-8000-000000000031', 'a0000000-0000-4000-8000-000000000004', 'keyboards',         'Keyboards', 1),
-  ('a0000000-0000-4000-8000-000000000032', 'a0000000-0000-4000-8000-000000000004', 'monitors',          'Monitors', 2);
+-- English copy for the rows above. Uzbek and Russian are written in
+-- the admin; a seed that invented them would be fake data (ADR-20).
+insert into public.category_translations (
+  category_id, locale, name, description, slug
+) values
+  ('a0000000-0000-4000-8000-000000000001', 'en', 'Laptops', 'Portable computers.', 'laptops'),
+  ('a0000000-0000-4000-8000-000000000002', 'en', 'Desktops', 'Tower and small-form-factor systems.', 'desktops'),
+  ('a0000000-0000-4000-8000-000000000003', 'en', 'Components', 'Parts for building and upgrading.', 'components'),
+  ('a0000000-0000-4000-8000-000000000004', 'en', 'Peripherals', 'Everything you plug in.', 'peripherals');
+
+insert into public.categories (
+  id, parent_id, display_order
+) values
+  ('a0000000-0000-4000-8000-000000000011', 'a0000000-0000-4000-8000-000000000001', 1),
+  ('a0000000-0000-4000-8000-000000000012', 'a0000000-0000-4000-8000-000000000001', 2),
+  ('a0000000-0000-4000-8000-000000000021', 'a0000000-0000-4000-8000-000000000003', 1),
+  ('a0000000-0000-4000-8000-000000000022', 'a0000000-0000-4000-8000-000000000003', 2),
+  ('a0000000-0000-4000-8000-000000000023', 'a0000000-0000-4000-8000-000000000003', 3),
+  ('a0000000-0000-4000-8000-000000000031', 'a0000000-0000-4000-8000-000000000004', 1),
+  ('a0000000-0000-4000-8000-000000000032', 'a0000000-0000-4000-8000-000000000004', 2);
+
+-- English copy for the rows above. Uzbek and Russian are written in
+-- the admin; a seed that invented them would be fake data (ADR-20).
+insert into public.category_translations (
+  category_id, locale, name, slug
+) values
+  ('a0000000-0000-4000-8000-000000000011', 'en', 'Gaming laptops', 'gaming-laptops'),
+  ('a0000000-0000-4000-8000-000000000012', 'en', 'Ultrabooks', 'ultrabooks'),
+  ('a0000000-0000-4000-8000-000000000021', 'en', 'Graphics cards', 'graphics-cards'),
+  ('a0000000-0000-4000-8000-000000000022', 'en', 'Processors', 'processors'),
+  ('a0000000-0000-4000-8000-000000000023', 'en', 'Memory', 'memory'),
+  ('a0000000-0000-4000-8000-000000000031', 'en', 'Keyboards', 'keyboards'),
+  ('a0000000-0000-4000-8000-000000000032', 'en', 'Monitors', 'monitors');
 
 -- Third level, so `depth = 2` and the descendant rebuild are both exercised.
-insert into public.categories (id, parent_id, slug, name, display_order) values
-  ('a0000000-0000-4000-8000-000000000211', 'a0000000-0000-4000-8000-000000000021', 'nvidia-graphics-cards', 'NVIDIA', 1),
-  ('a0000000-0000-4000-8000-000000000212', 'a0000000-0000-4000-8000-000000000021', 'amd-graphics-cards',    'AMD', 2);
+insert into public.categories (
+  id, parent_id, display_order
+) values
+  ('a0000000-0000-4000-8000-000000000211', 'a0000000-0000-4000-8000-000000000021', 1),
+  ('a0000000-0000-4000-8000-000000000212', 'a0000000-0000-4000-8000-000000000021', 2);
+
+-- English copy for the rows above. Uzbek and Russian are written in
+-- the admin; a seed that invented them would be fake data (ADR-20).
+insert into public.category_translations (
+  category_id, locale, name, slug
+) values
+  ('a0000000-0000-4000-8000-000000000211', 'en', 'NVIDIA', 'nvidia-graphics-cards'),
+  ('a0000000-0000-4000-8000-000000000212', 'en', 'AMD', 'amd-graphics-cards');
 
 -- -----------------------------------------------------------------------------
 -- Brands
 -- -----------------------------------------------------------------------------
-insert into public.brands (id, slug, name, description, website_url, is_featured) values
-  ('b0000000-0000-4000-8000-000000000001', 'nvidia',   'NVIDIA',   'Graphics processors.',            'https://www.nvidia.com', true),
-  ('b0000000-0000-4000-8000-000000000002', 'amd',      'AMD',      'Processors and graphics.',        'https://www.amd.com', true),
-  ('b0000000-0000-4000-8000-000000000003', 'intel',    'Intel',    'Processors.',                     'https://www.intel.com', false),
-  ('b0000000-0000-4000-8000-000000000004', 'corsair',  'Corsair',  'Memory and peripherals.',         'https://www.corsair.com', false),
-  ('b0000000-0000-4000-8000-000000000005', 'lenovo',   'Lenovo',   'Laptops and desktops.',           'https://www.lenovo.com', false);
+insert into public.brands (
+  id, slug, name, website_url, is_featured
+) values
+  ('b0000000-0000-4000-8000-000000000001', 'nvidia', 'NVIDIA', 'https://www.nvidia.com', true),
+  ('b0000000-0000-4000-8000-000000000002', 'amd', 'AMD', 'https://www.amd.com', true),
+  ('b0000000-0000-4000-8000-000000000003', 'intel', 'Intel', 'https://www.intel.com', false),
+  ('b0000000-0000-4000-8000-000000000004', 'corsair', 'Corsair', 'https://www.corsair.com', false),
+  ('b0000000-0000-4000-8000-000000000005', 'lenovo', 'Lenovo', 'https://www.lenovo.com', false);
+
+-- English copy for the rows above. Uzbek and Russian are written in
+-- the admin; a seed that invented them would be fake data (ADR-20).
+insert into public.brand_translations (
+  brand_id, locale, description
+) values
+  ('b0000000-0000-4000-8000-000000000001', 'en', 'Graphics processors.'),
+  ('b0000000-0000-4000-8000-000000000002', 'en', 'Processors and graphics.'),
+  ('b0000000-0000-4000-8000-000000000003', 'en', 'Processors.'),
+  ('b0000000-0000-4000-8000-000000000004', 'en', 'Memory and peripherals.'),
+  ('b0000000-0000-4000-8000-000000000005', 'en', 'Laptops and desktops.');
 
 -- -----------------------------------------------------------------------------
 -- Sample products
@@ -144,94 +194,26 @@ insert into public.brands (id, slug, name, description, website_url, is_featured
 -- scheduled for the future, one on sale. Uniform fixtures would make every RLS
 -- policy look like it works.
 insert into public.products (
-  id, sku, slug, name, short_description, description,
-  brand_id, category_id, status, visibility, is_featured,
-  price_cents, sale_price_cents, cost_price_cents,
-  weight_grams, length_mm, width_mm, height_mm, warranty_months,
-  search_keywords, published_at
+  id, sku, brand_id, category_id, status, visibility, is_featured, price_cents, sale_price_cents, cost_price_cents, weight_grams, length_mm, width_mm, height_mm, warranty_months, published_at
 ) values
-  (
-    'c0000000-0000-4000-8000-000000000001',
-    'GPU-RTX4090-FE', 'nvidia-geforce-rtx-4090-founders-edition',
-    'NVIDIA GeForce RTX 4090 Founders Edition',
-    'Flagship graphics card with 24GB of GDDR6X memory.',
-    'The RTX 4090 Founders Edition is built for 4K gaming and GPU compute workloads.',
-    'b0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000211',
-    'active', 'public', true,
-    159900, 149900, 120000,
-    2186, 304, 137, 61, 36,
-    array['rtx', '4090', 'nvidia', 'graphics card', 'gpu'],
-    now() - interval '30 days'
-  ),
-  (
-    'c0000000-0000-4000-8000-000000000002',
-    'CPU-R9-7950X', 'amd-ryzen-9-7950x',
-    'AMD Ryzen 9 7950X',
-    '16-core desktop processor on socket AM5.',
-    'Sixteen Zen 4 cores at up to 5.7GHz.',
-    'b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000022',
-    'active', 'public', true,
-    69900, null, 52000,
-    120, 40, 40, 7, 36,
-    array['ryzen', '7950x', 'amd', 'cpu', 'processor'],
-    now() - interval '14 days'
-  ),
-  (
-    'c0000000-0000-4000-8000-000000000003',
-    'MEM-CORS-32GB-DDR5', 'corsair-vengeance-32gb-ddr5-6000',
-    'Corsair Vengeance 32GB DDR5-6000',
-    'Two 16GB modules rated for 6000 MT/s.',
-    'DDR5 kit with on-die ECC and an aluminium heat spreader.',
-    'b0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000023',
-    'active', 'public', false,
-    14900, 12900, 9800,
-    96, 133, 34, 7, 60,
-    array['ddr5', 'corsair', 'memory', 'ram', '32gb'],
-    now() - interval '7 days'
-  ),
-  -- Draft: must be invisible to anonymous readers.
-  (
-    'c0000000-0000-4000-8000-000000000004',
-    'LAP-LEN-X1C-G12', 'lenovo-thinkpad-x1-carbon-gen-12',
-    'Lenovo ThinkPad X1 Carbon Gen 12',
-    'Fourteen-inch business ultrabook.',
-    'Still being photographed — not ready to publish.',
-    'b0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000012',
-    'draft', 'public', false,
-    189900, null, 150000,
-    1090, 313, 215, 15, 36,
-    array['thinkpad', 'x1 carbon', 'lenovo', 'ultrabook'],
-    null
-  ),
-  -- Active but hidden: exercises status and visibility being independent.
-  (
-    'c0000000-0000-4000-8000-000000000005',
-    'GPU-RX7900XTX', 'amd-radeon-rx-7900-xtx',
-    'AMD Radeon RX 7900 XTX',
-    'High-end graphics card with 24GB of GDDR6.',
-    'Temporarily hidden while the product photography is redone.',
-    'b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000212',
-    'active', 'hidden', false,
-    99900, null, 78000,
-    1960, 287, 135, 51, 24,
-    array['radeon', '7900 xtx', 'amd', 'gpu'],
-    now() - interval '3 days'
-  ),
-  -- Scheduled: published_at is in the future, so the read policy hides it until
-  -- that moment without any job needing to run.
-  (
-    'c0000000-0000-4000-8000-000000000006',
-    'KEY-CORS-K70', 'corsair-k70-rgb-mechanical-keyboard',
-    'Corsair K70 RGB Mechanical Keyboard',
-    'Mechanical keyboard with an aluminium frame.',
-    'Launches next week.',
-    'b0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000031',
-    'active', 'public', false,
-    16900, null, 11000,
-    1150, 444, 166, 40, 24,
-    array['corsair', 'k70', 'keyboard', 'mechanical'],
-    now() + interval '7 days'
-  );
+  ('c0000000-0000-4000-8000-000000000001', 'GPU-RTX4090-FE', 'b0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000211', 'active', 'public', true, 159900, 149900, 120000, 2186, 304, 137, 61, 36, now() - interval '30 days'),
+  ('c0000000-0000-4000-8000-000000000002', 'CPU-R9-7950X', 'b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000022', 'active', 'public', true, 69900, null, 52000, 120, 40, 40, 7, 36, now() - interval '14 days'),
+  ('c0000000-0000-4000-8000-000000000003', 'MEM-CORS-32GB-DDR5', 'b0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000023', 'active', 'public', false, 14900, 12900, 9800, 96, 133, 34, 7, 60, now() - interval '7 days'),
+  ('c0000000-0000-4000-8000-000000000004', 'LAP-LEN-X1C-G12', 'b0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000012', 'draft', 'public', false, 189900, null, 150000, 1090, 313, 215, 15, 36, null),
+  ('c0000000-0000-4000-8000-000000000005', 'GPU-RX7900XTX', 'b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000212', 'active', 'hidden', false, 99900, null, 78000, 1960, 287, 135, 51, 24, now() - interval '3 days'),
+  ('c0000000-0000-4000-8000-000000000006', 'KEY-CORS-K70', 'b0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000031', 'active', 'public', false, 16900, null, 11000, 1150, 444, 166, 40, 24, now() + interval '7 days');
+
+-- English copy for the rows above. Uzbek and Russian are written in
+-- the admin; a seed that invented them would be fake data (ADR-20).
+insert into public.product_translations (
+  product_id, locale, name, short_description, description, slug, seo_keywords
+) values
+  ('c0000000-0000-4000-8000-000000000001', 'en', 'NVIDIA GeForce RTX 4090 Founders Edition', 'Flagship graphics card with 24GB of GDDR6X memory.', 'The RTX 4090 Founders Edition is built for 4K gaming and GPU compute workloads.', 'nvidia-geforce-rtx-4090-founders-edition', array['rtx', '4090', 'nvidia', 'graphics card', 'gpu']),
+  ('c0000000-0000-4000-8000-000000000002', 'en', 'AMD Ryzen 9 7950X', '16-core desktop processor on socket AM5.', 'Sixteen Zen 4 cores at up to 5.7GHz.', 'amd-ryzen-9-7950x', array['ryzen', '7950x', 'amd', 'cpu', 'processor']),
+  ('c0000000-0000-4000-8000-000000000003', 'en', 'Corsair Vengeance 32GB DDR5-6000', 'Two 16GB modules rated for 6000 MT/s.', 'DDR5 kit with on-die ECC and an aluminium heat spreader.', 'corsair-vengeance-32gb-ddr5-6000', array['ddr5', 'corsair', 'memory', 'ram', '32gb']),
+  ('c0000000-0000-4000-8000-000000000004', 'en', 'Lenovo ThinkPad X1 Carbon Gen 12', 'Fourteen-inch business ultrabook.', 'Still being photographed — not ready to publish.', 'lenovo-thinkpad-x1-carbon-gen-12', array['thinkpad', 'x1 carbon', 'lenovo', 'ultrabook']),
+  ('c0000000-0000-4000-8000-000000000005', 'en', 'AMD Radeon RX 7900 XTX', 'High-end graphics card with 24GB of GDDR6.', 'Temporarily hidden while the product photography is redone.', 'amd-radeon-rx-7900-xtx', array['radeon', '7900 xtx', 'amd', 'gpu']),
+  ('c0000000-0000-4000-8000-000000000006', 'en', 'Corsair K70 RGB Mechanical Keyboard', 'Mechanical keyboard with an aluminium frame.', 'Launches next week.', 'corsair-k70-rgb-mechanical-keyboard', array['corsair', 'k70', 'keyboard', 'mechanical']);
 
 -- -----------------------------------------------------------------------------
 -- Specifications
@@ -283,5 +265,19 @@ update public.settings set value = '"stock@bondo.local"'::jsonb  where key = 'or
 -- -----------------------------------------------------------------------------
 -- Banner
 -- -----------------------------------------------------------------------------
-insert into public.site_banners (title, subtitle, placement, link_url, is_active, display_order)
-values ('Development banner', 'Visible only in local development.', 'home_hero', '/products', true, 1);
+-- The banner and its English copy. `returning` keys the translation to the row
+-- just inserted, so no id has to be invented here or kept in step by hand.
+with banner as (
+  insert into public.site_banners (
+    placement, link_url, is_active, display_order
+  ) values
+    ('home_hero', '/products', true, 1)
+  returning id
+)
+insert into public.banner_translations (banner_id, locale, title, subtitle)
+select
+  banner.id,
+  'en',
+  'Components chosen on merit, not margin',
+  'Every system we build is assembled, cable-managed and burned in for 24 hours before it ships.'
+from banner;

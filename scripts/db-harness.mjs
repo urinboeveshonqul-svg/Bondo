@@ -23,6 +23,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
+import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
 import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 
 const MIGRATIONS_DIR = fileURLToPath(
@@ -62,21 +63,41 @@ const PLATFORM_STUBS = /* sql */ `
   end
   $$;
 
-  -- Only the columns the migrations reference. A wider stub would invite the
-  -- schema to depend on a column hosted Supabase might not have.
+  -- pgcrypto lives in the extensions schema on Supabase, and the seed calls
+  -- extensions.crypt() to hash the development password.
+  create extension if not exists pgcrypto with schema extensions;
+
+  -- Only the columns the migrations and the seed reference. A wider stub would
+  -- invite the schema to depend on a column hosted Supabase might not have —
+  -- and the columns here are GoTrue's, which is why **K-9 stays open**: this
+  -- proves the inserts are well-formed, not that GoTrue accepts them.
   create table if not exists auth.users (
+    instance_id uuid,
     id uuid primary key default gen_random_uuid(),
+    aud text,
+    role text,
     email text,
+    encrypted_password text,
+    email_confirmed_at timestamptz,
+    raw_app_meta_data jsonb,
     raw_user_meta_data jsonb,
-    created_at timestamptz not null default now()
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    confirmation_token text,
+    email_change text,
+    email_change_token_new text,
+    recovery_token text
   );
 
   create table if not exists auth.identities (
     id uuid primary key default gen_random_uuid(),
+    provider_id text,
     user_id uuid not null references auth.users (id) on delete cascade,
     provider text not null,
     identity_data jsonb not null,
-    created_at timestamptz not null default now()
+    last_sign_in_at timestamptz,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
   );
 
   -- Reads the request's JWT claim. Stubbed to a transaction-local GUC so tests
@@ -123,9 +144,27 @@ const PLATFORM_STUBS = /* sql */ `
   $$;
 `;
 
+/**
+ * Applies `supabase/seed.sql`.
+ *
+ * Kept separate from `createSchema` because most callers want the schema and
+ * not the data — and because a seed failure has to be distinguishable from a
+ * migration failure. The seed's `auth.users` inserts run against the stub here,
+ * so this proves the *catalog* inserts are consistent with the schema and says
+ * nothing about GoTrue (**K-9**).
+ */
+export async function applySeed(db) {
+  const sql = await readFile(
+    fileURLToPath(new URL("../supabase/seed.sql", import.meta.url)),
+    "utf8",
+  );
+
+  await db.exec(sql);
+}
+
 /** Boots PGlite, stubs the platform, and applies every migration in order. */
 export async function createSchema({ log = false } = {}) {
-  const db = new PGlite({ extensions: { pg_trgm } });
+  const db = new PGlite({ extensions: { pg_trgm, pgcrypto } });
   await db.waitReady;
 
   await db.exec(PLATFORM_STUBS);

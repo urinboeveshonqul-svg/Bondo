@@ -1,3 +1,5 @@
+import type { Enums } from "@/types/database";
+
 /**
  * Static, non-secret configuration for the storefront.
  *
@@ -17,9 +19,22 @@
  * `messages/` folder and every localized content field. Uzbek is first because
  * it is the default.
  */
-export const locales = ["uz", "ru", "en"] as const;
+export const locales = [
+  "uz",
+  "ru",
+  "en",
+] as const satisfies readonly Enums<"locale">[];
 
-export type Locale = (typeof locales)[number];
+/**
+ * **Derived from the database** (CLAUDE.md § 12). `public.locale` is a Postgres
+ * enum, so adding a language is a migration — which is right, because it is
+ * never only a data change: it also needs a `messages/<code>/` folder, a font
+ * subset and a routing entry.
+ *
+ * The `satisfies` below is the join between the two: if the enum and this list
+ * ever disagree, the build fails here rather than at the first insert.
+ */
+export type Locale = Enums<"locale">;
 
 export const defaultLocale: Locale = "uz";
 

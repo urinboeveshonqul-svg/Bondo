@@ -12,6 +12,55 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — Phase 3C: localization is first-class in the database
+
+**K-15 is closed.** Migration `20260804001000_localization.sql` replaces the
+single `text` column per content field with six normalized translation tables,
+each keyed `(entity, locale)` and cascading from its parent:
+`product_translations`, `category_translations`, `brand_translations`,
+`banner_translations`, `content_page_translations` and `setting_translations`.
+`content_pages` is new — the static pages the footer already lists.
+
+Not `jsonb`, deliberately (**ADR-51**): a blob cannot be constrained, cannot
+carry a per-locale `tsvector`, and cannot have a unique index on a slug.
+
+**Full-text search is per locale.** `search_vector` moved onto the translation
+row and picks its dictionary from that row's language — `russian`, `english`, or
+`simple` for Uzbek, which has no Postgres dictionary and is better left
+unstemmed. Verified: "graphics" finds "graphics card" through the English
+stemmer, and "nvidia" survives intact through `simple`.
+
+**Slugs are per locale** (**ADR-52**), unique within a locale rather than
+globally, so `/ru/products/videokarta-rtx-4090` is expressible.
+
+**The old columns were dropped**, not left alongside — two places to write a
+product name is the duplicate concept this phase existed to remove. Existing
+rows are migrated to `en` in the same migration, and the seed was restructured
+to match so `db:reset` still works.
+
+**Services own translations.** Callers pass and receive `LocalizedText`;
+`*_translations` never appears in a page or a component. `lib/i18n/translations.ts`
+is the single fold — `toLocalizedText`, `toTranslationRows`, `pick`,
+`coverageOf`, `isPublishable` — used by every service and every form, so a
+second hand-rolled version cannot drop a language on save.
+
+**A record is not publishable until every language has copy** (**ADR-53**),
+enforced in the service and surfaced by the same function the form renders.
+
+**Components**: `LocalizedTextField`, `LocalizedTextarea`, `LanguageTabs`,
+`TranslationStatus`, `MissingTranslationIndicator`, `TranslationProgress`.
+
+**`Locale` now derives from the database.** `public.locale` is an enum, so
+adding a language is a migration — correct, because it also needs message files,
+a font subset and a routing entry.
+
+### Verified
+
+`npm run db:verify` grew from 33 to **70 assertions**, and now applies the seed
+as well as the migrations: 25 tables, RLS on every one, 64 policies, 53 foreign
+keys, 75 indexes, every translation table keyed and cascading, per-locale unique
+slug indexes, and the search dictionaries proven to differ per locale.
+
 ### Added — database-first policy (CLAUDE.md § 12)
 
 The schema is the source of truth. Before UI changes: the schema must support

@@ -2,9 +2,37 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { AppError } from "@/lib/errors";
 import { notFoundOrForbidden, toAppError } from "@/lib/supabase-error";
+import { toLocalizedText } from "@/lib/i18n/translations";
+import type { Locale } from "@/lib/site-config";
+import type { LocalizedText } from "@/types/catalog";
 import type { Database, Enums, Tables } from "@/types/database";
 
 type Client = SupabaseClient<Database>;
+
+/**
+ * Folds a row's embedded product translations into a `LocalizedText`.
+ *
+ * Inventory joins the catalog only for a label, so it reuses the same fold every
+ * other service uses rather than growing its own copy (K-15). The UI receives a
+ * product name in three languages and never sees a translation row.
+ */
+function foldProduct<T>(row: Record<string, unknown>): T {
+  const product = row.product as Record<string, unknown> | null;
+  if (!product) return row as T;
+
+  const translations = (product.translations ?? []) as ({
+    locale: Locale;
+  } & Record<string, unknown>)[];
+
+  return {
+    ...row,
+    product: {
+      id: product.id,
+      sku: product.sku,
+      name: toLocalizedText(translations, "name"),
+    },
+  } as T;
+}
 
 export type InventoryLevel = Pick<
   Tables<"inventory">,
@@ -15,7 +43,12 @@ export type InventoryLevel = Pick<
   | "allow_backorder"
   | "updated_at"
 > & {
-  product: Pick<Tables<"products">, "id" | "name" | "sku" | "slug"> | null;
+  product: {
+    id: string;
+    sku: string;
+    /** Folded from the translation rows; the UI never sees a locale row. */
+    name: LocalizedText;
+  } | null;
 };
 
 /**
@@ -33,7 +66,10 @@ export async function listInventory(
     .select(
       `product_id, quantity_on_hand, quantity_reserved, low_stock_threshold,
        allow_backorder, updated_at,
-       product:products ( id, name, sku, slug )`,
+       product:products (
+         id, sku,
+         translations:product_translations ( locale, name )
+       )`,
     )
     .order("quantity_on_hand", { ascending: true });
 
@@ -42,7 +78,9 @@ export async function listInventory(
   const { data, error } = await query;
   if (error) throw toAppError(error, "list inventory");
 
-  const rows = (data ?? []) as unknown as InventoryLevel[];
+  const rows = (data ?? []).map((row) =>
+    foldProduct<InventoryLevel>(row as unknown as Record<string, unknown>),
+  );
 
   // Low stock is `on_hand <= threshold`, a comparison between two columns.
   // PostgREST cannot express that in a filter, so it is applied here — a real
@@ -58,7 +96,7 @@ export async function listInventory(
 }
 
 export type MovementRow = Tables<"inventory_movements"> & {
-  product: Pick<Tables<"products">, "id" | "name" | "sku"> | null;
+  product: { id: string; sku: string; name: LocalizedText } | null;
 };
 
 export async function listMovements(
@@ -67,7 +105,9 @@ export async function listMovements(
 ): Promise<MovementRow[]> {
   let query = supabase
     .from("inventory_movements")
-    .select(`*, product:products ( id, name, sku )`)
+    .select(
+      `*, product:products ( id, sku, translations:product_translations ( locale, name ) )`,
+    )
     .order("created_at", { ascending: false })
     .limit(options.limit ?? 50);
 
@@ -76,7 +116,9 @@ export async function listMovements(
   const { data, error } = await query;
   if (error) throw toAppError(error, "list stock movements");
 
-  return (data ?? []) as unknown as MovementRow[];
+  return (data ?? []).map((row) =>
+    foldProduct<MovementRow>(row as unknown as Record<string, unknown>),
+  );
 }
 
 /**

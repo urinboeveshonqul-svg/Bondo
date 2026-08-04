@@ -16,28 +16,51 @@
  *  - GoTrue's acceptance of the seed's `auth.users` rows (**K-9**).
  *  - Anything about a hosted project's configuration.
  */
-import { createSchema } from "./db-harness.mjs";
+import { applySeed, createSchema } from "./db-harness.mjs";
 
 const EXPECTED_TABLES = [
   "admins",
   "audit_logs",
+  "banner_translations",
+  "brand_translations",
   "brands",
   "categories",
+  "category_translations",
+  "content_page_translations",
+  "content_pages",
   "inventory",
   "inventory_movements",
   "permissions",
   "product_images",
   "product_specifications",
+  "product_translations",
   "products",
   "profiles",
   "role_permissions",
   "roles",
+  "setting_translations",
   "settings",
   "site_banners",
   "user_roles",
   "wishlist_items",
   "wishlists",
 ];
+
+/**
+ * Every table holding localized copy, and the column that keys it.
+ *
+ * Asserted rather than assumed: the localization architecture is only real if
+ * each of these actually has a `locale` column, a composite primary key
+ * including it, and a cascade from its parent (K-15).
+ */
+const TRANSLATION_TABLES = {
+  product_translations: "product_id",
+  category_translations: "category_id",
+  brand_translations: "brand_id",
+  banner_translations: "banner_id",
+  content_page_translations: "page_id",
+  setting_translations: "setting_key",
+};
 
 const results = [];
 let failures = 0;
@@ -53,7 +76,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 9,
+  migrationCount === 10,
   `${migrationCount} files`,
 );
 
@@ -67,7 +90,7 @@ const tables = (
 ).rows.map((row) => row.tablename);
 
 check(
-  `18 public tables exist`,
+  `${EXPECTED_TABLES.length} public tables exist`,
   tables.length === EXPECTED_TABLES.length,
   `${tables.length} found`,
 );
@@ -306,24 +329,248 @@ check(
 // -----------------------------------------------------------------------------
 // Full-text search column
 // -----------------------------------------------------------------------------
-const searchVector = (
+// Per **locale** now (K-15): one `simple` vector over three languages stems
+// none of them, and Russian searched against an English dictionary silently
+// returns nothing.
+for (const table of ["product_translations", "content_page_translations"]) {
+  const vector = (
+    await db.query(
+      `select a.attgenerated
+       from pg_attribute a
+       join pg_class c on c.oid = a.attrelid
+       where c.relname = $1 and a.attname = 'search_vector' and not a.attisdropped`,
+      [table],
+    )
+  ).rows;
+
+  check(
+    `${table}.search_vector is a generated column`,
+    vector[0]?.attgenerated === "s",
+    vector.length ? `attgenerated=${vector[0].attgenerated}` : "absent",
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Localization architecture (K-15)
+// -----------------------------------------------------------------------------
+// The single-language columns must be *gone*, not merely unused. Two places to
+// write a product name is the duplicate concept this phase removed.
+const strandedColumns = (
   await db.query(`
-    select a.attname, a.attgenerated
+    select c.relname, a.attname
     from pg_attribute a
     join pg_class c on c.oid = a.attrelid
-    where c.relname = 'products' and a.attname = 'search_vector' and not a.attisdropped
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and not a.attisdropped and a.attnum > 0
+      and (
+        (c.relname = 'products' and a.attname in
+          ('name','description','short_description','slug','seo_title','seo_description','search_keywords','search_vector'))
+        or (c.relname = 'categories' and a.attname in
+          ('name','description','slug','seo_title','seo_description'))
+        or (c.relname = 'brands' and a.attname in
+          ('description','seo_title','seo_description'))
+        or (c.relname = 'site_banners' and a.attname in ('title','subtitle'))
+      )
   `)
 ).rows;
 
 check(
-  "products.search_vector is a generated column",
-  searchVector[0]?.attgenerated === "s",
-  searchVector.length
-    ? `attgenerated=${searchVector[0].attgenerated}`
-    : "absent",
+  "single-language content columns were dropped from the parents",
+  strandedColumns.length === 0,
+  strandedColumns.map((r) => `${r.relname}.${r.attname}`).join(", ") ||
+    "products, categories, brands and site_banners are language-independent",
+);
+
+for (const [table, parentColumn] of Object.entries(TRANSLATION_TABLES)) {
+  const columns = (
+    await db.query(
+      `select a.attname from pg_attribute a
+       join pg_class c on c.oid = a.attrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'public' and c.relname = $1
+         and not a.attisdropped and a.attnum > 0`,
+      [table],
+    )
+  ).rows.map((r) => r.attname);
+
+  check(`${table} has a locale column`, columns.includes("locale"));
+
+  // The primary key must be (parent, locale). Anything else permits two rows
+  // for one language, and the application would pick between them arbitrarily.
+  const pk = (
+    await db.query(
+      `select att.attname
+       from pg_constraint con
+       join pg_class c on c.oid = con.conrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       join unnest(con.conkey) as k(attnum) on true
+       join pg_attribute att on att.attrelid = c.oid and att.attnum = k.attnum
+       where con.contype = 'p' and n.nspname = 'public' and c.relname = $1`,
+      [table],
+    )
+  ).rows.map((r) => r.attname);
+
+  check(
+    `${table} is keyed by (${parentColumn}, locale)`,
+    pk.length === 2 && pk.includes(parentColumn) && pk.includes("locale"),
+    pk.join(", "),
+  );
+
+  // A translation outliving its parent is unreachable noise.
+  const cascade = (
+    await db.query(
+      `select con.confdeltype
+       from pg_constraint con
+       join pg_class c on c.oid = con.conrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       join unnest(con.conkey) as k(attnum) on true
+       join pg_attribute att on att.attrelid = c.oid and att.attnum = k.attnum
+       where con.contype = 'f' and n.nspname = 'public'
+         and c.relname = $1 and att.attname = $2`,
+      [table, parentColumn],
+    )
+  ).rows;
+
+  check(
+    `${table} cascades from its parent`,
+    cascade[0]?.confdeltype === "c",
+    cascade.length ? `confdeltype=${cascade[0].confdeltype}` : "no foreign key",
+  );
+}
+
+// A localized slug is unique *within* a locale, never globally: "monitor" may
+// be one product's Uzbek slug and another product's English one.
+for (const table of [
+  "product_translations",
+  "category_translations",
+  "content_page_translations",
+]) {
+  const indexes = (
+    await db.query(
+      `select indexdef from pg_indexes
+       where schemaname = 'public' and tablename = $1`,
+      [table],
+    )
+  ).rows;
+
+  check(
+    `${table} has a per-locale unique slug index`,
+    indexes.some(
+      (row) =>
+        /UNIQUE/i.test(row.indexdef) && /locale, slug/i.test(row.indexdef),
+    ),
+    indexes.length ? "" : "no indexes",
+  );
+}
+
+const localeValues = (
+  await db.query(`
+    select e.enumlabel
+    from pg_type t
+    join pg_enum e on e.enumtypid = t.oid
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public' and t.typname = 'locale'
+    order by e.enumsortorder
+  `)
+).rows.map((r) => r.enumlabel);
+
+check(
+  "locale enum is exactly uz, ru, en",
+  localeValues.join(",") === "uz,ru,en",
+  localeValues.join(", ") || "absent",
 );
 
 // -----------------------------------------------------------------------------
+// The seed must still apply. It writes catalog rows, and this phase moved every
+// piece of localized copy out from under it — a seed that no longer matches the
+// schema breaks `db:reset` for whoever runs it next, silently until they do.
+// -----------------------------------------------------------------------------
+try {
+  await applySeed(db);
+  check("supabase/seed.sql applies against the schema", true);
+
+  const seeded = (
+    await db.query(`
+      select
+        (select count(*) from public.products)::int as products,
+        (select count(*) from public.product_translations)::int as product_rows,
+        (select count(*) from public.category_translations)::int as category_rows,
+        (select count(*) from public.brand_translations)::int as brand_rows,
+        (select count(*) from public.banner_translations)::int as banner_rows
+    `)
+  ).rows[0];
+
+  check(
+    "every seeded product has a translation",
+    seeded.products > 0 && seeded.product_rows >= seeded.products,
+    `${seeded.products} products, ${seeded.product_rows} translations`,
+  );
+
+  check(
+    "categories, brands and banners were translated too",
+    seeded.category_rows > 0 && seeded.brand_rows > 0 && seeded.banner_rows > 0,
+    `categories ${seeded.category_rows}, brands ${seeded.brand_rows}, banners ${seeded.banner_rows}`,
+  );
+
+  // Proof the vector indexes text rather than merely existing — and that the
+  // per-locale dictionary is really applied. Both halves matter:
+  //
+  //  * "graphics" only matches the description via the *english* dictionary,
+  //    which stems it to "graphic". A `simple` query would miss it, which is
+  //    exactly the bug a single shared config produces.
+  //  * "nvidia" matches the name and keywords, which are indexed `simple` so a
+  //    model number survives intact.
+  const stemmed = (
+    await db.query(`
+      select count(*)::int as n from public.product_translations
+      where locale = 'en'
+        and search_vector @@ websearch_to_tsquery('english', 'graphics')
+    `)
+  ).rows[0];
+
+  check(
+    'english dictionary stems prose — "graphics" finds "graphics card"',
+    stemmed.n > 0,
+    `${stemmed.n} rows`,
+  );
+
+  const literal = (
+    await db.query(`
+      select count(*)::int as n from public.product_translations
+      where locale = 'en'
+        and search_vector @@ websearch_to_tsquery('simple', 'nvidia')
+    `)
+  ).rows[0];
+
+  check(
+    'simple dictionary keeps identifiers intact — "nvidia" matches',
+    literal.n > 0,
+    `${literal.n} rows`,
+  );
+
+  // The dictionary is chosen from the row's locale, so an English query must
+  // not be what makes a Russian row match. Nothing seeds Russian copy, so the
+  // assertion is that the function exists and returns the right config.
+  const configs = (
+    await db.query(`
+      select
+        public.text_search_config('uz')::text as uz,
+        public.text_search_config('ru')::text as ru,
+        public.text_search_config('en')::text as en
+    `)
+  ).rows[0];
+
+  check(
+    "each locale maps to its own text search dictionary",
+    configs.uz === "simple" &&
+      configs.ru === "russian" &&
+      configs.en === "english",
+    `uz=${configs.uz}, ru=${configs.ru}, en=${configs.en}`,
+  );
+} catch (error) {
+  check("supabase/seed.sql applies against the schema", false, error.message);
+}
+
 await db.close();
 
 console.log(results.join("\n"));

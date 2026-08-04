@@ -199,11 +199,9 @@ services, which moved out of Phase 2 when it was scoped to the database only.
 
 ### Blocked
 
-- [ ] **K-15** — the schema is single-language and cannot store `LocalizedText`.
-      **This gates everything below it.** See § "Translated content in the
-      database" for the design
-- [ ] **K-16** — reconcile the admin's publishing and inventory vocabulary with
-      `product_status`, `product_visibility` and `inventory_movement_type`
+- [x] **K-15** — six normalized translation tables, per-locale search vectors
+      and slugs (ADR-51, ADR-52)
+- [x] **K-16** — enums derived from the database, enforced by `npm run enums:check`
 - [ ] A Supabase project: `.env.local`, `supabase link`, `db push`. Without one
       nothing can be executed, only compiled
 

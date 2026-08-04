@@ -111,19 +111,107 @@ export type Database = {
         }
         Relationships: []
       }
+      banner_translations: {
+        Row: {
+          banner_id: string
+          created_at: string
+          created_by: string | null
+          cta_label: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          subtitle: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          banner_id: string
+          created_at?: string
+          created_by?: string | null
+          cta_label?: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          banner_id?: string
+          created_at?: string
+          created_by?: string | null
+          cta_label?: string | null
+          locale?: Database["public"]["Enums"]["locale"]
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banner_translations_banner_id_fkey"
+            columns: ["banner_id"]
+            isOneToOne: false
+            referencedRelation: "site_banners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_translations: {
+        Row: {
+          brand_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          seo_description: string | null
+          seo_keywords: string[]
+          seo_title: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          seo_description?: string | null
+          seo_keywords?: string[]
+          seo_title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          locale?: Database["public"]["Enums"]["locale"]
+          seo_description?: string | null
+          seo_keywords?: string[]
+          seo_title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_translations_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brands: {
         Row: {
           created_at: string
           created_by: string | null
           deleted_at: string | null
-          description: string | null
           id: string
           is_featured: boolean
           is_visible: boolean
           logo_path: string | null
           name: string
-          seo_description: string | null
-          seo_title: string | null
           slug: string
           updated_at: string
           updated_by: string | null
@@ -133,14 +221,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
-          description?: string | null
           id?: string
           is_featured?: boolean
           is_visible?: boolean
           logo_path?: string | null
           name: string
-          seo_description?: string | null
-          seo_title?: string | null
           slug: string
           updated_at?: string
           updated_by?: string | null
@@ -150,14 +235,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
-          description?: string | null
           id?: string
           is_featured?: boolean
           is_visible?: boolean
           logo_path?: string | null
           name?: string
-          seo_description?: string | null
-          seo_title?: string | null
           slug?: string
           updated_at?: string
           updated_by?: string | null
@@ -171,17 +253,12 @@ export type Database = {
           created_by: string | null
           deleted_at: string | null
           depth: number
-          description: string | null
           display_order: number
           id: string
           image_path: string | null
           is_visible: boolean
-          name: string
           parent_id: string | null
           path: string[]
-          seo_description: string | null
-          seo_title: string | null
-          slug: string
           updated_at: string
           updated_by: string | null
         }
@@ -190,17 +267,12 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           depth?: number
-          description?: string | null
           display_order?: number
           id?: string
           image_path?: string | null
           is_visible?: boolean
-          name: string
           parent_id?: string | null
           path?: string[]
-          seo_description?: string | null
-          seo_title?: string | null
-          slug: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -209,17 +281,12 @@ export type Database = {
           created_by?: string | null
           deleted_at?: string | null
           depth?: number
-          description?: string | null
           display_order?: number
           id?: string
           image_path?: string | null
           is_visible?: boolean
-          name?: string
           parent_id?: string | null
           path?: string[]
-          seo_description?: string | null
-          seo_title?: string | null
-          slug?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -232,6 +299,157 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      category_translations: {
+        Row: {
+          category_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          name: string
+          seo_description: string | null
+          seo_keywords: string[]
+          seo_title: string | null
+          slug: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          name: string
+          seo_description?: string | null
+          seo_keywords?: string[]
+          seo_title?: string | null
+          slug?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          locale?: Database["public"]["Enums"]["locale"]
+          name?: string
+          seo_description?: string | null
+          seo_keywords?: string[]
+          seo_title?: string | null
+          slug?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_translations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_page_translations: {
+        Row: {
+          body: string | null
+          created_at: string
+          created_by: string | null
+          excerpt: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          page_id: string
+          search_vector: unknown
+          seo_description: string | null
+          seo_keywords: string[]
+          seo_title: string | null
+          slug: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          page_id: string
+          search_vector?: unknown
+          seo_description?: string | null
+          seo_keywords?: string[]
+          seo_title?: string | null
+          slug?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string | null
+          locale?: Database["public"]["Enums"]["locale"]
+          page_id?: string
+          search_vector?: unknown
+          seo_description?: string | null
+          seo_keywords?: string[]
+          seo_title?: string | null
+          slug?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_page_translations_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "content_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_pages: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          display_order: number
+          id: string
+          is_published: boolean
+          key: string
+          published_at: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          display_order?: number
+          id?: string
+          is_published?: boolean
+          key: string
+          published_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          display_order?: number
+          id?: string
+          is_published?: boolean
+          key?: string
+          published_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       inventory: {
         Row: {
@@ -430,6 +648,65 @@ export type Database = {
           },
         ]
       }
+      product_translations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          name: string
+          product_id: string
+          search_vector: unknown
+          seo_description: string | null
+          seo_keywords: string[]
+          seo_title: string | null
+          short_description: string | null
+          slug: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          name: string
+          product_id: string
+          search_vector?: unknown
+          seo_description?: string | null
+          seo_keywords?: string[]
+          seo_title?: string | null
+          short_description?: string | null
+          slug?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          locale?: Database["public"]["Enums"]["locale"]
+          name?: string
+          product_id?: string
+          search_vector?: unknown
+          seo_description?: string | null
+          seo_keywords?: string[]
+          seo_title?: string | null
+          short_description?: string | null
+          slug?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_translations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           brand_id: string | null
@@ -438,22 +715,14 @@ export type Database = {
           created_at: string
           created_by: string | null
           deleted_at: string | null
-          description: string | null
           height_mm: number | null
           id: string
           is_featured: boolean
           length_mm: number | null
-          name: string
           price_cents: number
           published_at: string | null
           sale_price_cents: number | null
-          search_keywords: string[]
-          search_vector: unknown
-          seo_description: string | null
-          seo_title: string | null
-          short_description: string | null
           sku: string
-          slug: string
           status: Database["public"]["Enums"]["product_status"]
           updated_at: string
           updated_by: string | null
@@ -469,22 +738,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
-          description?: string | null
           height_mm?: number | null
           id?: string
           is_featured?: boolean
           length_mm?: number | null
-          name: string
           price_cents: number
           published_at?: string | null
           sale_price_cents?: number | null
-          search_keywords?: string[]
-          search_vector?: unknown
-          seo_description?: string | null
-          seo_title?: string | null
-          short_description?: string | null
           sku: string
-          slug: string
           status?: Database["public"]["Enums"]["product_status"]
           updated_at?: string
           updated_by?: string | null
@@ -500,22 +761,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
-          description?: string | null
           height_mm?: number | null
           id?: string
           is_featured?: boolean
           length_mm?: number | null
-          name?: string
           price_cents?: number
           published_at?: string | null
           sale_price_cents?: number | null
-          search_keywords?: string[]
-          search_vector?: unknown
-          seo_description?: string | null
-          seo_title?: string | null
-          short_description?: string | null
           sku?: string
-          slug?: string
           status?: Database["public"]["Enums"]["product_status"]
           updated_at?: string
           updated_by?: string | null
@@ -640,10 +893,46 @@ export type Database = {
         }
         Relationships: []
       }
+      setting_translations: {
+        Row: {
+          created_at: string
+          locale: Database["public"]["Enums"]["locale"]
+          setting_key: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          locale: Database["public"]["Enums"]["locale"]
+          setting_key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string
+          locale?: Database["public"]["Enums"]["locale"]
+          setting_key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "setting_translations_setting_key_fkey"
+            columns: ["setting_key"]
+            isOneToOne: false
+            referencedRelation: "settings"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       settings: {
         Row: {
           created_at: string
           description: string | null
+          is_localized: boolean
           is_public: boolean
           key: string
           updated_at: string
@@ -653,6 +942,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          is_localized?: boolean
           is_public?: boolean
           key: string
           updated_at?: string
@@ -662,6 +952,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          is_localized?: boolean
           is_public?: boolean
           key?: string
           updated_at?: string
@@ -683,8 +974,6 @@ export type Database = {
           link_url: string | null
           placement: Database["public"]["Enums"]["banner_placement"]
           starts_at: string | null
-          subtitle: string | null
-          title: string
           updated_at: string
           updated_by: string | null
         }
@@ -700,8 +989,6 @@ export type Database = {
           link_url?: string | null
           placement: Database["public"]["Enums"]["banner_placement"]
           starts_at?: string | null
-          subtitle?: string | null
-          title: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -717,8 +1004,6 @@ export type Database = {
           link_url?: string | null
           placement?: Database["public"]["Enums"]["banner_placement"]
           starts_at?: string | null
-          subtitle?: string | null
-          title?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -828,12 +1113,17 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_product_published: { Args: { p_product_id: string }; Returns: boolean }
       is_valid_slug: { Args: { value: string }; Returns: boolean }
+      text_search_config: {
+        Args: { loc: Database["public"]["Enums"]["locale"] }
+        Returns: unknown
+      }
     }
     Enums: {
       banner_placement:
         "home_hero" | "home_secondary" | "category_top" | "site_wide_notice"
       inventory_movement_type:
         "purchase" | "adjustment" | "correction" | "sale" | "return"
+      locale: "uz" | "ru" | "en"
       product_status: "draft" | "active" | "archived"
       product_visibility: "public" | "hidden"
     }
@@ -973,6 +1263,7 @@ export const Constants = {
         "sale",
         "return",
       ],
+      locale: ["uz", "ru", "en"],
       product_status: ["draft", "active", "archived"],
       product_visibility: ["public", "hidden"],
     },
