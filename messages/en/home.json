@@ -32,24 +32,7 @@
     "emptyDescription": "New promotions go up at the start of each month."
   },
   "valueProps": {
-    "title": "Why buy from us",
-    "description": "Four reasons.",
-    "tested": {
-      "title": "Every build is tested",
-      "body": "A full day of thermal and stability testing. If a machine is going to throttle or crash, it does it on our bench and not on your desk."
-    },
-    "answers": {
-      "title": "We answer with numbers",
-      "body": "Ask whether a cooler fits your case and you get the height in millimetres, not a link to the product page."
-    },
-    "packed": {
-      "title": "Packed properly",
-      "body": "Graphics cards ship double-boxed with the connector supported. Nothing moves in transit."
-    },
-    "returns": {
-      "title": "30-day returns",
-      "body": "Wrong model, or changed your mind? Send it back unused and we refund it in full."
-    }
+    "title": "Why buy from us"
   },
   "reviews": {
     "title": "Customer reviews",

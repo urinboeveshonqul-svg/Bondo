@@ -1415,6 +1415,80 @@ export type Database = {
         }
         Relationships: []
       }
+      service_highlight_translations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          highlight_id: string
+          locale: Database["public"]["Enums"]["locale"]
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description: string
+          highlight_id: string
+          locale: Database["public"]["Enums"]["locale"]
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          highlight_id?: string
+          locale?: Database["public"]["Enums"]["locale"]
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_highlight_translations_highlight_id_fkey"
+            columns: ["highlight_id"]
+            isOneToOne: false
+            referencedRelation: "service_highlights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_highlights: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          display_order: number
+          icon: string
+          id: string
+          is_visible: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          display_order?: number
+          icon?: string
+          id?: string
+          is_visible?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          display_order?: number
+          icon?: string
+          id?: string
+          is_visible?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       setting_translations: {
         Row: {
           created_at: string

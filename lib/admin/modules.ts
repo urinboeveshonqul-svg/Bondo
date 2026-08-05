@@ -188,6 +188,32 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
     audit: true,
   },
   {
+    id: "highlights",
+    labelKey: "nav.highlights",
+    href: routes.admin.highlights,
+    icon: "BadgeCheck",
+    navSection: "storefront",
+    // Reuses the banner permissions rather than inventing a pair: a highlight is
+    // storefront content with the same lifecycle and the same author (ADR-44).
+    grants: {
+      view: "banners.read",
+      create: "banners.manage",
+      update: "banners.manage",
+      // Visibility is the publish control, and it is the same permission.
+      publish: "banners.manage",
+      delete: "banners.manage",
+      settings: null,
+      export: null,
+    },
+    // Editing happens in a dialog on the list, not a separate route: a highlight
+    // is an icon and two short strings per language, and a full-page form for
+    // six fields would be ceremony.
+    form: [],
+    localized: true,
+    seo: false,
+    audit: true,
+  },
+  {
     id: "content",
     labelKey: "nav.content",
     href: routes.admin.content,

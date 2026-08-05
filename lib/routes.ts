@@ -83,6 +83,7 @@ export const routes = {
     brands: "/admin/brands",
     inventory: "/admin/inventory",
     homepage: "/admin/homepage",
+    highlights: "/admin/highlights",
     content: "/admin/content",
     contentPage: (slug: string) => `/admin/content/${slug}`,
     settings: "/admin/settings",

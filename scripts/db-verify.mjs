@@ -53,6 +53,8 @@ const EXPECTED_TABLES = [
   "order_items",
   "order_status_history",
   "product_reviews",
+  "service_highlights",
+  "service_highlight_translations",
 ];
 
 /**
@@ -85,7 +87,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 16,
+  migrationCount === 17,
   `${migrationCount} files`,
 );
 
@@ -1227,6 +1229,101 @@ try {
   );
 } catch (error) {
   check("default categories behave", false, error.message);
+}
+
+// -----------------------------------------------------------------------------
+// Service highlights
+// -----------------------------------------------------------------------------
+try {
+  const highlights = (
+    await db.query(
+      `select h.id, h.icon, h.display_order, h.is_visible,
+              count(t.locale)::int as locales
+       from public.service_highlights h
+       left join public.service_highlight_translations t on t.highlight_id = h.id
+       group by h.id
+       order by h.display_order`,
+    )
+  ).rows;
+
+  check(
+    "the six default highlights were seeded by the migration",
+    highlights.length === 6,
+    `${highlights.length} found`,
+  );
+
+  check(
+    "every highlight exists in all three languages",
+    highlights.every((row) => row.locales === 3),
+    highlights.map((r) => r.locales).join(","),
+  );
+
+  check(
+    "highlights carry a display order and are visible",
+    highlights.every((row) => row.is_visible) &&
+      highlights.every((row, i) => row.display_order === i + 1),
+    highlights.map((r) => r.display_order).join(","),
+  );
+
+  const warranty = (
+    await db.query(
+      `select locale, title from public.service_highlight_translations
+       where highlight_id = (
+         select id from public.service_highlights order by display_order limit 1
+       ) order by locale`,
+    )
+  ).rows;
+
+  check(
+    "the warranty highlight carries its three written titles",
+    warranty.length === 3 &&
+      warranty.some((r) => r.title === "1 yillik kafolat") &&
+      warranty.some((r) => r.title === "Гарантия 1 год") &&
+      warranty.some((r) => r.title === "1-Year Warranty"),
+    warranty.map((r) => `${r.locale}=${r.title}`).join(" "),
+  );
+
+  // The icon column must not be able to hold markup or a path.
+  const badIcon = await db
+    .query(
+      `insert into public.service_highlights (icon) values ('<img src=x>')`,
+    )
+    .then(
+      () => false,
+      () => true,
+    );
+
+  check("an icon name that is not an identifier is refused", badIcon);
+
+  // Deleting a highlight must take its copy with it.
+  const someId = highlights[0].id;
+  await db.query(`delete from public.service_highlights where id = $1`, [
+    someId,
+  ]);
+
+  const orphans = (
+    await db.query(
+      `select count(*)::int as n from public.service_highlight_translations
+       where highlight_id = $1`,
+      [someId],
+    )
+  ).rows[0];
+
+  check("deleting a highlight cascades its translations", orphans.n === 0);
+
+  // Re-running the seed block must not resurrect it: the guard is
+  // all-or-nothing on the table being non-empty.
+  const remaining = (
+    await db.query(`select count(*)::int as n from public.service_highlights`)
+  ).rows[0];
+
+  check(
+    "the seed does not resurrect a deleted highlight",
+    remaining.n === 5,
+    `${remaining.n} remain`,
+  );
+} catch (error) {
+  check("service highlights behave", false, error.message);
 }
 
 await db.close();

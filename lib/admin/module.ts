@@ -143,6 +143,7 @@ export type AdminModuleId =
   | "brands"
   | "inventory"
   | "homepage"
+  | "highlights"
   | "content"
   | "users"
   | "audit"

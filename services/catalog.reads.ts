@@ -18,6 +18,8 @@ import * as brandsService from "@/services/brands.service";
 import * as categoriesService from "@/services/categories.service";
 import * as productsService from "@/services/products.service";
 import * as reviewsService from "@/services/reviews.service";
+import * as highlightsService from "@/services/service-highlights.service";
+import type { ServiceHighlight } from "@/services/service-highlights.service";
 
 /**
  * The storefront's read facade.
@@ -450,6 +452,34 @@ export async function listRecentReviews(locale: Locale): Promise<Review[]> {
     unstable_rethrow(error);
 
     logger.error("[catalog] recent reviews unavailable", error, { locale });
+
+    return [];
+  }
+}
+
+/**
+ * The service highlights shown under the hero.
+ *
+ * Degrades to an empty list, for the same reason the category menu does: this is
+ * a trust band, and losing it costs a visitor six cards where taking the page
+ * down costs them the shop. `ServiceHighlights` renders nothing for an empty
+ * list, so the failure is a missing section rather than a broken one.
+ *
+ * No fixture fallback. The rows are reference data shipped by a migration, so
+ * "empty" here means the migration has not been applied — which a fixture would
+ * hide at exactly the moment somebody needs to notice it.
+ */
+export async function listServiceHighlights(): Promise<ServiceHighlight[]> {
+  try {
+    const supabase = await createClient();
+
+    return await highlightsService.listHighlights(supabase, {
+      visibleOnly: true,
+    });
+  } catch (error) {
+    unstable_rethrow(error);
+
+    logger.error("[catalog] service highlights unavailable", error);
 
     return [];
   }

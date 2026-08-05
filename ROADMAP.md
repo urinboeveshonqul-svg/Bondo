@@ -377,6 +377,11 @@ nothing uses yet.
       answers a customer or order search from fixtures
 - [x] Fixed `adminDashboard.orderStatus`, which still held the pre-ADR-63
       payment vocabulary and would have rendered raw keys on every badge
+- [x] **Service highlights** — the trust row under the hero, database-backed and
+      fully manageable from `/admin/highlights`: add, edit, delete, reorder,
+      hide, change the icon, edit all three languages. Six defaults seeded by
+      `20260811001000_service_highlights.sql` (**ADR-69**). Replaces the
+      hardcoded `ValueProps`
 
 ### Outstanding
 

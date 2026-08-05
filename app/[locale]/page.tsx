@@ -5,7 +5,7 @@ import { Hero } from "@/components/home/hero";
 import { NewsletterSection } from "@/components/home/newsletter-section";
 import { ProductGrid } from "@/components/home/product-grid";
 import { Reviews } from "@/components/home/reviews";
-import { ValueProps } from "@/components/home/value-props";
+import { ServiceHighlights } from "@/components/home/service-highlights";
 import { Section } from "@/components/layout/section";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
@@ -17,6 +17,7 @@ import {
   listFeaturedProducts,
   listProductsByCategory,
   listRecentReviews,
+  listServiceHighlights,
   readCatalog,
 } from "@/services/catalog.reads";
 import type { PageParams } from "@/types";
@@ -45,6 +46,11 @@ export default async function HomePage({
     getTranslations("home"),
     getTranslations("common"),
   ]);
+
+  // Outside `readCatalog` on purpose: the highlights are storefront chrome, and
+  // losing them should cost the visitor a band of six cards rather than the
+  // whole page. The reader already degrades to an empty list.
+  const highlights = await listServiceHighlights();
 
   // Wrapped, because an exception escaping here does not reach
   // `app/[locale]/error.tsx` — it aborts the shell and Next replaces the whole
@@ -75,6 +81,14 @@ export default async function HomePage({
   return (
     <>
       <Hero />
+
+      {/*
+        Directly under the hero, because it answers the question a first-time
+        visitor has before any product does: why buy from this shop at all. The
+        content is `service_highlights` rows an operator edits — warranty, build
+        time, delivery, assembly, testing, parts.
+      */}
+      <ServiceHighlights highlights={highlights} locale={activeLocale} />
 
       <Section
         id="featured"
@@ -118,8 +132,6 @@ export default async function HomePage({
           emptyDescription={t("deals.emptyDescription")}
         />
       </Section>
-
-      <ValueProps />
 
       {/*
         Real reviews or no reviews. `product_reviews` exists now

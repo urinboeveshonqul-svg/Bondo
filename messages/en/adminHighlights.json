@@ -1,0 +1,28 @@
+{
+  "title": "Service highlights",
+  "subtitle": "The cards under the hero on the home page. Drag a row to change the order.",
+  "new": "New card",
+  "newTitle": "New card",
+  "editTitle": "Edit card",
+  "saved": "Saved",
+  "deleted": "Deleted",
+  "emptyTitle": "No cards yet",
+  "emptyDescription": "Tell a shopper what they get from buying here — warranty, delivery, how quickly you build.",
+  "visibleLabel": "Show {name} on the home page",
+  "editLabel": "Edit {name}",
+  "deleteLabel": "Delete {name}",
+  "fields": {
+    "icon": "Icon",
+    "title": "Heading",
+    "description": "Description",
+    "isVisible": "Show on the home page"
+  },
+  "errors": {
+    "saveFailed": "Not saved",
+    "unknownIcon": "That icon does not exist. Pick one from the list.",
+    "titleRequired": "Add a heading.",
+    "titleTooLong": "That heading is too long.",
+    "descriptionRequired": "Add a description.",
+    "descriptionTooLong": "That description is too long — shorten it."
+  }
+}

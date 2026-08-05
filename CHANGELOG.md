@@ -12,6 +12,55 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — service highlights, editable from the admin
+
+The trust row under the hero: six promises a shopper reads before deciding
+whether to buy from a shop they have not used. Warranty, build time, delivery,
+who assembles the machine, whether it is tested, whether the parts are genuine.
+Each one is a commitment somebody could hold the shop to, which is the only kind
+of claim worth putting there.
+
+**None of it is hardcoded.** `20260811001000_service_highlights.sql` creates
+`service_highlights` and `service_highlight_translations`, seeds the six
+defaults in Uzbek, Russian and English, and an operator manages them from
+`/admin/highlights`: add, edit, delete, drag to reorder, hide, change the icon,
+edit every language. The old `ValueProps` component and its four claims in
+`home.valueProps` are deleted.
+
+The copy lives on the record rather than in `messages/` — ADR-39 applied. "1
+yillik kafolat" is the shop making a promise, not the interface labelling a
+button. Only the section heading stayed in `messages/`, because that is chrome.
+
+**The icon is a lucide name, not an upload** (**ADR-69**). Stored as text,
+resolved by an explicit map, and validated against that same map in the Server
+Action so the picker and the storefront cannot drift. A check constraint enforces
+the identifier shape; the action enforces membership. Not a database enum, which
+would make adding a glyph a migration.
+
+No permission was invented: highlights are storefront content with the same
+lifecycle and author as banners, so they reuse `banners.read` and
+`banners.manage` (ADR-44 holds).
+
+Two interaction decisions worth stating. **Reordering saves immediately** —
+dragging a row and then having to press Save is how an operator loses an
+arrangement they thought they made — and the list is optimistic, reverting with a
+toast if the action refuses. **The edit dialog saves on submit**, because
+half-typed copy in three languages must not reach the storefront between
+keystrokes. **All three languages are required** by the schema, not merely
+encouraged: a highlight missing its Russian renders a gap for every
+Russian-reading visitor.
+
+`db:verify` grew from 119 to **126 assertions** — the six defaults exist, each in
+three languages, in order and visible; the warranty card carries its three
+written titles; an icon that is not an identifier is refused; deleting a
+highlight cascades its copy; and the seed does not resurrect a deleted one.
+
+**Not seen rendering with real rows.** The dev server points at the hosted
+project, which has none of the last three migrations, so the read fails and the
+section is absent. That path was exercised and behaves as designed — logged at
+`error`, page intact, no layout shift — but the populated section is proven by
+assertions, typecheck and build rather than by looking at it.
+
 ### Removed — the admin dashboard's fake analytics
 
 A dashboard whose numbers are decoration is worse than no dashboard: it is the

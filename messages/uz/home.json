@@ -32,24 +32,7 @@
     "emptyDescription": "Yangi chegirmalar har oy boshida chiqadi."
   },
   "valueProps": {
-    "title": "Nega aynan biz",
-    "description": "To'rtta sabab.",
-    "tested": {
-      "title": "Har bir kompyuter tekshiriladi",
-      "body": "Yig'ilgandan so'ng kompyuter bir kecha-kunduz to'liq yuklamada ishlatiladi. Qizib ketsa yoki o'chib qolsa, buni siz emas, biz aniqlaymiz."
-    },
-    "answers": {
-      "title": "Savolingizga aniq javob beramiz",
-      "body": "\"Shu kuler mana bu korpusga sig'adimi?\" desangiz, havola tashlamaymiz. Balandligini millimetrda aytamiz."
-    },
-    "packed": {
-      "title": "Puxta qadoqlaymiz",
-      "body": "Videokarta ikki qavat qutida, ulagichi mahkamlangan holda jo'natiladi. Yo'lda hech narsa qimirlamaydi."
-    },
-    "returns": {
-      "title": "30 kun ichida qaytarish",
-      "body": "Model to'g'ri kelmadimi yoki fikringiz o'zgardimi, ishlatilmagan mahsulotni qaytaring. Pulingiz to'liq qaytariladi."
-    }
+    "title": "Nega aynan biz"
   },
   "reviews": {
     "title": "Xaridorlar sharhlari",

@@ -1129,6 +1129,7 @@ reversal here.**
 
 | ID     | Decision                                                                                                                                                                                                                                                                                                                      | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ADR-69 | **A service highlight's icon is a lucide _name_ stored as text, validated against the component's own map — not an upload, and not a database enum.**                                                                                                                                                                         | Three options and each fails differently. An upload lets an operator put a 900 kB PNG above the fold and makes the trust row an asset-management problem; the glyphs are already in the design system. A database enum makes adding one a migration, for a change that is purely presentational. Free text with no validation renders a hole when somebody types `Sheild`. So: the check constraint enforces the _shape_ of an identifier (rejecting markup and paths), the Server Action enforces _membership_ against `HIGHLIGHT_ICONS`, and the component falls back to a neutral glyph for a name that predates a rename. One list drives the picker and the storefront, so the two cannot drift, and extending the set is a change to one file.                                                                                                                         |
 | ADR-68 | **The default category taxonomy ships in a migration, not in `seed.sql`.** Twenty categories in three languages, inserted idempotently by `20260810001000_default_categories.sql`.                                                                                                                                            | ADR-20 forbids _fake_ data, and this is not fake: it is the shop's own taxonomy, decided by the business, and a computer store that sells laptops has a Laptops category the day it opens. The distinction that decides the file is deployability — `seed.sql` is development fixture data and never runs on `db push` (ADR-25), so reference data the application cannot function without has to be a migration, exactly as the roles and permissions in 20260801000200 already are. Inserted flat rather than nested because that is the list the business gave; `parent_id` and the `path` trigger already support nesting, so an operator can build a hierarchy without a migration. Keyed on the Uzbek slug for idempotency, because `categories` carries no name or slug of its own since the localization migration and there is nothing else on the parent to match. |
 | ADR-67 | **Two permissions were added to the database — `orders.read` and `orders.update` — and no `orders.delete`.** Granted to `super_admin` (set-based, as ADR-44's migration does), `support_agent` (read + update) and `catalog_manager` (read). `support_agent`'s description changed from "Changes nothing" to match.           | ADR-44 forbids the _registry_ inventing a permission, not the schema gaining one — an Orders module needs the database to name what it offers before the interface may offer it. There is no delete because an order is never deleted: a sale that fell through is `cancelled`, which keeps the phone number, the basket and the reason, all three of which the shop wants when the customer rings back. The support agent got update because that role _is_ the workflow — the person who rings the customer is the person who moves the status, and a read-only support role would leave nobody able to work an order.                                                                                                                                                                                                                                                     |
 | ADR-66 | **The review gate is an RLS policy, not an application check.** "Verified buyer, delivered order, one per purchased product" is a `with check` containing the `orders → order_items` join it depends on.                                                                                                                      | The rule is the feature, and a rule that lives in a Server Action protects that action rather than the table. Written as a policy it survives the next action somebody adds in a hurry, a leaked anon key, and `service_role` being handed to a script. `services/reviews.service.ts` translates the 42501 refusal into a sentence a shopper can read, and deliberately does **not** say which of the three conditions failed — telling a caller _why_ an authorisation check failed is how a probe learns the shape of somebody else's order. Verified: `db:verify` asserts all four outcomes under `set role authenticated` with a real JWT claim, not around RLS.                                                                                                                                                                                                         |
@@ -1436,6 +1437,85 @@ locales against each other, and the key was equally wrong in all three.
 append-only ledger to simplify an interface would be destroying data to hide a
 screen; hiding the screen is a UI decision, and the tables cost nothing while
 nothing writes them.
+
+---
+
+## Service highlights
+
+🟢 **Complete end to end** — schema, service, actions, storefront section and a
+full admin module. The first feature in this project built database-first from
+the migration to the screen in one pass.
+
+The trust row under the hero: six promises a shopper reads before deciding
+whether to buy from a shop they have not used. Warranty, build time, delivery,
+who assembles it, whether it is tested, whether the parts are genuine.
+
+**None of it is hardcoded.** `20260811001000_service_highlights.sql` creates
+`service_highlights` and `service_highlight_translations` and seeds the six
+defaults in uz/ru/en. An operator adds, edits, deletes, reorders, hides and
+re-icons them from `/admin/highlights` without a deploy.
+
+| Layer           | State                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Migration       | ✅ 2 tables, 5 policies, 4 triggers, seeded with the six defaults           |
+| Generated types | ✅ 36 tables from 17 migrations                                             |
+| Service         | ✅ list, get, save (upsert + translations), delete, reorder, set visibility |
+| Server Actions  | ✅ save, delete, reorder, visibility — all gated on `banners.manage`        |
+| Storefront      | ✅ `ServiceHighlights`, directly under the hero, renders nothing when empty |
+| Admin module    | ✅ registry entry, route, manager with drag-reorder and a 3-language dialog |
+| Localization    | ✅ `adminHighlights` namespace; 17 namespaces × 3 locales, 894 keys each    |
+
+### Decisions worth knowing
+
+**The copy lives on the record, not in `messages/`** (ADR-39 applied): "1 yillik
+kafolat" is the shop making a promise, not the interface labelling a button. The
+section _heading_ stays in `messages/home.json`, because that is chrome.
+
+**The icon is a lucide name, not an upload** (**ADR-69**). Stored as text,
+resolved by an explicit map in `components/home/highlight-icon.tsx`, and
+validated against that same map in the Server Action so the two cannot drift. A
+database check constraint enforces the identifier _shape_; the action enforces
+_membership_. Deliberately not a database enum — adding a glyph would then be a
+migration.
+
+**No permission was invented.** Highlights are storefront content with the same
+lifecycle and the same author as banners, so they reuse `banners.read` and
+`banners.manage` (ADR-44 holds).
+
+**Reordering saves immediately, editing saves on submit.** Dragging a row and
+then having to press Save is how an operator loses an arrangement they thought
+they made. The dialog is the opposite: half-typed copy in three languages must
+not reach the storefront between keystrokes. The list is optimistic and reverts
+with a toast if the action refuses.
+
+**All three languages are required** by the action's schema, not merely
+encouraged. A highlight missing its Russian renders a gap in the trust row for
+every Russian-reading visitor, and there is no sensible fallback to show.
+
+### Verified
+
+`npm run verify` passes: 126 schema assertions (up from 119) and a production
+build. Seven of the new assertions are the highlights:
+
+| Assertion                                               | Result               |
+| ------------------------------------------------------- | -------------------- |
+| the six defaults were seeded by the migration           | 6 found              |
+| every highlight exists in all three languages           | 3,3,3,3,3,3          |
+| they carry a display order and are visible              | 1,2,3,4,5,6          |
+| the warranty highlight carries its three written titles | uz/ru/en all present |
+| an icon name that is not an identifier is refused       | ✅ check constraint  |
+| deleting a highlight cascades its translations          | ✅                   |
+| the seed does not resurrect a deleted highlight         | 5 remain             |
+
+> **Not seen rendering with real rows.** The dev server points at the hosted
+> project, which has neither this migration nor the two before it, so the read
+> fails and the section is absent. That path was exercised and behaves as
+> designed — logged at `error`, page intact, no layout shift — but the populated
+> section has only been proven by the assertions above plus typecheck and build,
+> not by looking at it. It renders the moment `supabase db push` runs.
+
+**Removed:** `components/home/value-props.tsx` and the four hardcoded claims in
+`home.valueProps`. Its heading survives as the section's.
 
 ---
 

@@ -1,0 +1,28 @@
+{
+  "title": "Xizmat afzalliklari",
+  "subtitle": "Bosh sahifada, banner ostida ko'rinadigan kartochkalar. Tartibini o'zgartirish uchun torting.",
+  "new": "Yangi kartochka",
+  "newTitle": "Yangi kartochka",
+  "editTitle": "Kartochkani tahrirlash",
+  "saved": "Saqlandi",
+  "deleted": "O'chirildi",
+  "emptyTitle": "Kartochka yo'q",
+  "emptyDescription": "Xaridorga do'kon haqida nima bilish kerakligini ayting: kafolat, yetkazib berish, yig'ish muddati.",
+  "visibleLabel": "{name} bosh sahifada ko'rinsinmi",
+  "editLabel": "{name} kartochkasini tahrirlash",
+  "deleteLabel": "{name} kartochkasini o'chirish",
+  "fields": {
+    "icon": "Belgi",
+    "title": "Sarlavha",
+    "description": "Tavsif",
+    "isVisible": "Bosh sahifada ko'rsatilsin"
+  },
+  "errors": {
+    "saveFailed": "Saqlanmadi",
+    "unknownIcon": "Bunday belgi yo'q. Ro'yxatdan tanlang.",
+    "titleRequired": "Sarlavhani yozing.",
+    "titleTooLong": "Sarlavha juda uzun.",
+    "descriptionRequired": "Tavsifni yozing.",
+    "descriptionTooLong": "Tavsif juda uzun. Qisqartiring."
+  }
+}
