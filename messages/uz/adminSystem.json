@@ -59,7 +59,7 @@
       "logo": "Logotip",
       "favicon": "Favicon",
       "noLogo": "Logotip yuklanmagan. Uning o'rniga do'kon nomi yoziladi.",
-      "uploadsUnavailable": "Yuklash uchun Supabase Storage kerak, u servislar bosqichida qo'shiladi."
+      "uploadsUnavailable": "Rasm yuklash keyingi bosqichda ulanadi."
     },
     "hours": {
       "title": "Ish vaqti",
@@ -80,13 +80,13 @@
     "planned": {
       "badge": "Hali qurilmagan",
       "title": "Bu bo'lim rejalashtirilgan, lekin amalga oshirilmagan",
-      "body": "Do'kon nimalarni boshqarishini ko'rishingiz uchun ushbu ilova shu yerda. Unda hech narsani tahrirlab bo'lmaydi, chunki uning ortida hali hech narsa yo'q — yozganingizni yo'qotadigan shakl bo'shidan yomonroq.",
+      "body": "Do'kon nimalarni boshqarishini ko'rishingiz uchun bu bo'lim shu yerda turibdi. Uni hozircha tahrirlab bo'lmaydi: ortida hali hech narsa yo'q.",
       "blocked": "Kutilmoqda",
       "reasons": {
-        "needsCheckout": "to'lov bosqichi — ushbu sozlamalar ishlaydigan buyurtmalar va to'lovlar jadvallarini olib keladi",
-        "needsShippingTables": "yetkazib berish hududlari va tariflari — operatsiyalar bosqichida keladi",
-        "perUserLocale": "hisob uchun til ustuni. Hozir interfeys tili URL va NEXT_LOCALE cookie'siga bog'liq, bu esa xat yuborilmaguncha to'g'ri",
-        "themeIsPerVisitor": "do'kon bo'yicha mavzu. Yorug' va qorong'i hozircha har bir tashrifchining o'z tanlovi va brauzerida saqlanadi, shuning uchun do'kon darajasida sozlanadigan narsa yo'q"
+        "needsCheckout": "buyurtma qabul qilish va to'lov bo'limi, bu sozlamalar shundan keyin ishlaydi",
+        "needsShippingTables": "yetkazib berish hududlari va tariflari",
+        "perUserLocale": "hisobga bog'langan til sozlamasi. Hozir interfeys tili sahifa manzili bo'yicha tanlanadi",
+        "themeIsPerVisitor": "do'kon bo'yicha umumiy ko'rinish. Hozir yorug' va tungi rejimni har bir tashrifchi o'zi tanlaydi"
       }
     }
   },
@@ -112,8 +112,8 @@
     "deactivatedNote": "Faolsizlantirilgan administrator kirish huquqini darhol yo'qotadi, lekin qilgan ishlarida nomi qoladi.",
     "roles": {
       "title": "Rollar",
-      "description": "Sxema bilan beshta tizim roli keladi; ularni qayta nomlash yoki o'chirish mumkin emas — dastur kodi ularning kalitlariga tayanadi.",
-      "system": "Tizim roli",
+      "description": "Beshta asosiy rol oldindan tayyor turadi. Ularni qayta nomlash yoki o'chirish mumkin emas.",
+      "system": "Asosiy rol",
       "members": "{count, plural, one {# ta a'zo} other {# ta a'zo}}",
       "permissionCount": "{count, plural, one {# ta ruxsat} other {# ta ruxsat}}",
       "permissions": "Ruxsatlar",
@@ -162,7 +162,7 @@
         "read": "Audit jurnalini o'qish"
       }
     },
-    "inviteUnavailable": "Administrator taklif qilish uchun Supabase Auth kerak, u hali ulanmagan."
+    "inviteUnavailable": "Administrator taklif qilish hali ulanmagan."
   },
   "audit": {
     "title": "Audit jurnali",
@@ -187,6 +187,6 @@
       "login": "Kirdi",
       "adjust": "Tuzatdi"
     },
-    "appendOnly": "Audit jurnaliga faqat qo'shiladi va u service role uchun ham o'zgarmasdir."
+    "appendOnly": "Audit jurnaliga faqat yangi yozuv qo'shiladi. Undagi yozuvlarni hech kim o'zgartira olmaydi."
   }
 }

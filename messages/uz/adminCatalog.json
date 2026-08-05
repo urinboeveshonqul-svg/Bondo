@@ -5,7 +5,7 @@
     "new": "Yangi mahsulot",
     "searchPlaceholder": "Nom, SKU yoki brend bo'yicha qidiring…",
     "emptyTitle": "Hozircha mahsulot yo'q",
-    "emptyDescription": "Birinchisini yarating — chop etilgach do'kon sahifasida ko'rinadi.",
+    "emptyDescription": "Birinchi mahsulotni qo'shing. Chop etilgach u do'konda ko'rinadi.",
     "columns": {
       "product": "Mahsulot",
       "sku": "SKU",
@@ -29,7 +29,7 @@
       "delete": "O'chirish"
     },
     "variantCount": "{count, plural, one {# ta variant} other {# ta variant}}",
-    "noVariants": "Yagona konfiguratsiya"
+    "noVariants": "Bitta variant"
   },
   "editor": {
     "newTitle": "Yangi mahsulot",
@@ -40,10 +40,10 @@
       "pricing": "Narx va ombor",
       "variants": "Variantlar",
       "images": "Rasmlar",
-      "specs": "Xarakteristikalar",
-      "organisation": "Tashkiliy",
+      "specs": "Texnik xususiyatlar",
+      "organisation": "Tartibga solish",
       "publishing": "Chop etish",
-      "seo": "Qidiruv tizimidagi ko'rinish"
+      "seo": "Qidiruvdagi ko'rinish"
     },
     "fields": {
       "name": "Mahsulot nomi",
@@ -77,32 +77,32 @@
       "primary": "Asosiy",
       "altLabel": "Alt matni",
       "emptyTitle": "Hozircha rasm yo'q",
-      "emptyDescription": "Mahsulot suratlari Storage bilan keladi. Unga qadar kartochkalarda monogramma ko'rsatiladi.",
+      "emptyDescription": "Rasm yuklash hali ulanmagan. Unga qadar kartochkalarda brend monogrammasi ko'rsatiladi.",
       "unavailableTitle": "Yuklash hali ulanmagan",
-      "unavailableDescription": "Supabase Storage servislar bosqichida qo'shiladi. Alt matnini hozir yozish mumkin."
+      "unavailableDescription": "Rasm yuklash keyingi bosqichda qo'shiladi. Alt matnini hozirdan yozib qo'yish mumkin."
     },
     "specs": {
-      "title": "Xarakteristikalar",
-      "description": "Guruh va nom umumiy lug'atdan olinadi, shuning uchun katalog bo'ylab bir xil o'qiladi.",
+      "title": "Texnik xususiyatlar",
+      "description": "Guruh va nom umumiy ro'yxatdan tanlanadi. Shu sababli butun katalogda bir xil yoziladi.",
       "group": "Guruh",
       "name": "Nomi",
       "value": "Qiymati",
       "unit": "Birlik",
-      "add": "Xarakteristika qo'shish",
-      "emptyTitle": "Xarakteristika yo'q",
-      "emptyDescription": "Xaridor sotib olishdan oldin solishtiradigan raqamlarni qo'shing."
+      "add": "Xususiyat qo'shish",
+      "emptyTitle": "Texnik xususiyat kiritilmagan",
+      "emptyDescription": "Xaridor sotib olishdan oldin solishtiradigan raqamlarni yozing."
     },
     "variants": {
       "title": "Variantlar",
-      "description": "Bitta mahsulot ostida sotiladigan konfiguratsiyalar — xotira, disk, videokarta.",
+      "description": "Bitta mahsulotning turli to'ldirilishi: xotira, disk, videokarta.",
       "addOption": "Parametr qo'shish",
       "optionName": "Parametr",
       "optionValues": "Qiymatlar",
       "optionValuesHint": "Vergul bilan ajrating.",
       "generate": "Kombinatsiyalarni yaratish",
       "generateHint": "Yuqoridagi parametrlardan {count, plural, one {# ta qator} other {# ta qator}} yaratadi.",
-      "emptyTitle": "Yagona konfiguratsiya",
-      "emptyDescription": "Bu mahsulot bitta konfiguratsiyada sotiladi. Variantlarga bo'lish uchun parametr qo'shing.",
+      "emptyTitle": "Variant qo'shilmagan",
+      "emptyDescription": "Bu mahsulot bitta ko'rinishda sotiladi. Variantlarga bo'lish uchun parametr qo'shing.",
       "columns": {
         "variant": "Variant",
         "sku": "SKU",

@@ -1,23 +1,23 @@
 {
-  "metaTitle": "Computers, components and accessories",
-  "metaDescription": "Bondo builds and tests custom PCs, and stocks the laptops, components and accessories to go with them. Three-year warranty.",
+  "metaTitle": "Laptops, computers and PC parts",
+  "metaDescription": "Bondo sells laptops, desktops, PC components and accessories. Custom builds tested before they ship, three-year warranty.",
   "hero": {
-    "eyebrow": "For people who read the spec sheet",
-    "title": "You pick the parts. We prove they work.",
-    "body": "Every build gets 24 hours on the bench before it ships. The thermal and stability numbers come in the box, for your machine rather than the model.",
+    "eyebrow": "Three-year warranty",
+    "title": "Laptops, computers and PC parts",
+    "body": "Tell us what the machine is for and we'll build it. Every build runs 24 hours on the bench before it ships, and the test results come in the box.",
     "browseCatalog": "Browse the catalog",
-    "prebuilt": "Prebuilt systems",
+    "prebuilt": "Prebuilt computers",
     "assurances": {
-      "built": "Assembled in our own workshop",
+      "built": "Built in our own workshop",
       "warranty": "Three-year warranty",
       "delivery": "Free delivery over {amount}"
     },
     "panelValue": "24h",
-    "panelBody": "On the bench, at full load, before anything gets boxed."
+    "panelBody": "How long every build runs at full load before it gets boxed."
   },
   "featured": {
-    "title": "Popular right now",
-    "description": "The builds and parts customers are ordering most this month."
+    "title": "Best sellers",
+    "description": "The models customers are ordering most this month."
   },
   "brands": {
     "title": "Brands we stock"
@@ -26,39 +26,39 @@
     "linkLabel": "All {category}"
   },
   "deals": {
-    "title": "Deals",
+    "title": "On sale",
     "description": "Prices go back to list when a promotion ends.",
     "emptyTitle": "No deals right now",
     "emptyDescription": "New promotions go up at the start of each month."
   },
   "valueProps": {
-    "title": "Why buy from Bondo",
-    "description": "Four things you can hold us to.",
+    "title": "Why buy from us",
+    "description": "Four reasons.",
     "tested": {
-      "title": "Burned in before it ships",
-      "body": "A full day of thermal and stability testing. If a build is going to throttle or drop out, it does it here and not on your desk."
+      "title": "Every build is tested",
+      "body": "A full day of thermal and stability testing. If a machine is going to throttle or crash, it does it on our bench and not on your desk."
     },
     "answers": {
-      "title": "Answers with numbers in them",
-      "body": "Ask whether a cooler clears tall memory and you get the height in millimetres and the clearance to the first slot."
+      "title": "We answer with numbers",
+      "body": "Ask whether a cooler fits your case and you get the height in millimetres, not a link to the product page."
     },
     "packed": {
-      "title": "Packed for the trip",
-      "body": "Graphics cards are double-boxed with the connector supported. Nothing rattles."
+      "title": "Packed properly",
+      "body": "Graphics cards ship double-boxed with the connector supported. Nothing moves in transit."
     },
     "returns": {
-      "title": "Thirty-day returns",
-      "body": "Changed your mind, or picked the wrong socket? Send it back unused and we refund it."
+      "title": "30-day returns",
+      "body": "Wrong model, or changed your mind? Send it back unused and we refund it in full."
     }
   },
   "reviews": {
-    "title": "What customers say",
-    "description": "Only verified orders can leave a review.",
+    "title": "Customer reviews",
+    "description": "Only customers who ordered can leave one.",
     "verified": "Verified purchase"
   },
   "newsletter": {
-    "title": "Back-in-stock alerts",
-    "body": "Tell us what you're waiting on and we'll email you the day it lands.",
-    "note": "Two emails a month at most. We never share your address."
+    "title": "Get an email when it's back in stock",
+    "body": "Tell us which model you're waiting on and we'll write the day it arrives.",
+    "note": "Two emails a month at most. We don't pass your address on."
   }
 }

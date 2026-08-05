@@ -1,6 +1,6 @@
 {
   "title": "Mening hisobim",
-  "subtitle": "Maʼlumotlaringiz, xavfsizligingiz va sozlamalaringiz.",
+  "subtitle": "Ma'lumotlaringiz, xavfsizlik va sozlamalar.",
   "signOut": "Chiqish",
   "signingOut": "Chiqilmoqda…",
   "nav": {
@@ -11,7 +11,7 @@
     "admin": "Admin panel"
   },
   "overview": {
-    "identity": "Maʼlumotlaringiz",
+    "identity": "Ma'lumotlaringiz",
     "verified": "Tasdiqlangan",
     "unverified": "Elektron pochtangiz hali tasdiqlanmagan.",
     "verifyNow": "Hozir tasdiqlash",

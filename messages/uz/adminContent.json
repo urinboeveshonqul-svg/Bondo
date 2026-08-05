@@ -10,12 +10,12 @@
     "emptyDescription": "Bosh sahifani yig'ish uchun bo'lim qo'shing.",
     "types": {
       "hero": "Bosh banner",
-      "featured": "Tanlangan mahsulotlar",
-      "brands": "Ommabop brendlar",
+      "featured": "Ko'p sotilayotgan mahsulotlar",
+      "brands": "Mashhur brendlar",
       "category-rail": "Kategoriya bo'limi",
-      "deals": "Bugungi chegirmalar",
-      "value-props": "Nega bizdan xarid qilish kerak",
-      "reviews": "Mijozlar sharhlari",
+      "deals": "Chegirmadagi mahsulotlar",
+      "value-props": "Nega aynan biz",
+      "reviews": "Xaridorlar sharhlari",
       "newsletter": "Obuna"
     },
     "position": "{position}-o'rin",
@@ -57,12 +57,12 @@
     },
     "published": "Chop etilgan",
     "draft": "Qoralama",
-    "notLinkedYet": "Chop etilib, manzillari paydo bo'lguncha pastki qism ularni oddiy matn sifatida ko'rsatadi.",
+    "notLinkedYet": "Sahifalar chop etilmaguncha pastki qismda ular oddiy matn ko'rinishida turadi.",
     "editor": {
       "title": "Sahifani tahrirlash",
       "sections": {
         "content": "Matn",
-        "seo": "Qidiruv tizimidagi ko'rinish",
+        "seo": "Qidiruvdagi ko'rinish",
         "publishing": "Chop etish"
       },
       "fields": {

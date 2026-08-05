@@ -59,7 +59,7 @@
       "logo": "Logo",
       "favicon": "Favicon",
       "noLogo": "No logo yet; the store name is shown as text instead.",
-      "uploadsUnavailable": "Uploads need Supabase Storage, which lands with the services phase."
+      "uploadsUnavailable": "Image uploads arrive in the next phase."
     },
     "hours": {
       "title": "Business hours",
@@ -80,13 +80,13 @@
     "planned": {
       "badge": "Not built yet",
       "title": "This section is planned, not implemented",
-      "body": "The tab is here so you can see what the store will manage. Nothing on it can be edited, because there is nothing behind it yet — a form that discarded what you typed would be worse than an empty one.",
+      "body": "The tab is here so you can see what the store will manage. You can't edit it yet, because there is nothing behind it.",
       "blocked": "Waiting on",
       "reasons": {
-        "needsCheckout": "the checkout phase, which brings the orders and payments tables these settings act on",
-        "needsShippingTables": "shipping zones and rates, which arrive with the operations phase",
-        "perUserLocale": "a per-account language column. Today the interface language follows the URL and the NEXT_LOCALE cookie, which is correct until something sends email",
-        "themeIsPerVisitor": "a store-wide theme. Light and dark are currently each visitor's own choice, stored in their browser, so there is nothing store-level to set"
+        "needsCheckout": "checkout and payments; these settings do nothing until orders exist",
+        "needsShippingTables": "delivery zones and rates",
+        "perUserLocale": "a language saved on the account. Right now the interface language comes from the page address",
+        "themeIsPerVisitor": "a store-wide look. Light and dark are each visitor's own choice at the moment"
       }
     }
   },
@@ -112,7 +112,7 @@
     "deactivatedNote": "A deactivated administrator loses access immediately but keeps their name on everything they did.",
     "roles": {
       "title": "Roles",
-      "description": "Five system roles ship with the schema and cannot be renamed or deleted — application code branches on their keys.",
+      "description": "Five built-in roles come with the store. They cannot be renamed or deleted.",
       "system": "System role",
       "members": "{count, plural, one {# member} other {# members}}",
       "permissionCount": "{count, plural, one {# permission} other {# permissions}}",
@@ -162,7 +162,7 @@
         "read": "Read the audit log"
       }
     },
-    "inviteUnavailable": "Inviting an administrator needs Supabase Auth, which is not wired yet."
+    "inviteUnavailable": "Inviting an administrator is not connected yet."
   },
   "audit": {
     "title": "Audit log",
@@ -187,6 +187,6 @@
       "login": "Signed in",
       "adjust": "Adjusted"
     },
-    "appendOnly": "The audit log is append-only and immutable even to the service role."
+    "appendOnly": "The audit log only ever grows. Nobody can edit or remove an entry."
   }
 }

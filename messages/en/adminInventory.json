@@ -7,7 +7,7 @@
     "outOfStock": "Out of stock",
     "reserved": "Reserved"
   },
-  "reservedNote": "Reserved stock is declared in the schema but nothing writes it until checkout lands.",
+  "reservedNote": "Reserved stock starts counting once checkout is live. For now it stays at zero.",
   "tabs": {
     "levels": "Stock levels",
     "movements": "Movement history"

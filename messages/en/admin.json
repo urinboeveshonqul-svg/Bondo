@@ -14,9 +14,11 @@
       "overview": "Overview",
       "catalog": "Catalog",
       "storefront": "Storefront",
-      "administration": "Administration"
+      "administration": "Administration",
+      "sales": "Sales"
     },
     "dashboard": "Dashboard",
+    "orders": "Orders",
     "products": "Products",
     "categories": "Categories",
     "brands": "Brands",
@@ -149,9 +151,9 @@
     "ogDescription": "Share description",
     "ogDescriptionHint": "Falls back to the meta description.",
     "ogImage": "Share image",
-    "ogImageHint": "A storage path inside this module's bucket, not a URL. Falls back to the primary image.",
+    "ogImageHint": "A file path, not a link. Leave it empty to use the primary image.",
     "twitterCard": "Card layout",
-    "twitterCardHint": "Applies to every language. A large image in one and a small one in another is an inconsistency, not a translation.",
+    "twitterCardHint": "One setting for all three languages. The card looks the same in each of them.",
     "cards": {
       "default": "Store default",
       "summary": "Small image",
@@ -172,7 +174,7 @@
   },
   "notSaved": {
     "title": "Nothing was saved",
-    "body": "The admin runs on mock data until the services land, so this form does not persist."
+    "body": "The panel still runs on sample data, so nothing you type in this form is saved."
   },
   "emptyTitle": "Nothing here yet",
   "updatedBy": "Updated by {name}",
@@ -183,7 +185,7 @@
     "hidden": "Hidden"
   },
   "details": {
-    "description": "Everything recorded about this row. Editing opens the full editor."
+    "description": "Everything recorded for this row. Edit opens the full form."
   },
   "history": {
     "title": "History",
@@ -202,11 +204,11 @@
   "media": {
     "count": "{count, plural, =0 {No files} one {# file} other {# files}}",
     "add": "Add image",
-    "unavailable": "Uploading needs Supabase Storage, which is not connected yet. Existing files can be reordered and described.",
+    "unavailable": "Image uploads are not connected yet. Files already here can be reordered and described.",
     "empty": "No images yet.",
     "primary": "Primary",
     "altLabel": "Alt text",
-    "altHint": "Describe the image for someone who cannot see it. Translated, because a screen reader reads it in the visitor's language.",
+    "altHint": "Describe what is in the picture. It shows when the image fails to load, and it is what a screen reader reads out.",
     "moveEarlier": "Move earlier",
     "moveLater": "Move later",
     "setPrimary": "Make primary",

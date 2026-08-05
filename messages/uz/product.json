@@ -4,9 +4,9 @@
   "home": "Bosh sahifa",
   "products": "Mahsulotlar",
   "about": "Mahsulot haqida",
-  "specifications": "Xarakteristikalar",
-  "specsCaption": "{name} uchun texnik xarakteristikalar",
-  "related": "{category} bo'limidan yana",
+  "specifications": "Texnik xususiyatlar",
+  "specsCaption": "{name} texnik xususiyatlari",
+  "related": "{category} bo'limidagi boshqa mahsulotlar",
   "warrantyYears": "{years} yillik kafolat",
   "freeDelivery": "{amount}dan yuqori buyurtmaga yetkazib berish bepul",
   "specs": {
@@ -25,7 +25,7 @@
       "build": "Korpus",
       "processor": "Protsessor",
       "graphics": "Videokarta",
-      "storage": "Saqlash xotirasi",
+      "storage": "Disk",
       "sensor": "Sensor",
       "colour": "Rang"
     },
@@ -41,14 +41,14 @@
       "speed": "Tezligi",
       "latency": "Kechikish",
       "height": "Balandligi",
-      "size": "O'lchami",
-      "resolution": "Ruxsati",
+      "size": "Diagonali",
+      "resolution": "Aniqligi",
       "weight": "Og'irligi",
       "refreshRate": "Yangilanish chastotasi",
       "model": "Modeli",
       "actuation": "Bosilish chuqurligi",
       "topPlate": "Yuqori panel",
-      "life": "Ishlash muddati",
+      "life": "Ishlash vaqti",
       "adobeRgb": "Adobe RGB"
     }
   }

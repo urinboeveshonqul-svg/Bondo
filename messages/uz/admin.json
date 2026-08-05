@@ -2,8 +2,8 @@
   "title": "Boshqaruv paneli",
   "backToStore": "Do'konga qaytish",
   "preview": {
-    "label": "Namoyish maʼlumotlari",
-    "body": "Kirish ishlaydi. Lekin ma'lumotlar hozircha namunaviy, o'zgarishlar saqlanmaydi."
+    "label": "Namunaviy ma'lumotlar",
+    "body": "Kirish ishlaydi. Ammo ma'lumotlar namunaviy — kiritgan o'zgarishlaringiz saqlanmaydi."
   },
   "nav": {
     "label": "Boshqaruv navigatsiyasi",
@@ -14,9 +14,11 @@
       "overview": "Umumiy",
       "catalog": "Katalog",
       "storefront": "Do'kon sahifasi",
-      "administration": "Boshqaruv"
+      "administration": "Boshqaruv",
+      "sales": "Savdo"
     },
     "dashboard": "Boshqaruv paneli",
+    "orders": "Buyurtmalar",
     "products": "Mahsulotlar",
     "categories": "Kategoriyalar",
     "brands": "Brendlar",
@@ -54,7 +56,7 @@
     "newProduct": "Yangi mahsulot",
     "newCategory": "Yangi kategoriya",
     "newBrand": "Yangi brend",
-    "adjustStock": "Ombor tuzatish"
+    "adjustStock": "Qoldiqni tuzatish"
   },
   "notifications": {
     "open": "Bildirishnomalar",
@@ -130,8 +132,8 @@
     "complete": "Barcha tillar to'ldirilgan"
   },
   "seo": {
-    "title": "Qidiruv tizimidagi ko'rinish",
-    "description": "Qidiruv natijalarida va havola ulashilganda qanday ko'rinishi. Bo'sh qoldirilsa, har bir maydon yuqoridagisidan oladi.",
+    "title": "Qidiruvdagi ko'rinish",
+    "description": "Sahifa qidiruv natijalarida qanday ko'rinishi. Bo'sh qoldirsangiz, ma'lumot yuqoridagi maydonlardan olinadi.",
     "metaTitle": "Meta sarlavha",
     "metaDescription": "Meta tavsif",
     "keywords": "Kalit so'zlar",
@@ -149,9 +151,9 @@
     "ogDescription": "Ulashish tavsifi",
     "ogDescriptionHint": "Bo'sh bo'lsa, meta tavsif ishlatiladi.",
     "ogImage": "Ulashish rasmi",
-    "ogImageHint": "Modul bucket'idagi fayl yo'li, URL emas. Bo'sh bo'lsa, asosiy rasm ishlatiladi.",
+    "ogImageHint": "Fayl yo'li, to'liq havola emas. Bo'sh bo'lsa, asosiy rasm ishlatiladi.",
     "twitterCard": "Karta ko'rinishi",
-    "twitterCardHint": "Barcha tillarga tegishli. Bir tilda katta, boshqasida kichik rasm — bu tarjima emas, nomuvofiqlik.",
+    "twitterCardHint": "Barcha tillar uchun bitta sozlama. Karta hamma tilda bir xil ko'rinadi.",
     "cards": {
       "default": "Do'kon sozlamasi",
       "summary": "Kichik rasm",
@@ -172,7 +174,7 @@
   },
   "notSaved": {
     "title": "Hech narsa saqlanmadi",
-    "body": "Servislar ulanmaguncha boshqaruv paneli namunaviy ma'lumotlarda ishlaydi, shuning uchun bu forma saqlanmaydi."
+    "body": "Panel hozircha namunaviy ma'lumotlarda ishlaydi. Shuning uchun bu forma saqlanmaydi."
   },
   "emptyTitle": "Hozircha bu yerda hech narsa yo'q",
   "updatedBy": "{name} yangiladi",
@@ -183,7 +185,7 @@
     "hidden": "Yashirilgan"
   },
   "details": {
-    "description": "Ushbu qator haqida yozib olingan hamma narsa. Tahrirlash to'liq muharrirni ochadi."
+    "description": "Bu yozuv haqida saqlangan barcha ma'lumotlar. Tahrirlash tugmasi to'liq shaklni ochadi."
   },
   "history": {
     "title": "Tarix",
@@ -202,11 +204,11 @@
   "media": {
     "count": "{count, plural, =0 {Fayl yo'q} one {# ta fayl} other {# ta fayl}}",
     "add": "Rasm qo'shish",
-    "unavailable": "Yuklash uchun Supabase Storage kerak, u hali ulanmagan. Mavjud fayllarni tartiblash va tavsiflash mumkin.",
+    "unavailable": "Rasm yuklash hali ulanmagan. Mavjud fayllarni tartiblash va tavsif yozish mumkin.",
     "empty": "Hozircha rasm yo'q.",
     "primary": "Asosiy",
     "altLabel": "Alt matni",
-    "altHint": "Rasmni ko'ra olmaydigan odam uchun tasvirlang. Tarjima qilinadi, chunki ekran o'quvchisi uni tashrifchining tilida o'qiydi.",
+    "altHint": "Rasmda nima borligini yozing. Rasm ochilmay qolsa yoki ekran o'quvchisi ishlatilsa, shu matn o'qiladi.",
     "moveEarlier": "Oldinga surish",
     "moveLater": "Orqaga surish",
     "setPrimary": "Asosiy qilish",

@@ -7,7 +7,7 @@
     "outOfStock": "Tugagan",
     "reserved": "Band qilingan"
   },
-  "reservedNote": "Band qilingan miqdor sxemada e'lon qilingan, lekin to'lov tizimi qo'shilmaguncha unga hech narsa yozilmaydi.",
+  "reservedNote": "Band qilingan miqdor buyurtma qabul qilish ishga tushgach hisoblanadi. Hozircha u doim nol.",
   "tabs": {
     "levels": "Ombor qoldiqlari",
     "movements": "Harakatlar tarixi"
@@ -46,7 +46,7 @@
       "note": "Izoh",
       "by": "Kim"
     },
-    "appendOnly": "Bu jurnalga faqat qo'shiladi. Tuzatish — yangi harakat, tahrir emas."
+    "appendOnly": "Bu jurnalga faqat yangi yozuv qo'shiladi. Xatoni to'g'rilash uchun ham yangi harakat yoziladi."
   },
   "reasons": {
     "purchase": "Xarid",
@@ -57,7 +57,7 @@
   },
   "adjustDialog": {
     "title": "Omborni tuzatish",
-    "description": "{product} bo'yicha harakat qayd etiladi. Ombor qoldig'i hech qachon qayta yozilmaydi.",
+    "description": "{product} bo'yicha yangi harakat yoziladi. Eski qoldiq o'chirilmaydi.",
     "reason": "Sababi",
     "quantity": "Miqdori",
     "quantityHint": "Musbat qiymat qo'shadi, manfiy ayiradi.",

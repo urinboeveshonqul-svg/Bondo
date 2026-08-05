@@ -10,10 +10,10 @@
     "emptyDescription": "Add a section to build the home page.",
     "types": {
       "hero": "Hero banner",
-      "featured": "Featured products",
-      "brands": "Popular brands",
+      "featured": "Best sellers",
+      "brands": "Brands we stock",
       "category-rail": "Category rail",
-      "deals": "Today's deals",
+      "deals": "On sale",
       "value-props": "Why buy from us",
       "reviews": "Customer reviews",
       "newsletter": "Newsletter"

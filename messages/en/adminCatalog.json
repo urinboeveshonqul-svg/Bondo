@@ -29,7 +29,7 @@
       "delete": "Delete"
     },
     "variantCount": "{count, plural, one {# variant} other {# variants}}",
-    "noVariants": "Single configuration"
+    "noVariants": "One variant"
   },
   "editor": {
     "newTitle": "New product",
@@ -77,9 +77,9 @@
       "primary": "Primary",
       "altLabel": "Alt text",
       "emptyTitle": "No images yet",
-      "emptyDescription": "Product photography arrives with Storage. Cards render a monogram until then.",
+      "emptyDescription": "Image uploads are not connected yet, so cards show the brand monogram instead.",
       "unavailableTitle": "Uploads are not wired yet",
-      "unavailableDescription": "Supabase Storage lands with the services phase. Alt text can be written now."
+      "unavailableDescription": "Uploading arrives in the next phase. You can write the alt text now."
     },
     "specs": {
       "title": "Specifications",
@@ -101,8 +101,8 @@
       "optionValuesHint": "Comma separated.",
       "generate": "Generate combinations",
       "generateHint": "Creates {count, plural, one {# row} other {# rows}} from the options above.",
-      "emptyTitle": "One configuration",
-      "emptyDescription": "This product is sold in a single configuration. Add an option to split it into variants.",
+      "emptyTitle": "No variants",
+      "emptyDescription": "This product is sold one way only. Add an option to split it into variants.",
       "columns": {
         "variant": "Variant",
         "sku": "SKU",

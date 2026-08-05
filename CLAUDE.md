@@ -316,6 +316,46 @@ that say what happens. Descriptions that help somebody decide what to buy.
 Avoid academic and bureaucratic phrasing, archaic words, ornamental metaphor,
 empty promotional language, and the generic cadence of generated marketing copy.
 
+**Do not write slogans.** A hero section does not need one, and inventing a
+tagline because the layout has a big heading is how the site starts sounding
+generated. A heading states what is being sold or what the section contains:
+`Yangi noutbuklar`, `O'yin kompyuterlari`, `Chegirmadagi mahsulotlar`,
+`Kompyuter butlovchi qismlari`. Never try to sound poetic, clever or impressive.
+
+**The test for every sentence:** would a salesperson in a real computer shop in
+Tashkent say it out loud, and would it look normal on Uzum, Texnomart, Asaxiy or
+MediaPark? If not, rewrite it.
+
+### Uzbek vocabulary: use the words shoppers use
+
+Write with the words customers actually type into a search box — `noutbuk`,
+`kompyuter`, `o'yin kompyuteri`, `videokarta`, `protsessor`, `monitor`, `SSD`,
+`operativ xotira`, `klaviatura`, `sichqoncha`, `printer`, `server`, `aksessuar`.
+If a word is uncommon in everyday Uzbek, or would raise an eyebrow said aloud in
+a shop, it does not go on the site.
+
+These are **banned in Uzbek copy**, storefront and admin alike:
+
+| Do not write                    | Write instead                                  |
+| ------------------------------- | ---------------------------------------------- |
+| `komplektuvchilar`              | `butlovchi qismlar`                            |
+| `tizim`, meaning a computer     | `kompyuter`                                    |
+| `xarakteristikalar`             | `texnik xususiyatlar`                          |
+| `yechim`, `innovatsion`         | say what the thing actually is                 |
+| `ekotizim`, `platforma` as PR   | name the product                               |
+| `imkoniyatlar` as a filler noun | name the capability                            |
+| `Bondo'dan`                     | `Bondodan` — no apostrophe before a suffix     |
+| `GGts`, `Gts`                   | `GHz`, `Hz` — protected names stay as they are |
+
+`tizim` is allowed only where it is genuinely the Uzbek word for the thing —
+`to'lov tizimi`, `sovutish` prose about cooling — never as a stand-in for a
+machine we sell. Likewise `konfiguratsiya`: use `variant` or `ko'rinish` unless
+you really mean a build specification.
+
+Describe the benefit, not the abstraction. `Har bir kompyuter yig'ilgandan so'ng
+tekshiriladi va sinovdan o'tkaziladi` beats `Har bir tizim sifat uchun yig'iladi`
+because a shopper can act on the first one.
+
 ### Vocabulary that does not change
 
 `Intel`, `AMD`, `NVIDIA`, `DDR5`, `PCIe`, `RTX`, `SSD`, `USB`, `Wi-Fi`,
@@ -343,9 +383,11 @@ are exact every time they appear:
   em-dash aside landing in the same slot in all three is copied structure, and
   structure does not survive independent writing by coincidence.
 
-It deliberately does **not** grade tone. A checker that guessed at register would
-fail honest copy and train everyone to ignore it. Tone is a review judgement, and
-the reviewer should be a native speaker — see **D-14**.
+It deliberately does **not** grade tone, and it does **not** know the banned
+vocabulary above — a word list that fired on `to'lov tizimi` would be wrong more
+often than right. A checker that guessed at register would fail honest copy and
+train everyone to ignore it. Tone and word choice are review judgements, and the
+reviewer should be a native speaker — see **D-14**.
 
 ### Where things live
 

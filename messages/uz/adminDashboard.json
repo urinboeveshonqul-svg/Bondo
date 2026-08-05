@@ -33,7 +33,7 @@
     "title": "So'nggi buyurtmalar",
     "description": "Eng yangi yettitasi.",
     "emptyTitle": "Hozircha buyurtma yo'q",
-    "emptyDescription": "To'lov tizimi ishga tushgach buyurtmalar shu yerda ko'rinadi.",
+    "emptyDescription": "Buyurtma qabul qilish ishga tushgach, buyurtmalar shu yerda ko'rinadi.",
     "reference": "Buyurtma",
     "customer": "Mijoz",
     "status": "Holati",
@@ -61,6 +61,6 @@
   },
   "notWired": {
     "title": "Raqamlar namunaviy",
-    "body": "Tushum, buyurtmalar va mijozlar namunaviy ma'lumotlardan olingan. To'lov tizimi qo'shilmaguncha buyurtmalar jadvali mavjud emas."
+    "body": "Tushum, buyurtma va mijoz raqamlari namuna uchun ko'rsatilgan. Buyurtmalar bo'limi keyingi bosqichda ochiladi."
   }
 }
