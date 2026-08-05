@@ -57,6 +57,35 @@ the `admins` row, grants `super_admin`, reads the grant back, and writes an
 administrator already exists unless `--force` is passed. A script and never a
 route: behind HTTP, "create the first admin" is "create an admin".
 
+### Fixed — no user who had written an audit entry could ever be deleted (K-22)
+
+`audit_logs.actor_id` referenced `auth.users` with `on delete set null`, while
+`audit_logs` carries a `before update or delete` trigger that rejects every
+mutation (ADR-27). The two are incompatible: the cascade tries to UPDATE the
+audit row to null the actor, the guard raises, and the whole
+`DELETE FROM auth.users` rolls back.
+
+It surfaced as an opaque GoTrue **500 with an empty body** — no constraint name,
+no table, nothing pointing at the audit log. Found while deleting the bootstrap
+administrator and isolated against test users that deleted cleanly, the
+difference between them being exactly one audit row.
+
+**Every administrator writes audit entries by definition**, so the entire staff
+register was permanently undeletable, and any customer would have been the moment
+audit coverage reached customer actions.
+
+`20260807001000_audit_log_independence.sql` drops the foreign key rather than
+weakening the guard (**ADR-61**). Weakening it was the other option and it is
+wrong twice: one exception is how a log stops being evidence, and nulling the
+actor erases the single field the row exists to hold. The log now outlives its
+actors and keeps both `actor_id` and `actor_email`. Erasure is still possible —
+it is a deliberate redaction rather than a silent side effect of closing an
+account, which is what a data-protection request actually calls for.
+
+Verified: the bootstrap administrator was deleted, `profiles`, `wishlists`,
+`admins` and `user_roles` all cascaded away, and both audit entries survived
+still naming who acted.
+
 ### Fixed — an administrator had no way into the panel
 
 Nothing outside `/admin` linked to it, so the only route in was typing the URL.
