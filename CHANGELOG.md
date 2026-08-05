@@ -12,6 +12,102 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — orders and reviews, without a payment gateway
+
+Bondo does not take money online, so this is not a checkout with the payment
+step removed. `order_status` tracks a **conversation** — `new → contacted →
+confirmed → preparing → shipped → delivered`, plus `cancelled` — because that is
+what a manager ringing a customer back actually does (**ADR-63**). No `paid`, no
+`refunded`: cash settles at the door, and a status nobody updates is worse than
+no status. `orders.phone` is required and email is not collected at all.
+
+**`20260809001000_orders_and_reviews.sql`** — `orders`, `order_items`,
+`order_status_history`, `product_reviews`; the `order_status` enum; a reference
+sequence; ten RLS policies; two permissions (**ADR-67**).
+
+Three properties carry the design:
+
+- **Nothing writes an order directly.** `place_order()` is `security definer` and
+  no role holds insert on `orders` or `order_items` (**ADR-65**). It accepts a
+  basket and **no prices** — every line is priced from the catalog inside the
+  transaction that writes it. That closes three holes at once: a client-supplied
+  total, a half-written order, and a guest appending lines to another guest's
+  order, which a table-level insert policy could not prevent because a guest
+  order has no owner to check.
+- **The timeline writes itself.** A trigger appends to `order_status_history`
+  inside the same transaction as the update, and the table carries the
+  append-only guard — the argument ADR-24 makes for stock, applied to a workflow.
+- **The review gate is an RLS policy** (**ADR-66**). Verified buyer, delivered
+  order, one per purchased product — all three in a `with check` containing the
+  join they depend on, so the rule survives the next Server Action somebody
+  writes in a hurry.
+
+**The cart is client-side and there is no `carts` table** (**ADR-64**), reversing
+the roadmap's Phase 4 plan. Server carts existed to survive a redirect to a
+payment provider; there is no provider.
+
+**Verified** — `npm run db:verify` grew from 93 to **111 assertions**. The order
+ones are behavioural: a real order is placed, then the catalog is re-priced to
+999999 and the order is asserted to still cost what it cost. The four review
+assertions run under `set role authenticated` with a real JWT claim, so the gate
+is tested through RLS rather than around it. The harness also caught three
+missing foreign-key indexes before they shipped.
+
+**Not delivered: the screens.** Checkout, the success page, the admin list and
+detail, and the review form do not exist — tracked as **D-31**, with **D-30** for
+the basket provider that is written but not yet wired. The admin module registry
+entry is deliberately held back so the sidebar cannot link to a 404 (§ 5); the
+comment where it will go records everything it will contain. The migration is
+committed but **not pushed to the hosted project**.
+
+Along the way: `types/admin.ts`'s hand-written `OrderStatus` union became
+`Enums<"order_status">` and its declared exception in `scripts/check-enums.mjs`
+was deleted — the mechanism working as intended, three phases after it was
+written. `ProductBadge` took its place as an exception, because `order_status`
+also has a `new` and the overlap rule cannot tell a coincidence from a
+divergence.
+
+### Changed — the copy now uses the words a computer shop actually uses
+
+The previous pass fixed sentence _structure_ and left a vocabulary problem
+underneath it. The strings were parallel-free, grammatical, and still did not
+sound like a shop: `Komplektuvchilar foyda uchun emas, sifati uchun tanlanadi`
+is a slogan nobody says out loud, assembled from words an ordinary Uzbek shopper
+does not use.
+
+A banned-vocabulary table is now part of the standard (CLAUDE.md § 11a) and the
+substitutions are applied throughout:
+
+| Removed                      | Replaced with                       |
+| ---------------------------- | ----------------------------------- |
+| `komplektuvchilar`           | `butlovchi qismlar`                 |
+| `tizim`, meaning a computer  | `kompyuter`                         |
+| `xarakteristikalar`          | `texnik xususiyatlar`               |
+| `konfiguratsiya` as a label  | `variant`                           |
+| `Ruxsati` for screen density | `Aniqligi` — `ruxsat` is permission |
+| `GGts`, `Gts`                | `GHz`, `Hz`                         |
+| `Bondo'dan`                  | `Bondodan`                          |
+
+**Headings state what they list.** `Shu oyda ko'p olinmoqda` →
+`Ko'p sotilayotgan mahsulotlar`, `Chegirmalar` → `Chegirmadagi mahsulotlar`,
+`Rasmiy hamkor brendlar` → `Mashhur brendlar`. The hero dropped its slogan for
+the name of what is sold plus the one fact that decides a purchase: every
+computer is checked and stress-tested before it ships. Russian and English were
+rewritten independently, not adjusted to match.
+
+**The admin panel was held to the same standard.** Twelve strings named our own
+infrastructure to an operator with no reason to know it — `Supabase Storage`,
+`service role`, `NEXT_LOCALE cookie`, `фикстуры`, `схема`, `bucket` — and now
+say what the operator can and cannot do instead. Three clever asides were cut.
+
+**Catalog copy followed**: twelve product descriptions, four category
+descriptions and three reviews. The reviewers were renamed — `Marcus Reid` and
+`Priya Nandakumar` on an Uzbek storefront read as an untranslated template
+regardless of what the review says.
+
+`npm run check` passes: 16 namespaces × 3 locales, 893 keys each; copy, enum and
+translation gates all green.
+
 ### Changed — the three languages are now written, not translated
 
 The previous pass fixed every word-level defect and still left the real problem

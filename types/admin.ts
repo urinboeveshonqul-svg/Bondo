@@ -94,17 +94,13 @@ export type AdminRole = {
 /**
  * Order status.
  *
- * **A declared exception to CLAUDE.md § 12**: there is no `orders` table and no
- * `order_status` enum, because orders arrive with checkout. This union is the
- * vocabulary the dashboard renders against until then, chosen to match the
- * transitions checkout will need rather than invented for the UI.
- *
- * Registered in `scripts/check-enums.mjs` so the exception is visible and
- * expires — when the table lands, this becomes `Enums<"order_status">` and the
- * checker stops allowing it.
+ * **The exception expired.** This was a hand-written union while there was no
+ * `orders` table, declared in `scripts/check-enums.mjs` so it would be found
+ * again. `20260809001000_orders_and_reviews.sql` created the enum, so it now
+ * derives — and its old values (`pending`, `paid`, `fulfilled`, `refunded`) are
+ * gone, because they described a payment this shop does not take (ADR-63).
  */
-export type OrderStatus =
-  "pending" | "paid" | "fulfilled" | "cancelled" | "refunded";
+export type OrderStatus = Enums<"order_status">;
 
 export type AdminOrder = {
   id: string;

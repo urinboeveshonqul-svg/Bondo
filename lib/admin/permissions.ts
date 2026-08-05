@@ -39,6 +39,12 @@ export const PERMISSIONS = [
   "admins.manage",
   "roles.manage",
   "audit.read",
+  // Added by 20260809001000_orders_and_reviews. There is deliberately no
+  // `orders.delete`: a sale that fell through is `cancelled`, which keeps the
+  // phone number and the basket — both of which the shop wants when the
+  // customer rings back.
+  "orders.read",
+  "orders.update",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -73,14 +79,20 @@ export const ROLE_PERMISSIONS: Record<RoleKey, readonly Permission[]> = {
     "brands.read",
     "brands.manage",
     "inventory.read",
+    // Sees what sold, changes nothing about it.
+    "orders.read",
   ],
   inventory_manager: ["products.read", "inventory.read", "inventory.adjust"],
+  // The support agent is the person who actually rings the customer, so the
+  // whole manual sales workflow lives in this role.
   support_agent: [
     "products.read",
     "categories.read",
     "brands.read",
     "inventory.read",
     "users.read",
+    "orders.read",
+    "orders.update",
   ],
   content_editor: [
     "banners.read",

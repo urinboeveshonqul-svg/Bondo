@@ -1,3 +1,4 @@
+import type { OrderStatus } from "@/types/admin";
 import type {
   ProductStatus,
   ProductVariant,
@@ -106,6 +107,69 @@ export function optionCombinations(
       ),
     [{}],
   );
+}
+
+// -----------------------------------------------------------------------------
+// Orders
+// -----------------------------------------------------------------------------
+
+/**
+ * The pipeline, in the order an operator walks it.
+ *
+ * `cancelled` is deliberately absent: it is reachable from anywhere and is not a
+ * step, so a progress indicator that included it would draw it as one. Callers
+ * that need every value use `Constants.public.Enums.order_status`.
+ *
+ * Listing the order here rather than reading it off the enum keeps the sequence
+ * of a business workflow from being an accident of how the DDL was typed — but
+ * `satisfies` means a value renamed in the schema still fails to compile.
+ */
+export const ORDER_STATUS_FLOW = [
+  "new",
+  "contacted",
+  "confirmed",
+  "preparing",
+  "shipped",
+  "delivered",
+] as const satisfies readonly OrderStatus[];
+
+/**
+ * Where an order sits in the pipeline, as a 1-based step, or `null` when it is
+ * cancelled and therefore nowhere on it.
+ */
+export function orderProgress(
+  status: OrderStatus,
+): { step: number; of: number } | null {
+  const index = ORDER_STATUS_FLOW.indexOf(
+    status as (typeof ORDER_STATUS_FLOW)[number],
+  );
+
+  return index === -1
+    ? null
+    : { step: index + 1, of: ORDER_STATUS_FLOW.length };
+}
+
+/**
+ * The statuses an order may legally move to next.
+ *
+ * Forward one step, or cancelled — never backwards. An operator who marked an
+ * order delivered by mistake needs a colleague and an audit trail, not an undo
+ * button, because "delivered" is what unlocks the customer's right to review it
+ * (ADR-66) and reversing it silently would strand a review that already exists.
+ *
+ * A delivered or cancelled order is terminal and returns an empty list, which is
+ * what makes the admin's status control disappear rather than offer a no-op.
+ */
+export function nextOrderStatuses(status: OrderStatus): OrderStatus[] {
+  if (status === "delivered" || status === "cancelled") return [];
+
+  const index = ORDER_STATUS_FLOW.indexOf(
+    status as (typeof ORDER_STATUS_FLOW)[number],
+  );
+
+  const forward = ORDER_STATUS_FLOW[index + 1];
+
+  return forward ? [forward, "cancelled"] : ["cancelled"];
 }
 
 /** Percentage change between two periods, or `null` when the base is zero. */

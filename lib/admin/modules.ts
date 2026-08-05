@@ -53,6 +53,19 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
     seo: false,
     audit: false,
   },
+  // -----------------------------------------------------------------------------
+  // `orders` is deliberately absent, and this is the note that says why
+  // -----------------------------------------------------------------------------
+  // The schema, the services and the Server Actions all exist and are verified
+  // (20260809001000_orders_and_reviews.sql, 111 assertions in `db:verify`). The
+  // **screens** do not, and a module here is a sidebar entry — so adding the
+  // record before the route would put a link to a 404 in front of every operator
+  // holding `orders.read`, which § 5 forbids and which no amount of intent makes
+  // less broken.
+  //
+  // Everything the entry will contain is settled and written down in
+  // PROJECT_STATUS.md § Orders; adding it back is this comment's replacement plus
+  // `app/[locale]/admin/orders/`. Tracked as **D-30**.
   {
     id: "products",
     labelKey: "nav.products",

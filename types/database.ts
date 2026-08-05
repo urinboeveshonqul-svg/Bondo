@@ -601,6 +601,177 @@ export type Database = {
           },
         ]
       }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          line_total_cents: number
+          order_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          sku: string
+          unit_price_cents: number
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_total_cents: number
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          sku: string
+          unit_price_cents: number
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_total_cents?: number
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          sku?: string
+          unit_price_cents?: number
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_status_history: {
+        Row: {
+          changed_by: string | null
+          changed_by_name: string | null
+          created_at: string
+          from_status: Database["public"]["Enums"]["order_status"] | null
+          id: string
+          note: string | null
+          order_id: string
+          to_status: Database["public"]["Enums"]["order_status"]
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["order_status"] | null
+          id?: string
+          note?: string | null
+          order_id: string
+          to_status: Database["public"]["Enums"]["order_status"]
+        }
+        Update: {
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["order_status"] | null
+          id?: string
+          note?: string | null
+          order_id?: string
+          to_status?: Database["public"]["Enums"]["order_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          address: string
+          city: string | null
+          created_at: string
+          currency: string
+          customer_name: string
+          delivery_fee_cents: number
+          id: string
+          internal_note: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          notes: string | null
+          phone: string
+          placed_at: string
+          reference: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal_cents: number
+          telegram: string | null
+          total_cents: number
+          updated_at: string
+          updated_by: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address: string
+          city?: string | null
+          created_at?: string
+          currency?: string
+          customer_name: string
+          delivery_fee_cents?: number
+          id?: string
+          internal_note?: string | null
+          locale?: Database["public"]["Enums"]["locale"]
+          notes?: string | null
+          phone: string
+          placed_at?: string
+          reference: string
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal_cents: number
+          telegram?: string | null
+          total_cents: number
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: string
+          city?: string | null
+          created_at?: string
+          currency?: string
+          customer_name?: string
+          delivery_fee_cents?: number
+          id?: string
+          internal_note?: string | null
+          locale?: Database["public"]["Enums"]["locale"]
+          notes?: string | null
+          phone?: string
+          placed_at?: string
+          reference?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal_cents?: number
+          telegram?: string | null
+          total_cents?: number
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           action: string
@@ -783,6 +954,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "product_options_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_reviews: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string
+          rating: number
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id: string
+          rating: number
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string
+          rating?: number
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -1413,6 +1635,46 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_product_published: { Args: { p_product_id: string }; Returns: boolean }
       is_valid_slug: { Args: { value: string }; Returns: boolean }
+      place_order: {
+        Args: {
+          p_address: string
+          p_city?: string
+          p_customer_name: string
+          p_items: Json
+          p_locale?: Database["public"]["Enums"]["locale"]
+          p_notes?: string
+          p_phone: string
+          p_telegram?: string
+        }
+        Returns: {
+          address: string
+          city: string | null
+          created_at: string
+          currency: string
+          customer_name: string
+          delivery_fee_cents: number
+          id: string
+          internal_note: string | null
+          locale: Database["public"]["Enums"]["locale"]
+          notes: string | null
+          phone: string
+          placed_at: string
+          reference: string
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal_cents: number
+          telegram: string | null
+          total_cents: number
+          updated_at: string
+          updated_by: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       text_search_config: {
         Args: { loc: Database["public"]["Enums"]["locale"] }
         Returns: unknown
@@ -1424,6 +1686,14 @@ export type Database = {
       inventory_movement_type:
         "purchase" | "adjustment" | "correction" | "sale" | "return"
       locale: "uz" | "ru" | "en"
+      order_status:
+        | "new"
+        | "contacted"
+        | "confirmed"
+        | "preparing"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
       product_status: "draft" | "active" | "archived"
       product_visibility: "public" | "hidden"
       twitter_card: "summary" | "summary_large_image"
@@ -1565,6 +1835,15 @@ export const Constants = {
         "return",
       ],
       locale: ["uz", "ru", "en"],
+      order_status: [
+        "new",
+        "contacted",
+        "confirmed",
+        "preparing",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
       product_status: ["draft", "active", "archived"],
       product_visibility: ["public", "hidden"],
       twitter_card: ["summary", "summary_large_image"],

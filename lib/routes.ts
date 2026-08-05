@@ -37,6 +37,17 @@ export const routes = {
 
   cart: "/cart",
   checkout: "/checkout",
+  /**
+   * Where a placed order lands.
+   *
+   * The reference travels in the query string rather than the path, and the page
+   * renders it without fetching anything. That is forced by the schema, not a
+   * shortcut: most orders are placed by guests, and a guest holds no read
+   * privilege on `orders` at all — so there is no order for this page to load.
+   * The action returns the reference; the page shows it.
+   */
+  checkoutSuccess: (reference: string) =>
+    `/checkout/success?ref=${encodeURIComponent(reference)}`,
 
   auth: {
     signIn: "/sign-in",
@@ -77,6 +88,8 @@ export const routes = {
     settings: "/admin/settings",
     users: "/admin/users",
     audit: "/admin/audit",
+    orders: "/admin/orders",
+    order: (id: string) => `/admin/orders/${id}`,
   },
 } as const;
 

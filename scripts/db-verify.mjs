@@ -49,6 +49,10 @@ const EXPECTED_TABLES = [
   "user_roles",
   "wishlist_items",
   "wishlists",
+  "orders",
+  "order_items",
+  "order_status_history",
+  "product_reviews",
 ];
 
 /**
@@ -81,7 +85,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 14,
+  migrationCount === 15,
   `${migrationCount} files`,
 );
 
@@ -809,6 +813,314 @@ try {
   check("a variant SKU is unique across the catalog", duplicateSku);
 } catch (error) {
   check("variant schema behaves", false, error.message);
+}
+
+// -----------------------------------------------------------------------------
+// Orders — the manual sales workflow
+// -----------------------------------------------------------------------------
+// The order flow is the one place in this schema where a mistake costs money, so
+// it is asserted behaviourally rather than structurally: place a real order, move
+// it, and check what the database did rather than what the DDL says it would.
+try {
+  // Seeded, active, public, published 30 days ago, on sale at 149900.
+  const PRODUCT = "c0000000-0000-4000-8000-000000000001";
+  // Seeded but `draft` with no `published_at` — nobody can buy it.
+  const DRAFT_PRODUCT = "c0000000-0000-4000-8000-000000000004";
+
+  const placed = (
+    await db.query(
+      `select * from public.place_order(
+         'Anvar Karimov', '+998901234567', 'Toshkent, Amir Temur 108',
+         $1::jsonb, null, 'Toshkent', 'Kechqurun qo''ng''iroq qiling', 'uz'
+       )`,
+      [JSON.stringify([{ product_id: PRODUCT, quantity: 2 }])],
+    )
+  ).rows[0];
+
+  check(
+    "place_order issues a readable reference",
+    /^BND-\d{6,}$/.test(placed.reference),
+    placed.reference,
+  );
+
+  check("a new order starts at 'new'", placed.status === "new", placed.status);
+
+  // The security property that matters most: the caller passed no prices, so
+  // the total can only have come from the database.
+  check(
+    "place_order prices the line from the database, not the caller",
+    placed.subtotal_cents === 299800 && placed.total_cents === 299800,
+    `subtotal=${placed.subtotal_cents} total=${placed.total_cents}`,
+  );
+
+  const line = (
+    await db.query(`select * from public.order_items where order_id = $1`, [
+      placed.id,
+    ])
+  ).rows[0];
+
+  check(
+    "the line snapshots name, SKU and unit price",
+    line.sku === "GPU-RTX4090-FE" &&
+      line.unit_price_cents === 149900 &&
+      line.line_total_cents === 299800,
+    `${line.sku} @ ${line.unit_price_cents} × ${line.quantity}`,
+  );
+
+  // The snapshot has to be independent of the catalog, or it is not a snapshot.
+  await db.query(
+    `update public.products set price_cents = 999999, sale_price_cents = null
+     where id = $1`,
+    [PRODUCT],
+  );
+
+  const afterRepricing = (
+    await db.query(
+      `select total_cents::int as total from public.orders where id = $1`,
+      [placed.id],
+    )
+  ).rows[0];
+
+  check(
+    "re-pricing the catalog does not move a placed order",
+    afterRepricing.total === 299800,
+    `total_cents=${afterRepricing.total}`,
+  );
+
+  const birth = (
+    await db.query(
+      `select from_status, to_status from public.order_status_history
+       where order_id = $1`,
+      [placed.id],
+    )
+  ).rows;
+
+  check(
+    "the timeline records the order's birth without being asked",
+    birth.length === 1 &&
+      birth[0].from_status === null &&
+      birth[0].to_status === "new",
+    `${birth.length} row(s)`,
+  );
+
+  await db.query(
+    `update public.orders set status = 'contacted' where id = $1`,
+    [placed.id],
+  );
+  await db.query(
+    `update public.orders set status = 'confirmed' where id = $1`,
+    [placed.id],
+  );
+
+  const moved = (
+    await db.query(
+      `select count(*)::int as n from public.order_status_history where order_id = $1`,
+      [placed.id],
+    )
+  ).rows[0];
+
+  check(
+    "each status move appends one timeline row",
+    moved.n === 3,
+    `${moved.n} rows after two moves`,
+  );
+
+  // A double-clicked save must not write a second identical entry.
+  await db.query(
+    `update public.orders set status = 'confirmed' where id = $1`,
+    [placed.id],
+  );
+
+  const unchanged = (
+    await db.query(
+      `select count(*)::int as n from public.order_status_history where order_id = $1`,
+      [placed.id],
+    )
+  ).rows[0];
+
+  check(
+    "re-saving the same status appends nothing",
+    unchanged.n === 3,
+    `${unchanged.n} rows`,
+  );
+
+  const historyImmutable = await db
+    .query(
+      `update public.order_status_history set to_status = 'delivered'
+       where order_id = $1`,
+      [placed.id],
+    )
+    .then(
+      () => false,
+      () => true,
+    );
+
+  check("the timeline is append-only", historyImmutable);
+
+  const totalGuard = await db
+    .query(`update public.orders set delivery_fee_cents = 5000 where id = $1`, [
+      placed.id,
+    ])
+    .then(
+      () => false,
+      () => true,
+    );
+
+  check("a delivery fee that does not reach the total is rejected", totalGuard);
+
+  await db.query(
+    `update public.orders
+     set delivery_fee_cents = 5000, total_cents = subtotal_cents + 5000
+     where id = $1`,
+    [placed.id],
+  );
+
+  const emptyOrder = await db
+    .query(
+      `select public.place_order('X Y', '+998901112233', 'Somewhere 1', '[]'::jsonb)`,
+    )
+    .then(
+      () => false,
+      () => true,
+    );
+
+  check("an order with no lines is refused", emptyOrder);
+
+  const draftOrder = await db
+    .query(
+      `select public.place_order('X Y', '+998901112233', 'Somewhere 1', $1::jsonb)`,
+      [JSON.stringify([{ product_id: DRAFT_PRODUCT, quantity: 1 }])],
+    )
+    .then(
+      () => false,
+      () => true,
+    );
+
+  check("an unpublished product cannot be ordered", draftOrder);
+
+  // ---------------------------------------------------------------------------
+  // The review gate
+  // ---------------------------------------------------------------------------
+  // Asserted through RLS rather than around it: `set role authenticated` plus a
+  // JWT claim is what a real customer's request looks like to Postgres.
+  const buyer = (
+    await db.query(
+      `insert into auth.users (id, email) values (gen_random_uuid(), 'buyer@bondo.test')
+       returning id`,
+    )
+  ).rows[0].id;
+
+  await db.query(`update public.orders set user_id = $1 where id = $2`, [
+    buyer,
+    placed.id,
+  ]);
+
+  /**
+   * Runs one statement as a signed-in customer, with RLS actually enforced.
+   *
+   * Statements go one per `query` call rather than semicolon-joined: PGlite's
+   * `query` takes a single statement, so a joined `begin; …; commit;` fails on
+   * the protocol rather than on the policy — which reads as "the database
+   * refused it" and would have turned this whole section into false passes.
+   */
+  const asCustomer = async (userId, sql, params = []) => {
+    await db.query(`set request.jwt.claim.sub = '${userId}'`);
+    await db.query(`set role authenticated`);
+
+    const allowed = await db.query(sql, params).then(
+      () => true,
+      () => false,
+    );
+
+    await db.query(`reset role`);
+    await db.query(`reset request.jwt.claim.sub`);
+
+    return allowed;
+  };
+
+  const INSERT_REVIEW = `insert into public.product_reviews
+      (product_id, user_id, order_id, rating, body)
+      values ($1, $2, $3, $4, $5)`;
+
+  check(
+    "a review is refused while the order is not delivered",
+    !(await asCustomer(buyer, INSERT_REVIEW, [
+      PRODUCT,
+      buyer,
+      placed.id,
+      5,
+      "Hali yetkazilmagan.",
+    ])),
+  );
+
+  await db.query(
+    `update public.orders set status = 'delivered' where id = $1`,
+    [placed.id],
+  );
+
+  check(
+    "a delivered buyer may review what they bought",
+    await asCustomer(buyer, INSERT_REVIEW, [
+      PRODUCT,
+      buyer,
+      placed.id,
+      5,
+      "Yaxshi karta, tez yetkazishdi.",
+    ]),
+  );
+
+  check(
+    "one review per buyer per product",
+    !(await asCustomer(buyer, INSERT_REVIEW, [
+      PRODUCT,
+      buyer,
+      placed.id,
+      3,
+      "Ikkinchi sharh.",
+    ])),
+  );
+
+  const stranger = (
+    await db.query(
+      `insert into auth.users (id, email) values (gen_random_uuid(), 'stranger@bondo.test')
+       returning id`,
+    )
+  ).rows[0].id;
+
+  check(
+    "somebody else's order earns nobody a review",
+    !(await asCustomer(stranger, INSERT_REVIEW, [
+      PRODUCT,
+      stranger,
+      placed.id,
+      5,
+      "Men sotib olmadim.",
+    ])),
+  );
+
+  // The other half of the gate: a buyer with a delivered order still may not
+  // review a product that order did not contain.
+  check(
+    "a delivered order earns no review of something it did not contain",
+    !(await asCustomer(buyer, INSERT_REVIEW, [
+      "c0000000-0000-4000-8000-000000000002",
+      buyer,
+      placed.id,
+      5,
+      "Buni olmaganman.",
+    ])),
+  );
+
+  check(
+    "a customer reads their own order under RLS",
+    await asCustomer(
+      buyer,
+      `select 1 from public.orders where id = $1 having count(*) = 1`,
+      [placed.id],
+    ),
+  );
+} catch (error) {
+  check("order flow behaves", false, error.message);
 }
 
 await db.close();

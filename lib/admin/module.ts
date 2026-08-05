@@ -114,9 +114,16 @@ export function orderFormSections(
 // Navigation grouping
 // -----------------------------------------------------------------------------
 
-/** Sidebar groups, in the order they appear. */
+/**
+ * Sidebar groups, in the order they appear.
+ *
+ * `sales` sits directly under `overview` because it is the group somebody opens
+ * every morning — an order that nobody rang about is the one thing in this panel
+ * with a customer waiting at the other end of it.
+ */
 export const MODULE_NAV_SECTIONS = [
   "overview",
+  "sales",
   "catalog",
   "storefront",
   "administration",
@@ -130,6 +137,7 @@ export type ModuleNavSection = (typeof MODULE_NAV_SECTIONS)[number];
 
 export type AdminModuleId =
   | "dashboard"
+  | "orders"
   | "products"
   | "categories"
   | "brands"

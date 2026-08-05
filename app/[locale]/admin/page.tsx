@@ -45,11 +45,15 @@ const ORDER_TONE: Record<
   OrderStatus,
   "success" | "info" | "neutral" | "danger"
 > = {
-  pending: "info",
-  paid: "info",
-  fulfilled: "success",
-  cancelled: "neutral",
-  refunded: "danger",
+  // `new` is the one that needs somebody to act, so it is the one that stands
+  // out; everything mid-pipeline is neutral because it is already in hand.
+  new: "info",
+  contacted: "neutral",
+  confirmed: "neutral",
+  preparing: "neutral",
+  shipped: "neutral",
+  delivered: "success",
+  cancelled: "danger",
 };
 
 /**

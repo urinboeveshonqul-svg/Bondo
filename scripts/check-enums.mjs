@@ -32,9 +32,16 @@ const read = async (path) =>
  */
 const DECLARED_EXCEPTIONS = [
   {
-    type: "OrderStatus",
-    reason: "no orders table until checkout (Phase 4)",
-    owner: "public.orders.status",
+    type: "ProductBadge",
+    // Flagged from 20260809001000 onwards because `order_status` also has a
+    // `new`, and the overlap rule cannot tell a coincidence from a divergence.
+    // It is a coincidence: a "New" flash on a product card and an order nobody
+    // has rung about yet are unrelated vocabularies that happen to share an
+    // English word. Badges are computed from `products.published_at`,
+    // `is_featured` and the stock level — there is no column to derive them
+    // from, and there is not meant to be.
+    reason: "presentation flags computed from product columns, not stored",
+    owner: "none — interface vocabulary",
   },
   {
     type: "HomepageSectionType",
