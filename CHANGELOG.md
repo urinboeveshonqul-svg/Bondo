@@ -12,6 +12,35 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Deployed — the last three migrations are live
+
+`supabase db push` applied `20260809001000_orders_and_reviews`,
+`20260810001000_default_categories` and `20260811001000_service_highlights` to
+`pgxqnezwrwfgrmamlxhs`. The project now carries **all 17 migrations and 36
+tables**, matching the committed types; `supabase migration list` reports zero
+pending.
+
+Verified afterwards through the **anonymous** client rather than the service
+role, so what follows is what a real visitor gets through RLS:
+
+| Check                                             | Result                      |
+| ------------------------------------------------- | --------------------------- |
+| 20 default categories readable                    | ✅                          |
+| 6 service highlights, visible, three languages    | ✅ `3,3,3,3,3,3`            |
+| warranty card's written titles                    | ✅ uz / ru / en all present |
+| `orders` exists and anon is refused               | ✅ 0 rows                   |
+| `product_reviews` exists and is publicly readable | ✅                          |
+
+**And the storefront was checked in a browser**, which closes the caveat carried
+by the previous two entries. The service highlights render six cards with icons
+directly under the hero, in position 1 of the page's sections, in Uzbek and
+Russian, one column at 320px with zero horizontal overflow. The twenty
+categories now drive the home page's category rails and the footer's shop
+column — every heading on the home page is a real category read from the
+database.
+
+Nothing in the application changed for this; it is a deployment entry.
+
 ### Added — service highlights, editable from the admin
 
 The trust row under the hero: six promises a shopper reads before deciding

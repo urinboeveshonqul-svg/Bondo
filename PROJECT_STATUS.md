@@ -694,9 +694,9 @@ default and both are approved in the `allowScripts` field of `package.json`.
 | ------------------- | ------------------------------------------------------------------------------ |
 | Hosted project      | 🟢 `pgxqnezwrwfgrmamlxhs` ("Bondo"), `ap-southeast-1`                          |
 | Platform versions   | Postgres 17.6.1.155, PostgREST 14.15, GoTrue 2.195.0, Storage 1.67.26          |
-| Migrations applied  | 🟢 **all 11**, local and remote in lockstep                                    |
+| Migrations applied  | 🟢 **all 17**, local and remote in lockstep                                    |
 | Schema drift        | 🟢 none — `db:types:remote` structurally identical to the committed file       |
-| Tables              | 25, all with RLS enabled and explicit policies                                 |
+| Tables              | 36, all with RLS enabled and explicit policies                                 |
 | RLS policies        | 64 on `public`, 10 on `storage.objects`                                        |
 | Indexes             | 75 on `public`                                                                 |
 | Storage buckets     | 🟢 5, verified on the project with their size and MIME limits                  |
@@ -1314,10 +1314,10 @@ and then moved:
 
 The four review rows run with RLS enforced and a real JWT claim, not around it.
 
-> **Not verified:** nothing has run against the hosted project. The migration is
-> committed but **not pushed** — `supabase db push` needs credentials this
-> session did not have. Until it runs, `pgxqnezwrwfgrmamlxhs` has 30 tables and
-> the committed types describe 34.
+**Applied to the hosted project.** `supabase db push` ran on 2026-08-11:
+`pgxqnezwrwfgrmamlxhs` now carries all 17 migrations and 36 tables, matching the
+committed types. Verified through the **anonymous** client, so these are the
+rows a real visitor sees through RLS — not a service-role read.
 
 ---
 
@@ -1507,12 +1507,10 @@ build. Seven of the new assertions are the highlights:
 | deleting a highlight cascades its translations          | ✅                   |
 | the seed does not resurrect a deleted highlight         | 5 remain             |
 
-> **Not seen rendering with real rows.** The dev server points at the hosted
-> project, which has neither this migration nor the two before it, so the read
-> fails and the section is absent. That path was exercised and behaves as
-> designed — logged at `error`, page intact, no layout shift — but the populated
-> section has only been proven by the assertions above plus typecheck and build,
-> not by looking at it. It renders the moment `supabase db push` runs.
+**Seen rendering, against the live database.** All 17 migrations are applied to
+`pgxqnezwrwfgrmamlxhs`. The section renders six cards with their icons directly
+under the hero, in position 1 of the page's sections, in Uzbek and Russian, one
+column at 320px with zero horizontal overflow.
 
 **Removed:** `components/home/value-props.tsx` and the four hardcoded claims in
 `home.valueProps`. Its heading survives as the section's.
