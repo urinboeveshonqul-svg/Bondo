@@ -27,7 +27,7 @@
     "title": "Profil",
     "subtitle": "Sizga qanday murojaat qilishimiz va buyurtma bo'yicha qanday bog'lanishimiz.",
     "email": "Elektron pochta",
-    "emailLocked": "Pochtani o'zgartirish qayta tasdiqlashni talab qiladi, shuning uchun u alohida jarayonda — hisob bosqichida keladi.",
+    "emailLocked": "Pochtani almashtirish uchun uni qaytadan tasdiqlash kerak. Bu alohida bo'limda bo'ladi.",
     "fullName": "To'liq ism",
     "phone": "Telefon raqami",
     "phoneHint": "Ixtiyoriy. Faqat yetkazib berish savollari uchun.",

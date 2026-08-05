@@ -7,20 +7,20 @@
   "account": "Kabinet",
   "search": {
     "label": "Mahsulotlarni qidirish",
-    "placeholder": "Videokarta, noutbuk, komplektuvchi qidiring…"
+    "placeholder": "Videokarta, noutbuk, protsessor…"
   },
   "basket": {
     "open": "Savatni ochish",
-    "title": "Savatingiz",
-    "description": "Xarid qilishga tayyor mahsulotlar.",
-    "emptyTitle": "Savatingiz bo'sh",
-    "emptyDescription": "Katalogni ko'rib chiqing va biror mahsulot qo'shing."
+    "title": "Savat",
+    "description": "Buyurtmaga tayyor mahsulotlar.",
+    "emptyTitle": "Savat bo'sh",
+    "emptyDescription": "Katalogdan mahsulot tanlang."
   },
   "wishlist": {
     "open": "Saralanganlarni ochish",
     "title": "Saralanganlar",
-    "description": "Keyinroq ko'rish uchun saqlab qo'yganlaringiz.",
+    "description": "Keyinroq ko'rish uchun saqlaganlaringiz.",
     "emptyTitle": "Hozircha bo'sh",
-    "emptyDescription": "Yoqqan mahsulotni saqlab qo'ying — keyin yonma-yon solishtirasiz."
+    "emptyDescription": "Yoqqan mahsulotni saqlab qo'ying, keyin solishtirasiz."
   }
 }

@@ -3,7 +3,7 @@
   "backToStore": "Back to store",
   "preview": {
     "label": "Preview data",
-    "body": "Authentication is live, but the admin still renders fixtures — nothing you change here is saved yet."
+    "body": "Sign-in works. The data behind these screens is still sample data, so edits go nowhere."
   },
   "nav": {
     "label": "Admin navigation",
@@ -34,7 +34,7 @@
   "search": {
     "open": "Search",
     "title": "Search the admin",
-    "description": "Find products, categories, brands, customers, orders, pages and settings.",
+    "description": "Jump to any product, category, brand, customer, page or setting.",
     "placeholder": "Search or jump to…",
     "empty": "Nothing matches that.",
     "shortcut": "Ctrl K",

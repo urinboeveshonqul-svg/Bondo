@@ -7,20 +7,20 @@
   "account": "Account",
   "search": {
     "label": "Search products",
-    "placeholder": "Search graphics cards, laptops, components…"
+    "placeholder": "Search graphics cards, laptops, CPUs…"
   },
   "basket": {
     "open": "Open basket",
     "title": "Your basket",
     "description": "Items you are ready to buy.",
     "emptyTitle": "Your basket is empty",
-    "emptyDescription": "Browse the catalog and add something to get started."
+    "emptyDescription": "Add something from the catalog and it'll show up here."
   },
   "wishlist": {
     "open": "Open wishlist",
     "title": "Your wishlist",
     "description": "Products you have saved for later.",
     "emptyTitle": "Nothing saved yet",
-    "emptyDescription": "Save products from any card to compare them side by side later."
+    "emptyDescription": "Hit save on anything you're considering and compare them later."
   }
 }

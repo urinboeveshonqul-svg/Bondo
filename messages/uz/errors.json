@@ -1,18 +1,18 @@
 {
   "notFound": {
     "code": "404",
-    "title": "Bunday sahifa mavjud emas",
-    "description": "Siz qidirayotgan sahifa ko'chirilgan yoki o'chirilgan bo'lishi mumkin.",
-    "backHome": "Bosh sahifaga qaytish"
+    "title": "Sahifa topilmadi",
+    "description": "Manzil noto'g'ri yozilgan bo'lishi yoki sahifa o'chirilgan bo'lishi mumkin.",
+    "backHome": "Bosh sahifaga"
   },
   "route": {
     "title": "Xatolik yuz berdi",
-    "description": "Nimadir noto'g'ri ketdi. Odatda sahifani qayta yuklash yetarli bo'ladi.",
+    "description": "Sahifani yangilab ko'ring, odatda shu yetadi.",
     "reference": "Xatolik kodi: {digest}",
     "tryAgain": "Qayta urinish"
   },
   "catalogUnavailable": {
-    "title": "Katalog hozir ochilmayapti",
-    "description": "Mahsulotlarni ko'rsata olmayapmiz. Muammo biz tomonda va undan xabardormiz. Bir-ikki daqiqadan keyin qayta urinib ko'ring."
+    "title": "Katalog ochilmadi",
+    "description": "Mahsulotlarni hozir ko'rsata olmayapmiz. Bir-ikki daqiqadan keyin urinib ko'ring."
   }
 }

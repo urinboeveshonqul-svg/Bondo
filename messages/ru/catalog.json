@@ -1,6 +1,6 @@
 {
   "title": "Все товары",
-  "metaDescription": "Все товары Bondo — готовые системы, комплектующие и аксессуары.",
+  "metaDescription": "Каталог Bondo — готовые сборки, комплектующие и периферия.",
   "resultsHeading": "Товары",
   "count": "{count, plural, one {# товар} few {# товара} many {# товаров} other {# товара}}",
   "showingResultsFor": "Результаты по запросу «{query}»",

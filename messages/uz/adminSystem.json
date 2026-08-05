@@ -19,7 +19,7 @@
       "title": "Do'kon ma'lumotlari",
       "description": "Yuqori qism, pastki qism va havola ko'rinishlarida ishlatiladi.",
       "name": "Do'kon nomi",
-      "nameHint": "Tarjima qilinmaydi — brend nomi barcha tillarda bir xil.",
+      "nameHint": "Brend nomi barcha tillarda bir xil yoziladi.",
       "tagline": "Shiori",
       "supportEmail": "Yordam pochtasi",
       "supportPhone": "Yordam telefoni",
@@ -58,7 +58,7 @@
       "description": "Logotip va favicon.",
       "logo": "Logotip",
       "favicon": "Favicon",
-      "noLogo": "Logotip yuklanmagan — do'kon nomi matn sifatida ko'rsatiladi.",
+      "noLogo": "Logotip yuklanmagan. Uning o'rniga do'kon nomi yoziladi.",
       "uploadsUnavailable": "Yuklash uchun Supabase Storage kerak, u servislar bosqichida qo'shiladi."
     },
     "hours": {

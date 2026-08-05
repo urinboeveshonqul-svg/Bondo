@@ -12,6 +12,46 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Changed — the three languages are now written, not translated
+
+The previous pass fixed every word-level defect and still left the real problem
+standing: all three languages shared one sentence. The home page hero was the
+proof — same "X not Y" shape, same margin/маржа/foyda metaphor, same em-dash in
+the same slot. Correct words, copied structure.
+
+**The home page was rewritten three times from the business idea**, not from each
+other. Each language now leads on a different pitch, because each market asks a
+different first question:
+
+|         | Leads on                                                          |
+| ------- | ----------------------------------------------------------------- |
+| Uzbek   | who did the work — `O'zimiz yig'amiz, o'zimiz sinaymiz`           |
+| Russian | fit to task — `Соберём конфигурацию, которая закроет вашу задачу` |
+| English | the buyer's decision — `You pick the parts. We prove they work.`  |
+
+Headings are different lengths. Paragraph counts differ. No em-dash lands in the
+same slot twice. Errors, empty states and the auth pages were rewritten the same
+way: Uzbek plain and short, Russian terse and impersonal, English conversational
+and taking the blame.
+
+**And it is now enforced.** `copy:check` gained a structural rule: it strips the
+words from a string, leaving only its punctuation skeleton, and fails when all
+three languages share a _distinctive_ one on the same key.
+
+Calibrated against the repository's own history rather than guessed — it flags
+the old hero and the old empty state, and passes the rewrites. Two refinements
+came out of that: ICU plural syntax is stripped first, because
+`{count, plural, …}` is identical in every language by definition and made every
+pluralized string look copied; and a bare `?` or `..` is not distinctive, because
+that is the shape of most short copy everywhere.
+
+It then found **seven more** across the admin hints and the catalog description
+that the manual pass had missed. All seven were rewritten.
+
+Atomic labels are exempt and say so: "Saqlash" / "Сохранить" / "Save" are what
+each language actually calls that button, and forcing them apart would be worse
+than leaving them alike.
+
 ### Added — the Bondo copy standard, enforced (CLAUDE.md § 11a)
 
 **Uzbek is now the master language.** Copy is written in Uzbek first and then

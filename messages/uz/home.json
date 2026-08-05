@@ -1,64 +1,64 @@
 {
-  "metaTitle": "Kompyuterlar, komplektuvchilar va aksessuarlar.",
-  "metaDescription": "Bondo — noutbuk, kompyuter, komplektuvchi va aksessuarlar sotadigan kompyuter do'koni.",
+  "metaTitle": "Kompyuter, noutbuk va komplektuvchilar",
+  "metaDescription": "Bondo — kompyuter va noutbuklar do'koni. Yig'ib, sinab beramiz. Rasmiy kafolat, O'zbekiston bo'ylab yetkazib berish.",
   "hero": {
-    "eyebrow": "Xarakteristikalarni o'qiydiganlar uchun",
-    "title": "Komplektuvchilar foyda uchun emas, sifati uchun tanlanadi",
-    "body": "Har bir tizimni o'zimiz yig'amiz, kabellarini tartibga solamiz va 24 soat sinovdan o'tkazamiz. Quti ichida umumiy model emas, aynan shu kompyuterning sinov natijasi bo'ladi.",
+    "eyebrow": "Rasmiy kafolat — 3 yil",
+    "title": "O'zimiz yig'amiz, o'zimiz sinaymiz",
+    "body": "Har bir kompyuter jo'natilishidan oldin bir kecha-kunduz ishlab ko'riladi. Sinov natijasi quti ichida keladi.",
     "browseCatalog": "Katalogni ko'rish",
-    "prebuilt": "Tayyor tizimlar",
+    "prebuilt": "Tayyor yig'malar",
     "assurances": {
-      "built": "O'zimizda yig'ilgan va sinovdan o'tgan",
-      "warranty": "Uch yillik kafolat",
+      "built": "Toshkentdagi ustaxonamizda yig'iladi",
+      "warranty": "3 yil kafolat",
       "delivery": "{amount}dan yuqori xaridga yetkazib berish bepul"
     },
     "panelValue": "24 soat",
-    "panelBody": "Har bir yig'ilgan kompyuter qadoqlanishdan oldin bir kun davomida harorat va barqarorlik sinovidan o'tadi."
+    "panelBody": "Qadoqlashdan oldin har bir kompyuter shuncha vaqt to'liq quvvatda ishlaydi."
   },
   "featured": {
-    "title": "Shu oyning tanlovi",
-    "description": "Yig'uvchi jamoamiz birinchi bo'lib qo'l uradigan tizimlar va qismlar."
+    "title": "Shu oyda ko'p olinmoqda",
+    "description": "Mijozlarimiz eng ko'p tanlayotgan yig'malar va qismlar."
   },
   "brands": {
-    "title": "Biz sotadigan brendlar"
+    "title": "Rasmiy hamkor brendlar"
   },
   "category": {
     "linkLabel": "Barcha {category}"
   },
   "deals": {
-    "title": "Bugungi chegirmalar",
-    "description": "Amaldagi aksiyalar. Aksiya tugagach narxlar avvalgi holiga qaytadi.",
-    "emptyTitle": "Hozircha aksiya yo'q",
-    "emptyDescription": "Ayni paytda chegirmali mahsulot yo'q. Keyinroq kiring — chegirmalar har oy yangilanadi."
+    "title": "Chegirmalar",
+    "description": "Aksiya muddati tugagach, narx avvalgi holiga qaytadi.",
+    "emptyTitle": "Hozircha chegirma yo'q",
+    "emptyDescription": "Yangi aksiyalar har oy boshida chiqadi. Ko'rib turing."
   },
   "valueProps": {
     "title": "Nega aynan Bondo",
-    "description": "Biz boshqacha qiladigan to'rt narsa — va ularning har biri uchun javob beramiz.",
+    "description": "To'rtta oddiy sabab.",
     "tested": {
-      "title": "Shunchaki yig'ilgan emas, sinovdan o'tgan",
-      "body": "Har bir tizim 24 soat davomida harorat va barqarorlik sinovidan o'tadi. Aynan sizning qurilmangiz natijalari quti ichida keladi."
+      "title": "Sinovdan o'tgan holda keladi",
+      "body": "Kompyuter yig'ilgach, bir kecha-kunduz to'liq quvvatda ishlatiladi. Qizib ketishi yoki o'chib qolishi bo'lsa, siz emas, biz ko'ramiz."
     },
     "answers": {
-      "title": "Aniq raqamli javoblar",
-      "body": "Kuler xotira to'plamiga xalaqit bermaydimi deb so'rasangiz, mahsulot sahifasiga havola emas, millimetrdagi balandlikni aytamiz."
+      "title": "Savolga aniq javob",
+      "body": "\"Shu kuler bu korpusga sig'adimi?\" desangiz, havola tashlamaymiz. Balandligini millimetrda aytamiz."
     },
     "packed": {
-      "title": "Yo'lni hisobga olgan qadoqlash",
-      "body": "Videokartalar ikki qavat qutida, ulagichi tayanch bilan qadoqlanadi. Hech narsa bo'sh joyli paketda jo'natilmaydi."
+      "title": "Yo'lda shikastlanmaydi",
+      "body": "Videokarta ikki qavat qutida, ulagichi mahkamlangan holda ketadi. Yo'lda hech narsa qimirlamaydi."
     },
     "returns": {
-      "title": "O'ttiz kun, bahssiz",
-      "body": "Fikringiz o'zgardimi yoki noto'g'ri soket tanladingizmi? O'ttiz kun ichida ochilmagan holda qaytaring — pulingizni qaytaramiz."
+      "title": "30 kun ichida qaytarasiz",
+      "body": "Fikringiz o'zgardimi yoki model to'g'ri kelmadimi — ishlatilmagan bo'lsa qaytaring. Pulingiz to'liq qaytariladi."
     }
   },
   "reviews": {
-    "title": "Mijozlar nima deydi",
-    "description": "O'zi yozayotgan mahsulotni sotib olgan odamlarning sharhlari.",
-    "verified": "Tasdiqlangan xarid"
+    "title": "Mijozlar fikri",
+    "description": "Faqat xarid qilganlar yozadi.",
+    "verified": "Xaridi tasdiqlangan"
   },
   "newsletter": {
-    "title": "Reklamasiz, faqat mahsulot qaytgani haqida xabar",
-    "body": "Nimani kutayotganingizni bir marta ayting — mahsulot qaytganida elektron pochtangizga xabar beramiz. Oyiga ko'pi bilan ikki marta, boshqa hech narsa.",
-    "note": "Bir bosishda obunani bekor qilasiz. Manzilingizni hech kimga bermaymiz."
+    "title": "Mahsulot qaytganda xabar beramiz",
+    "body": "Qaysi mahsulotni kutayotganingizni yozing. Sotuvga chiqishi bilan pochtangizga xabar keladi.",
+    "note": "Oyiga ikki martadan ko'p emas. Manzilingiz hech kimga berilmaydi."
   }
 }

@@ -1,18 +1,18 @@
 {
   "notFound": {
     "code": "404",
-    "title": "This page doesn't exist",
-    "description": "The page you are looking for may have been moved or removed.",
-    "backHome": "Back to home"
+    "title": "We can't find that page",
+    "description": "The link may be out of date, or the page has moved since you last saw it.",
+    "backHome": "Back to the shop"
   },
   "route": {
-    "title": "Something went wrong",
-    "description": "Something went wrong. Reloading the page usually sorts it out.",
+    "title": "Something broke on our end",
+    "description": "Give it another go — a refresh usually clears it.",
     "reference": "Reference: {digest}",
     "tryAgain": "Try again"
   },
   "catalogUnavailable": {
     "title": "The catalogue isn't loading",
-    "description": "We can't show products right now. It's on our side and we already know about it. Please try again in a couple of minutes."
+    "description": "We can't show products at the moment. Please try again in a minute or two."
   }
 }

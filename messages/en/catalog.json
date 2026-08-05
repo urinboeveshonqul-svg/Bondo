@@ -1,6 +1,6 @@
 {
   "title": "All products",
-  "metaDescription": "Browse every product Bondo stocks — systems, components and accessories.",
+  "metaDescription": "Every system, component and accessory Bondo stocks, in one place.",
   "resultsHeading": "Products",
   "count": "{count, plural, one {# product} other {# products}}",
   "showingResultsFor": "Showing results for “{query}”",

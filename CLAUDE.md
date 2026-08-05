@@ -268,18 +268,45 @@ and never as generated. This applies to the admin panel too: an administrator
 should feel they are using business software written for Uzbekistan, not a
 localized foreign product.
 
-### The order of writing
+### You are not translating. You are writing three times.
 
-1. **Write the Uzbek.** Think as an Uzbek ecommerce copywriter thinks. Do not
-   draft in English and convert — the sentence _shape_ survives translation even
-   when the words change, and that is what makes copy feel foreign.
-2. **Adapt into Russian**, using the vocabulary Russian-speaking computer buyers
-   already see. Not a word-for-word pass.
-3. **Adapt into English**, in the register an established technology retailer
-   uses.
+Start from the **business purpose**, never from a finished sentence. Then write
+each language as though the other two do not exist:
 
-Same meaning in all three. Never the same sentence structure. A language that
-reads as a copy of another language has failed even when every word is correct.
+1. **Uzbek.** You are the senior copywriter at Uzbekistan's largest computer
+   retailer. Write the best Uzbek copy for that purpose.
+2. **Russian.** Forget the Uzbek entirely. You now work for a Russian technology
+   retailer. Write the best Russian copy for the same purpose.
+3. **English.** Forget both. You work for an American computer retailer.
+
+The **only** thing shared is the business meaning. Not the words, not the clause
+order, not the paragraph count, not the headings, not the metaphors, not the
+punctuation.
+
+If Uzbek needs three words and English needs seven, that is correct. If one
+language wants two sentences and another wants one, that is correct.
+
+**The test:** if somebody only ever saw this language, would they believe it was
+written in it originally? If not, rewrite it.
+
+```
+Business idea: "we sell carefully selected hardware"
+
+  BAD — one sentence wearing three costumes
+    en  Components chosen on merit, not margin.
+    uz  Komplektuvchilar foyda uchun emas, sifati uchun tanlanadi.
+    ru  Комплектующие выбраны по делу, а не по марже.
+
+  GOOD — one idea, three pieces of writing
+    uz  O'zimiz yig'amiz, o'zimiz sinaymiz.
+    ru  Соберём конфигурацию, которая закроет вашу задачу.
+    en  You pick the parts. We prove they work.
+```
+
+**Atomic labels are the exception.** "Saqlash" / "Сохранить" / "Save" are the
+words each language genuinely uses for that button, and forcing them apart would
+be worse than leaving them alike. The rule governs _prose_ — headings, body
+copy, errors, empty states, hints.
 
 ### Voice
 
@@ -311,7 +338,10 @@ are exact every time they appear:
 - an Uzbek case suffix detached from its placeholder — `{name} ni` instead of
   `{name}ni`, the signature of a sentence assembled from an English template;
 - a customer-facing string naming our infrastructure;
-- a protected technical name transliterated into Cyrillic.
+- a protected technical name transliterated into Cyrillic;
+- **three languages sharing one punctuation skeleton** on the same key — an
+  em-dash aside landing in the same slot in all three is copied structure, and
+  structure does not survive independent writing by coincidence.
 
 It deliberately does **not** grade tone. A checker that guessed at register would
 fail honest copy and train everyone to ignore it. Tone is a review judgement, and

@@ -48,7 +48,7 @@
     "fields": {
       "name": "Product name",
       "slug": "URL slug",
-      "slugHint": "Not translated — one address per product in every language.",
+      "slugHint": "One address per product across every language; this one isn't translated.",
       "sku": "SKU",
       "brand": "Brand",
       "category": "Category",

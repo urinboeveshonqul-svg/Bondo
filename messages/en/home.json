@@ -1,23 +1,23 @@
 {
-  "metaTitle": "Computers, components and accessories.",
-  "metaDescription": "Bondo is a computer store selling laptops, desktops, components and accessories.",
+  "metaTitle": "Computers, components and accessories",
+  "metaDescription": "Bondo builds and tests custom PCs, and stocks the laptops, components and accessories to go with them. Three-year warranty.",
   "hero": {
-    "eyebrow": "Built for people who read the spec sheet",
-    "title": "Components chosen on merit, not margin",
-    "body": "Every system we build is assembled, cable-managed and burned in for 24 hours before it ships — and leaves with its own test results attached, not the model's.",
+    "eyebrow": "For people who read the spec sheet",
+    "title": "You pick the parts. We prove they work.",
+    "body": "Every build gets 24 hours on the bench before it ships. The thermal and stability numbers come in the box, for your machine rather than the model.",
     "browseCatalog": "Browse the catalog",
     "prebuilt": "Prebuilt systems",
     "assurances": {
-      "built": "Built and tested in-house",
+      "built": "Assembled in our own workshop",
       "warranty": "Three-year warranty",
       "delivery": "Free delivery over {amount}"
     },
     "panelValue": "24h",
-    "panelBody": "Every build runs a full day of thermal and stability testing before it is boxed."
+    "panelBody": "On the bench, at full load, before anything gets boxed."
   },
   "featured": {
-    "title": "Featured this month",
-    "description": "The systems and parts our build team reaches for first."
+    "title": "Popular right now",
+    "description": "The builds and parts customers are ordering most this month."
   },
   "brands": {
     "title": "Brands we stock"
@@ -26,39 +26,39 @@
     "linkLabel": "All {category}"
   },
   "deals": {
-    "title": "Today's deals",
-    "description": "Current promotions. Prices return to list when the promotion ends.",
-    "emptyTitle": "No promotions running",
-    "emptyDescription": "Nothing is discounted right now. Check back — deals rotate monthly."
+    "title": "Deals",
+    "description": "Prices go back to list when a promotion ends.",
+    "emptyTitle": "No deals right now",
+    "emptyDescription": "New promotions go up at the start of each month."
   },
   "valueProps": {
     "title": "Why buy from Bondo",
-    "description": "Four things we do differently, all of which you can hold us to.",
+    "description": "Four things you can hold us to.",
     "tested": {
-      "title": "Tested, not just assembled",
-      "body": "Every system runs 24 hours of thermal and stability testing. The results for your specific unit ship in the box."
+      "title": "Burned in before it ships",
+      "body": "A full day of thermal and stability testing. If a build is going to throttle or drop out, it does it here and not on your desk."
     },
     "answers": {
       "title": "Answers with numbers in them",
-      "body": "Ask whether a cooler clears a memory kit and you get the height in millimetres, not a link to the product page."
+      "body": "Ask whether a cooler clears tall memory and you get the height in millimetres and the clearance to the first slot."
     },
     "packed": {
-      "title": "Packed for the courier it will meet",
-      "body": "Graphics cards are double-boxed with the connector supported. Nothing ships in a bag with a void in it."
+      "title": "Packed for the trip",
+      "body": "Graphics cards are double-boxed with the connector supported. Nothing rattles."
     },
     "returns": {
-      "title": "Thirty days, no argument",
-      "body": "Changed your mind or picked the wrong socket? Send it back unopened within thirty days and we refund it."
+      "title": "Thirty-day returns",
+      "body": "Changed your mind, or picked the wrong socket? Send it back unused and we refund it."
     }
   },
   "reviews": {
     "title": "What customers say",
-    "description": "Reviews from people who bought the product they are describing.",
+    "description": "Only verified orders can leave a review.",
     "verified": "Verified purchase"
   },
   "newsletter": {
-    "title": "Restock alerts, without the marketing",
-    "body": "Tell us once what you are waiting for and we will email when it is back. Twice a month at most, and nothing else.",
-    "note": "Unsubscribe in one click. We never share your address."
+    "title": "Back-in-stock alerts",
+    "body": "Tell us what you're waiting on and we'll email you the day it lands.",
+    "note": "Two emails a month at most. We never share your address."
   }
 }

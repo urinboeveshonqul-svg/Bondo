@@ -19,7 +19,7 @@
       "title": "Store information",
       "description": "Shown in the header, the footer and in link previews.",
       "name": "Store name",
-      "nameHint": "Not translated — a brand name is the same in every language.",
+      "nameHint": "A brand name stays the same in every language, so this field isn't translated.",
       "tagline": "Tagline",
       "supportEmail": "Support email",
       "supportPhone": "Support phone",
@@ -58,7 +58,7 @@
       "description": "Logo and favicon.",
       "logo": "Logo",
       "favicon": "Favicon",
-      "noLogo": "No logo uploaded — the store name is rendered as text.",
+      "noLogo": "No logo yet; the store name is shown as text instead.",
       "uploadsUnavailable": "Uploads need Supabase Storage, which lands with the services phase."
     },
     "hours": {

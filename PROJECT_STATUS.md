@@ -396,6 +396,12 @@ to ignore it.
   noun is a transliteration habit, not Uzbek orthography.
 - **Ratings** read `4.8 / 5` rather than `5 balldan 4.8`, which reads like a
   school mark.
+- **The home page, rewritten three times from the business idea** rather than
+  from each other. Uzbek leads on who did the work, Russian on fit to task,
+  English on the buyer's decision — different headings, different lengths, no
+  shared punctuation. Errors, empty states and auth followed.
+- **Seven more parallel strings** in the admin hints and catalog description,
+  found by the structural check after the manual pass had missed them.
 - **The hero paragraph** was one long sentence with an English em-dash aside;
   it is now two, which is how the Uzbek stores a customer already uses write.
 

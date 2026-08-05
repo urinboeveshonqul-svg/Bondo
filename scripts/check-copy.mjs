@@ -85,6 +85,43 @@ const TRANSLITERATED = [
   /Ссд\b/i,
 ];
 
+/**
+ * The punctuation shape of a sentence with its words removed.
+ *
+ * `"Four things — and we stand behind each."` becomes `"—."`. Two strings that
+ * mean the same thing in different languages have no reason to share one, and
+ * three that do were written once and translated twice.
+ */
+const skeleton = (value) => {
+  // ICU first. `{count, plural, one {# item} other {# items}}` carries commas
+  // and braces that belong to the message format, not to the sentence — and its
+  // syntax is identical in every language by definition, so leaving it in makes
+  // every pluralized string look like copied structure. Innermost-out, because
+  // ICU nests.
+  let text = value;
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/\{[^{}]*\}/g, "");
+  } while (text !== previous);
+
+  return text.replace(/[^,.;:!?—]/g, "");
+};
+
+/**
+ * Whether a shared skeleton actually means anything.
+ *
+ * `"."` and `".."` are the shape of most short copy in every language, and
+ * flagging them would fail honest writing constantly. An em-dash aside, a colon
+ * or four-plus marks in the same order across three languages is a different
+ * claim: that is structure, and structure does not survive independent writing
+ * by coincidence.
+ */
+const distinctive = (shape) => /[—:;]/.test(shape) || shape.length >= 4;
+
+/** Below this a string is a label, not prose, and shape carries no signal. */
+const PROSE_MIN_LENGTH = 45;
+
 const problems = [];
 
 /** Walks a nested message object, yielding `[dottedKey, string]`. */
@@ -149,6 +186,60 @@ for (const locale of locales) {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Structural parallelism — the tell the mechanical rules above cannot see
+// -----------------------------------------------------------------------------
+// Every rule so far catches a *word*. This one catches a *shape*: three
+// languages carrying the same punctuation skeleton on the same key, which is
+// what "translated, not written" looks like once the vocabulary is fixed.
+//
+// It found the home page's hero and its empty state, and one password message,
+// after a pass that had already corrected every word-level defect — which is the
+// argument for having it.
+const byNamespace = new Map();
+
+for (const locale of locales) {
+  const files = await readdir(fileURLToPath(new URL(`${locale.name}/`, ROOT)));
+
+  for (const file of files.filter((name) => name.endsWith(".json"))) {
+    const namespace = file.replace(/\.json$/, "");
+    const json = JSON.parse(
+      await readFile(
+        fileURLToPath(new URL(`${locale.name}/${file}`, ROOT)),
+        "utf8",
+      ),
+    );
+
+    const bucket = byNamespace.get(namespace) ?? new Map();
+    for (const [key, value] of strings(json)) {
+      const entry = bucket.get(key) ?? {};
+      entry[locale.name] = value;
+      bucket.set(key, entry);
+    }
+    byNamespace.set(namespace, bucket);
+  }
+}
+
+for (const [namespace, keys] of byNamespace) {
+  for (const [key, byLocale] of keys) {
+    const values = Object.values(byLocale);
+
+    if (values.length < 3) continue;
+    if (values.some((value) => value.length < PROSE_MIN_LENGTH)) continue;
+
+    const shapes = values.map(skeleton);
+    const shared = shapes[0];
+
+    if (shapes.every((shape) => shape === shared) && distinctive(shared)) {
+      problems.push(
+        `${namespace}.${key}\n    All three languages share the punctuation shape "${shared}".\n` +
+          `    That is copied structure, not a translation of meaning — rewrite each\n` +
+          `    language from the business idea instead of from the other two.`,
+      );
+    }
+  }
+}
+
 if (problems.length > 0) {
   console.error(
     `\nCopy standard violations (CLAUDE.md § 11):\n\n  ${problems.join("\n\n  ")}\n`,
@@ -157,5 +248,6 @@ if (problems.length > 0) {
 }
 
 console.log(
-  `Copy OK — ${locales.length} locales checked for detached suffixes, leaked technical detail and transliterated technical names.`,
+  `Copy OK — ${locales.length} locales checked for detached suffixes, leaked ` +
+    `technical detail, transliterated technical names and copied sentence structure.`,
 );

@@ -27,7 +27,7 @@
     "title": "Profile",
     "subtitle": "How we address you, and how we reach you about an order.",
     "email": "Email address",
-    "emailLocked": "Changing your email needs re-confirmation, so it has its own flow — coming with the account phase.",
+    "emailLocked": "Changing this means confirming the new address first, so it gets its own flow later.",
     "fullName": "Full name",
     "phone": "Phone number",
     "phoneHint": "Optional. Used only for delivery questions.",

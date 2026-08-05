@@ -48,7 +48,7 @@
     "fields": {
       "name": "Mahsulot nomi",
       "slug": "URL manzili",
-      "slugHint": "Tarjima qilinmaydi — har bir mahsulotga barcha tillarda bitta manzil.",
+      "slugHint": "Barcha tillar uchun bitta manzil. Tarjima qilinmaydi.",
       "sku": "SKU",
       "brand": "Brend",
       "category": "Kategoriya",
