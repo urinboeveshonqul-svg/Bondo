@@ -7,12 +7,12 @@
   },
   "route": {
     "title": "Xatolik yuz berdi",
-    "description": "Kutilmagan xatolik yuz berdi. Ko'pincha qayta urinish yordam beradi.",
+    "description": "Nimadir noto'g'ri ketdi. Odatda sahifani qayta yuklash yetarli bo'ladi.",
     "reference": "Xatolik kodi: {digest}",
     "tryAgain": "Qayta urinish"
   },
   "catalogUnavailable": {
-    "title": "Katalogni yuklab bo'lmadi",
-    "description": "Mahsulotlar ma'lumotlar bazasi javob bermadi. Aloqangizda muammo yo'q — bu bizning tomondagi nosozlik va u allaqachon qayd etildi. Bir necha daqiqadan so'ng qayta urinib ko'ring."
+    "title": "Katalog hozir ochilmayapti",
+    "description": "Mahsulotlarni ko'rsata olmayapmiz. Muammo biz tomonda va undan xabardormiz. Bir-ikki daqiqadan keyin qayta urinib ko'ring."
   }
 }

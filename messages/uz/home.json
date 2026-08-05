@@ -4,13 +4,13 @@
   "hero": {
     "eyebrow": "Xarakteristikalarni o'qiydiganlar uchun",
     "title": "Komplektuvchilar foyda uchun emas, sifati uchun tanlanadi",
-    "body": "Biz yig'gan har bir tizim jo'natishdan oldin yig'iladi, kabellari tartibga solinadi va 24 soat sinovdan o'tkaziladi — hamda modelning emas, aynan o'zining sinov natijalari bilan birga jo'natiladi.",
+    "body": "Har bir tizimni o'zimiz yig'amiz, kabellarini tartibga solamiz va 24 soat sinovdan o'tkazamiz. Quti ichida umumiy model emas, aynan shu kompyuterning sinov natijasi bo'ladi.",
     "browseCatalog": "Katalogni ko'rish",
     "prebuilt": "Tayyor tizimlar",
     "assurances": {
       "built": "O'zimizda yig'ilgan va sinovdan o'tgan",
       "warranty": "Uch yillik kafolat",
-      "delivery": "{amount} dan yuqori xaridlarga bepul yetkazib berish"
+      "delivery": "{amount}dan yuqori xaridga yetkazib berish bepul"
     },
     "panelValue": "24 soat",
     "panelBody": "Har bir yig'ilgan kompyuter qadoqlanishdan oldin bir kun davomida harorat va barqarorlik sinovidan o'tadi."
@@ -32,7 +32,7 @@
     "emptyDescription": "Ayni paytda chegirmali mahsulot yo'q. Keyinroq kiring — chegirmalar har oy yangilanadi."
   },
   "valueProps": {
-    "title": "Nega Bondo'dan xarid qilish kerak",
+    "title": "Nega aynan Bondo",
     "description": "Biz boshqacha qiladigan to'rt narsa — va ularning har biri uchun javob beramiz.",
     "tested": {
       "title": "Shunchaki yig'ilgan emas, sinovdan o'tgan",

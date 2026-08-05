@@ -12,6 +12,47 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — the Bondo copy standard, enforced (CLAUDE.md § 11a)
+
+**Uzbek is now the master language.** Copy is written in Uzbek first and then
+_adapted_ into Russian and English, never translated word for word — because the
+sentence shape survives translation even when the words change, and that is what
+makes a site feel foreign.
+
+`npm run copy:check` joins `npm run check` and fails the build on the tells that
+are exact every time they appear: an Uzbek case suffix detached from its
+placeholder, a customer-facing string naming our infrastructure, and a protected
+technical name transliterated into Cyrillic.
+
+It deliberately does **not** grade tone. A checker that guessed at register would
+fail honest copy and train everyone to ignore it — so tone stays a review
+judgement, and the reviewer should be a native speaker (**D-14**).
+
+Proven rather than assumed: each of the three rules was fired by injecting a
+fault before the pass was declared clean.
+
+### Fixed — the defects the audit found
+
+- **Six detached case suffixes** in Uzbek — `{name} ni`, `{amount} dan`,
+  `{when} da`. Ungrammatical, and the signature of a sentence assembled from an
+  English template rather than written in Uzbek.
+- **A technical leak in all three languages.** The catalogue error told a shopper
+  the product _database_ had not answered. Rewritten in each language for its own
+  reader; none of the three now mentions infrastructure.
+- **Wishlist vocabulary** — `sevimlilar` became `saralanganlar`, the word the
+  standard names. Russian and English already used what their shoppers expect, so
+  neither changed.
+- **`Bondo'dan`** → `Bondodan`. An apostrophe before a case suffix on a foreign
+  proper noun is a transliteration habit, not Uzbek orthography.
+- **Ratings** read `4.8 / 5` instead of `5 balldan 4.8`, which reads like a school
+  mark rather than a product rating.
+- **The hero paragraph** was one long sentence with an English em-dash aside. It
+  is two now.
+
+**Not claimed:** that all 893 strings per locale were rewritten. This pass fixed
+what is demonstrably wrong and added the gate that stops it recurring. Register
+across the whole catalogue is **D-14** and needs a native speaker.
+
 ### Added — product variants, in the database (D-8 closed)
 
 The admin has had a variant editor since Phase 3A with **no table under it**. A

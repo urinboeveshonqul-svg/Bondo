@@ -4,7 +4,7 @@
   "categoriesNav": "Kategoriyalar",
   "openMenu": "Menyuni ochish",
   "shopByCategory": "Kategoriya bo'yicha",
-  "account": "Hisob",
+  "account": "Kabinet",
   "search": {
     "label": "Mahsulotlarni qidirish",
     "placeholder": "Videokarta, noutbuk, komplektuvchi qidiring…"
@@ -17,10 +17,10 @@
     "emptyDescription": "Katalogni ko'rib chiqing va biror mahsulot qo'shing."
   },
   "wishlist": {
-    "open": "Sevimlilarni ochish",
-    "title": "Sevimlilar",
-    "description": "Keyinroq uchun saqlab qo'ygan mahsulotlaringiz.",
-    "emptyTitle": "Hali hech narsa saqlanmagan",
-    "emptyDescription": "Istalgan mahsulotni saqlab qo'ying va keyin ularni yonma-yon solishtiring."
+    "open": "Saralanganlarni ochish",
+    "title": "Saralanganlar",
+    "description": "Keyinroq ko'rish uchun saqlab qo'yganlaringiz.",
+    "emptyTitle": "Hozircha bo'sh",
+    "emptyDescription": "Yoqqan mahsulotni saqlab qo'ying — keyin yonma-yon solishtirasiz."
   }
 }

@@ -21,12 +21,12 @@
     "discount": "−{percent}%"
   },
   "rating": {
-    "outOf5": "5 balldan {rating}",
-    "outOf5WithReviews": "5 balldan {rating}, {count} ta sharh asosida"
+    "outOf5": "{rating} / 5",
+    "outOf5WithReviews": "{rating} / 5 — {count} ta sharh asosida"
   },
   "card": {
-    "saveToWishlist": "{name} ni sevimlilarga qo'shish",
-    "addToBasket": "{name} ni savatga qo'shish"
+    "saveToWishlist": "{name}ni saralanganlarga qo'shish",
+    "addToBasket": "{name}ni savatga qo'shish"
   },
   "theme": {
     "toLight": "Yorug' rejimga o'tish",

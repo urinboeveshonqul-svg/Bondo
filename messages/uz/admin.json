@@ -114,7 +114,7 @@
     "sortAscending": "O'sish bo'yicha saralash",
     "sortDescending": "Kamayish bo'yicha saralash",
     "rowsPerPage": "Sahifadagi qatorlar",
-    "page": "{total} dan {page} sahifa",
+    "page": "{total} sahifadan {page}-si",
     "previous": "Oldingi sahifa",
     "next": "Keyingi sahifa",
     "showing": "{total} tadan {from}–{to} ko'rsatilmoqda",

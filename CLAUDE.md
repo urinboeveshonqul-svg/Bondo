@@ -248,15 +248,74 @@ Localization is part of the Definition of Done, not a follow-up task.
 
 ### The rules
 
-| Rule                                                                       | Why                                                                              |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Every user-facing string is translatable — no hardcoded text in components | A literal in a component is invisible to translators and ships in one language   |
-| Every new feature ships all three languages                                | A feature is not complete in one; `npm run check` fails if a key is missing      |
-| Dates, numbers, prices and currency use locale-aware formatting            | `$1,499.00` and `1 499,00 $` are the same amount; only one is readable to a user |
-| Import `Link` and navigation from `@/i18n/navigation`, never `next/link`   | `next/link` compiles, renders, and silently drops the visitor's locale           |
-| Every localized page sets its own canonical and `hreflang`                 | An inherited canonical tells crawlers the whole catalog duplicates one URL       |
-| UI chrome lives in `messages/`; catalog copy lives on the record           | ADR-39 — different authors, different lifecycles, different storage              |
-| Never machine-translate. Write it or have it written                       | A wrong register reads as carelessness in the reader's own language              |
+| Rule                                                                       | Why                                                                               |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Every user-facing string is translatable — no hardcoded text in components | A literal in a component is invisible to translators and ships in one language    |
+| Every new feature ships all three languages                                | A feature is not complete in one; `npm run check` fails if a key is missing       |
+| Dates, numbers, prices and currency use locale-aware formatting            | `$1,499.00` and `1 499,00 $` are the same amount; only one is readable to a user  |
+| Import `Link` and navigation from `@/i18n/navigation`, never `next/link`   | `next/link` compiles, renders, and silently drops the visitor's locale            |
+| Every localized page sets its own canonical and `hreflang`                 | An inherited canonical tells crawlers the whole catalog duplicates one URL        |
+| UI chrome lives in `messages/`; catalog copy lives on the record           | ADR-39 — different authors, different lifecycles, different storage               |
+| Never machine-translate. Write it or have it written                       | A wrong register reads as carelessness in the reader's own language               |
+| **Uzbek is the master language.** Write it first, then adapt               | Copy written in English and translated keeps English sentence shapes in all three |
+
+---
+
+## 11a. The copy standard
+
+Bondo is an Uzbek technology retailer. The site must never read as translated,
+and never as generated. This applies to the admin panel too: an administrator
+should feel they are using business software written for Uzbekistan, not a
+localized foreign product.
+
+### The order of writing
+
+1. **Write the Uzbek.** Think as an Uzbek ecommerce copywriter thinks. Do not
+   draft in English and convert — the sentence _shape_ survives translation even
+   when the words change, and that is what makes copy feel foreign.
+2. **Adapt into Russian**, using the vocabulary Russian-speaking computer buyers
+   already see. Not a word-for-word pass.
+3. **Adapt into English**, in the register an established technology retailer
+   uses.
+
+Same meaning in all three. Never the same sentence structure. A language that
+reads as a copy of another language has failed even when every word is correct.
+
+### Voice
+
+Short sentences. One question answered per sentence. Scannable headings. Buttons
+that say what happens. Descriptions that help somebody decide what to buy.
+
+Avoid academic and bureaucratic phrasing, archaic words, ornamental metaphor,
+empty promotional language, and the generic cadence of generated marketing copy.
+
+### Vocabulary that does not change
+
+`Intel`, `AMD`, `NVIDIA`, `DDR5`, `PCIe`, `RTX`, `SSD`, `USB`, `Wi-Fi`,
+`Bluetooth`, `DisplayPort`, `HDMI`, brand names and model numbers stay exactly as
+they are, in every language. A shopper searching for NVIDIA will not find
+"Нвидиа", and a transliterated model number is a spec sheet nobody trusts.
+
+### Errors, forms and empty states
+
+Errors say what the reader can do, never what our infrastructure did — no
+database, server, API, timeout or stack trace reaches a shopper. Forms get real
+labels, placeholders, validation and success messages, not field names. Empty
+states are written, not left as a shrug.
+
+### Enforced, not just documented
+
+`npm run copy:check` (part of `npm run check`) fails the build on the tells that
+are exact every time they appear:
+
+- an Uzbek case suffix detached from its placeholder — `{name} ni` instead of
+  `{name}ni`, the signature of a sentence assembled from an English template;
+- a customer-facing string naming our infrastructure;
+- a protected technical name transliterated into Cyrillic.
+
+It deliberately does **not** grade tone. A checker that guessed at register would
+fail honest copy and train everyone to ignore it. Tone is a review judgement, and
+the reviewer should be a native speaker — see **D-14**.
 
 ### Where things live
 
