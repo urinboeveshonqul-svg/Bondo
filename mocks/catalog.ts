@@ -4,7 +4,6 @@ import type {
   Category,
   Product,
   ProductSummary,
-  Review,
 } from "@/types/catalog";
 
 /**
@@ -126,8 +125,8 @@ export const products: Product[] = [
     },
     priceCents: 159900,
     salePriceCents: 149900,
-    rating: 4.8,
-    reviewCount: 214,
+    rating: 0,
+    reviewCount: 0,
     stock: 12,
     badges: ["bestseller"],
     shortDescription: {
@@ -168,8 +167,8 @@ export const products: Product[] = [
     },
     priceCents: 69900,
     salePriceCents: null,
-    rating: 4.7,
-    reviewCount: 168,
+    rating: 0,
+    reviewCount: 0,
     stock: 40,
     badges: ["bestseller"],
     shortDescription: {
@@ -205,8 +204,8 @@ export const products: Product[] = [
     },
     priceCents: 14900,
     salePriceCents: 12900,
-    rating: 4.6,
-    reviewCount: 91,
+    rating: 0,
+    reviewCount: 0,
     stock: 150,
     badges: [],
     shortDescription: {
@@ -242,8 +241,8 @@ export const products: Product[] = [
     },
     priceCents: 189900,
     salePriceCents: null,
-    rating: 4.5,
-    reviewCount: 132,
+    rating: 0,
+    reviewCount: 0,
     stock: 3,
     badges: ["low-stock"],
     shortDescription: {
@@ -284,8 +283,8 @@ export const products: Product[] = [
     },
     priceCents: 99900,
     salePriceCents: 89900,
-    rating: 4.4,
-    reviewCount: 76,
+    rating: 0,
+    reviewCount: 0,
     stock: 8,
     badges: [],
     shortDescription: {
@@ -320,8 +319,8 @@ export const products: Product[] = [
     },
     priceCents: 16900,
     salePriceCents: null,
-    rating: 4.6,
-    reviewCount: 340,
+    rating: 0,
+    reviewCount: 0,
     stock: 25,
     badges: ["new"],
     shortDescription: {
@@ -380,8 +379,8 @@ export const products: Product[] = [
     },
     priceCents: 249900,
     salePriceCents: 229900,
-    rating: 4.9,
-    reviewCount: 58,
+    rating: 0,
+    reviewCount: 0,
     stock: 6,
     badges: ["bestseller"],
     shortDescription: {
@@ -427,8 +426,8 @@ export const products: Product[] = [
     },
     priceCents: 199900,
     salePriceCents: 179900,
-    rating: 4.5,
-    reviewCount: 87,
+    rating: 0,
+    reviewCount: 0,
     stock: 14,
     badges: [],
     shortDescription: {
@@ -468,8 +467,8 @@ export const products: Product[] = [
     },
     priceCents: 14900,
     salePriceCents: null,
-    rating: 4.7,
-    reviewCount: 412,
+    rating: 0,
+    reviewCount: 0,
     stock: 0,
     badges: [],
     shortDescription: {
@@ -508,8 +507,8 @@ export const products: Product[] = [
     },
     priceCents: 399900,
     salePriceCents: null,
-    rating: 4.8,
-    reviewCount: 22,
+    rating: 0,
+    reviewCount: 0,
     stock: 4,
     badges: ["low-stock"],
     shortDescription: {
@@ -549,8 +548,8 @@ export const products: Product[] = [
     },
     priceCents: 49900,
     salePriceCents: 42900,
-    rating: 4.6,
-    reviewCount: 118,
+    rating: 0,
+    reviewCount: 0,
     stock: 19,
     badges: [],
     shortDescription: {
@@ -590,8 +589,8 @@ export const products: Product[] = [
     },
     priceCents: 58900,
     salePriceCents: 52900,
-    rating: 4.3,
-    reviewCount: 143,
+    rating: 0,
+    reviewCount: 0,
     stock: 31,
     badges: [],
     shortDescription: {
@@ -610,67 +609,6 @@ export const products: Product[] = [
       { group: "clocks", name: "boostClock", value: "6.0", unit: "GHz" },
       { group: "platform", name: "socket", value: "LGA1700", unit: null },
     ],
-  },
-];
-
-/**
- * Stand-in reviews. Localized here because they are marketing copy, not real
- * customer writing — a genuine review is never translated (see `types/catalog.ts`).
- */
-export const reviews: Review[] = [
-  {
-    id: "r1",
-    author: "Sardor Qodirov",
-    initials: "SQ",
-    rating: 5,
-    title: {
-      uz: "Sinovdan o'tkazilgan holda keldi",
-      ru: "Приехал уже протестированным",
-      en: "Arrived tested, not just assembled",
-    },
-    body: {
-      uz: "Quti ichida sinov hisoboti bor edi, unda aynan mening kompyuterimning haroratlari yozilgan. Bunday qiladigan boshqa do'kon ko'rmadim.",
-      ru: "В коробке лежал отчёт с реальными температурами моего компьютера. Раньше мне такого ни один магазин не давал.",
-      en: "The box had a test report in it with the real temperatures for my machine. No other shop I've bought from does that.",
-    },
-    productName: "Bondo Forge RTX 4080 Gaming PC",
-    verified: true,
-  },
-  {
-    id: "r2",
-    author: "Nigora Aliyeva",
-    initials: "NA",
-    rating: 5,
-    title: {
-      uz: "Kerakli qism, yaxshi qadoq",
-      ru: "Нужная деталь, нормальная упаковка",
-      en: "Right part, packed properly",
-    },
-    body: {
-      uz: "Seshanba kuni buyurtma berdim, payshanba kuni o'rnatdim. Karta ikki qavat qutida, ulagichi mahkamlangan holda keldi. Hamma do'kon bunday qadoqlamaydi.",
-      ru: "Заказала во вторник, в четверг уже поставила. Карта пришла в двойной коробке, разъём зафиксирован. Так упаковывают далеко не везде.",
-      en: "Ordered Tuesday, installed Thursday. The card came double-boxed with the connector held in place. Not every shop bothers.",
-    },
-    productName: "NVIDIA GeForce RTX 4090 Founders Edition",
-    verified: true,
-  },
-  {
-    id: "r3",
-    author: "Jasur Rahimov",
-    initials: "JR",
-    rating: 4,
-    title: {
-      uz: "Moslik haqidagi savolga aniq javob berishdi",
-      ru: "На вопрос о совместимости ответили по делу",
-      en: "They actually answered my compatibility question",
-    },
-    body: {
-      uz: "Bu to'plam kulerimga xalaqit bermaydimi deb so'radim. Havola tashlamadilar, balandligini millimetrda aytishdi.",
-      ru: "Спросил, пройдёт ли комплект под мой кулер. Вместо ссылки на товар назвали высоту в миллиметрах.",
-      en: "I asked whether the kit would fit under my cooler. They gave me the height in millimetres instead of a link.",
-    },
-    productName: "Corsair Vengeance 32GB DDR5-6000",
-    verified: true,
   },
 ];
 

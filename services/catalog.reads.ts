@@ -3,14 +3,21 @@ import "server-only";
 import { unstable_rethrow } from "next/navigation";
 
 import { createClient } from "@/supabase/server";
-import { pick } from "@/lib/i18n/translations";
+import { pick, toLocalizedText } from "@/lib/i18n/translations";
 import { logger } from "@/lib/logger";
 import type { Locale } from "@/lib/site-config";
-import type { Brand, Category, Product, ProductSummary } from "@/types/catalog";
+import type {
+  Brand,
+  Category,
+  Product,
+  ProductSummary,
+  Review,
+} from "@/types/catalog";
 
 import * as brandsService from "@/services/brands.service";
 import * as categoriesService from "@/services/categories.service";
 import * as productsService from "@/services/products.service";
+import * as reviewsService from "@/services/reviews.service";
 
 /**
  * The storefront's read facade.
@@ -83,23 +90,23 @@ async function withFixtureFallback<T>(
 // -----------------------------------------------------------------------------
 // Mapping: service shapes → the view models components already take
 // -----------------------------------------------------------------------------
-// The storefront's `ProductSummary` carries three fields the schema has no
-// column for — `rating`, `reviewCount` and `badges`. Reviews arrive with the
-// commerce phase and badges are derived, so they are filled from what does
-// exist rather than invented: a featured product gets the `bestseller` badge, a
-// low stock level gets `low-stock`, and the rating is zero until there is a
-// `reviews` table to aggregate. Recorded as **K-17**.
+// `ProductSummary` carries `rating`, `reviewCount` and `badges`, none of which
+// is a column.
+//
+// **`rating` and `reviewCount` are zero, and stay zero here.** `product_reviews`
+// exists now, but aggregating it per product on a listing would be a query per
+// card. A product's own rating is rendered from `getReviewSummary` on its detail
+// page; a card shows no stars until the aggregate is denormalised, and showing
+// an invented number would be worse than showing none.
+//
+// **`low-stock` is gone.** It read a stock level to tell a shopper to hurry, and
+// this shop does not track stock — a published product is orderable, full stop.
+// A badge derived from a number nobody maintains is a lie with a countdown on
+// it. `bestseller` stays because `is_featured` is a real column an operator
+// sets deliberately.
 
-function toBadges(item: {
-  isFeatured: boolean;
-  stockOnHand: number;
-}): ProductSummary["badges"] {
-  const badges: ProductSummary["badges"] = [];
-
-  if (item.isFeatured) badges.push("bestseller");
-  if (item.stockOnHand > 0 && item.stockOnHand <= 5) badges.push("low-stock");
-
-  return badges;
+function toBadges(item: { isFeatured: boolean }): ProductSummary["badges"] {
+  return item.isFeatured ? ["bestseller"] : [];
 }
 
 function toSummary(
@@ -391,6 +398,63 @@ export async function readCatalog<T>(
  * production means the database is unreachable, and nothing else on the page
  * will say so.
  */
+/**
+ * The newest customer reviews, for the home page.
+ *
+ * Degrades to an empty list rather than failing the page, and the reason is the
+ * same one `listNavigationCategories` gives: this is a marketing rail, not page
+ * content. A shop whose reviews rail is unreachable should still sell things.
+ *
+ * There is **no fixture fallback**. Reviews were the last fake thing on the
+ * storefront, and a fixture here would put words in a customer's mouth — the one
+ * kind of invented data that is not merely untidy but dishonest. Empty until
+ * somebody who bought something writes one.
+ */
+export async function listRecentReviews(locale: Locale): Promise<Review[]> {
+  try {
+    const supabase = await createClient();
+    const rows = await reviewsService.listRecentReviews(supabase);
+
+    return rows.map((row) => {
+      const name = row.author?.full_name?.trim() || "";
+
+      return {
+        id: row.id,
+        author: name,
+        // Two initials from whatever the customer gave us. A profile with no
+        // name yields an empty avatar rather than a crash.
+        initials:
+          name
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part[0]?.toUpperCase() ?? "")
+            .join("") || "?",
+        rating: row.rating,
+        title: row.title,
+        body: row.body,
+        productName: pick(
+          toLocalizedText(
+            (row.product?.translations ?? []) as {
+              locale: Locale;
+              name: string;
+            }[],
+            "name",
+          ),
+          locale,
+        ),
+        createdAt: row.created_at,
+      };
+    });
+  } catch (error) {
+    unstable_rethrow(error);
+
+    logger.error("[catalog] recent reviews unavailable", error, { locale });
+
+    return [];
+  }
+}
+
 export async function listNavigationCategories(
   locale: Locale,
 ): Promise<Category[]> {

@@ -16,6 +16,7 @@ import {
   listDealProducts,
   listFeaturedProducts,
   listProductsByCategory,
+  listRecentReviews,
   readCatalog,
 } from "@/services/catalog.reads";
 import type { PageParams } from "@/types";
@@ -121,12 +122,14 @@ export default async function HomePage({
       <ValueProps />
 
       {/*
-        Reviews are still fixtures: there is no `reviews` table (K-17). Passing
-        an empty list would render the section's empty state, which is a
-        truthful "no reviews yet" — but the section is marketing copy standing
-        in for real reviews, so it keeps its fixtures until the table exists.
+        Real reviews or no reviews. `product_reviews` exists now
+        (20260809001000), and it only accepts a row from a customer whose order
+        reached `delivered` — so anything here was written by somebody who
+        actually bought the product. Until one is, `Reviews` renders nothing at
+        all rather than an empty state: a section headed "what customers say"
+        with nothing under it advertises that nobody has said anything.
       */}
-      <Reviews reviews={(await import("@/mocks/catalog")).reviews} />
+      <Reviews reviews={await listRecentReviews(activeLocale)} />
 
       <NewsletterSection />
     </>

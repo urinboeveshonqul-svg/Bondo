@@ -12,6 +12,59 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — the shop's real category taxonomy
+
+**`20260810001000_default_categories.sql`** seeds the twenty categories the
+business actually sells, in all three languages: Noutbuklar, Tayyor
+kompyuterlar, O'yin kompyuterlari, Protsessorlar, Videokartalar, Ona platalar,
+Operativ xotira, SSD, HDD, Quvvat manbalari, Kompyuter korpuslari, Sovutish
+tizimlari, Monitorlar, Klaviaturalar, Sichqonchalar, Quloqchinlar, Printerlar,
+Router va tarmoq uskunalari, Server uskunalari, Aksessuarlar.
+
+**A migration, not `seed.sql`** (**ADR-68**). ADR-20 forbids _fake_ data, and a
+taxonomy is not fake — it is the shop's own, decided by the business, and a
+computer store that sells laptops has a Laptops category on the day it opens. It
+belongs with the roles and permissions inserted the same way in Phase 2.
+`seed.sql` is development fixture data and never runs on `db push`, so anything
+a fresh deployment cannot function without has to be a migration.
+
+Each category gets a slug per locale — `noutbuklar` / `noutbuki` / `laptops` —
+which is why `slug` lives on `category_translations` rather than the parent. SSD
+and HDD are spelled the same in every language, and the migration asserts it.
+
+Inserted flat, because that is the list the business gave. Nesting has worked
+since Phase 2 (`parent_id`, a trigger-maintained `path`, cycle rejection) and an
+operator can nest any of these from the admin without a migration — inventing a
+hierarchy nobody asked for is the speculation § 3 rules out.
+
+Idempotent, keyed on the Uzbek slug: re-running changes nothing, and an operator
+who renamed a category keeps their name.
+
+The seed's own category fixtures collided on six slugs and are now prefixed
+`demo-`, which also makes fixture data visible at a glance in any database.
+
+### Removed — the last fake data on the storefront
+
+- **Fake customer reviews.** The home page rendered three invented reviews from
+  `mocks/catalog.ts`. It now reads `product_reviews`, which only accepts a row
+  from a customer whose own order containing that product reached `delivered`
+  (ADR-66) — so every review on the site was written by somebody who bought the
+  thing. Until one is, the section **renders nothing at all** rather than an
+  empty state: a heading reading "what customers say" above an empty box
+  advertises that nobody has said anything.
+- **Fake product ratings.** Twelve mock products carried ratings like `4.8` and
+  `214` review counts. Zeroed.
+- **The `low-stock` badge.** It read a stock level to tell a shopper to hurry.
+  This shop does not track stock, and a badge derived from a number nobody
+  maintains is a lie with a countdown on it. `bestseller` stays — `is_featured`
+  is a real column an operator sets deliberately.
+
+`Review` changed shape to match the schema: `title` and `body` are plain strings,
+not `LocalizedText`. A review is something a person wrote in the language they
+wrote it in, and translating it would put words in their mouth. The `verified`
+flag is gone because there is nothing to flag — every row that exists is a
+verified purchase by construction, so the badge is unconditional and honest.
+
 ### Fixed — horizontal scroll at 320px, and a footer 1.3 screens tall
 
 Both were measured in a real browser before anything was changed, and measured

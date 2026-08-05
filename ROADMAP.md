@@ -351,6 +351,44 @@ interaction latency measured and within budget; First Load JS not regressed.
 
 ---
 
+## Phase 3F — Simplify for v1
+
+**Status:** 🟡 Started · **Target version:** v0.4.0
+
+Added at the user's request: build a real shop rather than demonstrate features
+nothing uses yet.
+
+### Done
+
+- [x] **Default category taxonomy in the database** — twenty categories, uz/ru/en,
+      per-locale slugs, shipped by a migration so a fresh deployment has them
+      (**ADR-68**). Nestable, reorderable and editable from the admin without a
+      code change
+- [x] **Fake customer reviews removed** — the home page reads `product_reviews`
+      and renders nothing until a delivered buyer writes one
+- [x] **Fake product ratings zeroed**
+- [x] **`low-stock` badge removed** — it was derived from a stock level this shop
+      does not maintain
+
+### Outstanding
+
+- [ ] **Fake analytics in the admin dashboard** — revenue, orders, customers, two
+      charts, the low-stock widget and the notification feed are all still
+      `mocks/admin.ts` (**D-15**)
+- [ ] **Remove inventory management from the admin.** The module, route, screens
+      and `adminInventory` messages are untouched. The tables stay — dropping an
+      append-only ledger to simplify a screen would be destroying data to hide a
+      UI
+- [ ] **Product editor: drop the stock fields**, and re-point it at the real
+      service (**D-29**)
+- [ ] Published/Hidden as the only availability control a product has
+- [ ] Review submission UI, so a delivered buyer can actually write one (**D-31**)
+
+**Exit criteria:** nothing on the storefront or in the admin is rendered from
+`mocks/`; a product's availability is decided by Published/Hidden alone.
+
+---
+
 ## Phase 4 — Cart & Checkout
 
 **Status:** Not started · **Target version:** v0.4.0

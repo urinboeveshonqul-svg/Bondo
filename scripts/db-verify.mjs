@@ -85,7 +85,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 15,
+  migrationCount === 16,
   `${migrationCount} files`,
 );
 
@@ -1121,6 +1121,112 @@ try {
   );
 } catch (error) {
   check("order flow behaves", false, error.message);
+}
+
+// -----------------------------------------------------------------------------
+// The default category taxonomy
+// -----------------------------------------------------------------------------
+// Reference data shipped by a migration, not fixture data (ADR-68), so it must
+// be present in a database that has never seen `seed.sql`.
+try {
+  const defaults = (
+    await db.query(
+      `select ct.slug, ct.name
+       from public.category_translations ct
+       where ct.locale = 'uz' and ct.slug not like 'demo-%'
+       order by ct.slug`,
+    )
+  ).rows;
+
+  check(
+    "the 20 default categories were seeded by the migration",
+    defaults.length === 20,
+    `${defaults.length} found`,
+  );
+
+  const trilingual = (
+    await db.query(
+      `select c.id
+       from public.categories c
+       join public.category_translations ct on ct.category_id = c.id
+       where exists (
+         select 1 from public.category_translations u
+         where u.category_id = c.id and u.locale = 'uz' and u.slug not like 'demo-%'
+       )
+       group by c.id
+       having count(distinct ct.locale) = 3`,
+    )
+  ).rows;
+
+  check(
+    "every default category exists in all three languages",
+    trilingual.length === 20,
+    `${trilingual.length}/20 complete`,
+  );
+
+  // The names the business gave, spot-checked at both ends of the list.
+  const named = (
+    await db.query(
+      `select locale, name from public.category_translations
+       where category_id = (
+         select category_id from public.category_translations
+         where locale = 'uz' and slug = 'noutbuklar'
+       ) order by locale`,
+    )
+  ).rows;
+
+  check(
+    "a default category carries its three written names",
+    named.length === 3 &&
+      named.some((r) => r.name === "Noutbuklar") &&
+      named.some((r) => r.name === "Ноутбуки") &&
+      named.some((r) => r.name === "Laptops"),
+    named.map((r) => `${r.locale}=${r.name}`).join(" "),
+  );
+
+  // Protected technical names survive untranslated (CLAUDE.md § 11a).
+  const ssd = (
+    await db.query(
+      `select count(distinct name)::int as n from public.category_translations
+       where category_id = (
+         select category_id from public.category_translations
+         where locale = 'uz' and slug = 'ssd'
+       )`,
+    )
+  ).rows[0];
+
+  check("SSD is spelled SSD in every language", ssd.n === 1);
+
+  // Slugs differ per locale, which is the whole reason the column is on the
+  // translation table rather than the parent.
+  const slugs = (
+    await db.query(
+      `select count(distinct slug)::int as n from public.category_translations
+       where category_id = (
+         select category_id from public.category_translations
+         where locale = 'uz' and slug = 'noutbuklar'
+       )`,
+    )
+  ).rows[0];
+
+  check(
+    "each locale gets its own category slug",
+    slugs.n === 3,
+    `${slugs.n} distinct`,
+  );
+
+  // Nesting still works, which is what "unlimited subcategories" rests on.
+  const nested = (
+    await db.query(`select max(depth)::int as d from public.categories`)
+  ).rows[0];
+
+  check(
+    "the category tree still nests",
+    nested.d >= 1,
+    `deepest level ${nested.d}`,
+  );
+} catch (error) {
+  check("default categories behave", false, error.message);
 }
 
 await db.close();

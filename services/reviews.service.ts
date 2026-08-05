@@ -10,6 +10,48 @@ export type ProductReview = Tables<"product_reviews"> & {
   author: { full_name: string | null } | null;
 };
 
+/**
+ * The most recent reviews across the whole catalog.
+ *
+ * For the home page. Returns an empty list when nobody has reviewed anything,
+ * which is the normal state of a shop that has just opened and is the state the
+ * caller must render honestly.
+ *
+ * `!inner` on the product join is what scopes this to published products: a
+ * review of something since unpublished should not advertise it on the home
+ * page. Anonymous callers get the same rows the RLS policy already allows.
+ */
+export async function listRecentReviews(
+  supabase: Client,
+  limit = 3,
+): Promise<RecentReview[]> {
+  const { data, error } = await supabase
+    .from("product_reviews")
+    .select(
+      `*, author:profiles ( full_name ),
+       product:products!inner (
+         id, status, visibility,
+         translations:product_translations ( locale, name )
+       )`,
+    )
+    .eq("product.status", "active")
+    .eq("product.visibility", "public")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw toAppError(error, "load the reviews");
+
+  return (data ?? []) as unknown as RecentReview[];
+}
+
+/** A recent review with enough of its product to name it on the home page. */
+export type RecentReview = ProductReview & {
+  product: {
+    id: string;
+    translations: { locale: string; name: string }[];
+  } | null;
+};
+
 export type ReviewSummary = {
   /** Mean rating to one decimal, or `null` when nothing has been reviewed. */
   average: number | null;

@@ -120,10 +120,10 @@ insert into public.categories (
 insert into public.category_translations (
   category_id, locale, name, description, slug
 ) values
-  ('a0000000-0000-4000-8000-000000000001', 'en', 'Laptops', 'Portable computers.', 'laptops'),
-  ('a0000000-0000-4000-8000-000000000002', 'en', 'Desktops', 'Tower and small-form-factor systems.', 'desktops'),
-  ('a0000000-0000-4000-8000-000000000003', 'en', 'Components', 'Parts for building and upgrading.', 'components'),
-  ('a0000000-0000-4000-8000-000000000004', 'en', 'Peripherals', 'Everything you plug in.', 'peripherals');
+  ('a0000000-0000-4000-8000-000000000001', 'en', 'Laptops', 'Portable computers.', 'demo-laptops'),
+  ('a0000000-0000-4000-8000-000000000002', 'en', 'Desktops', 'Tower and small-form-factor systems.', 'demo-desktops'),
+  ('a0000000-0000-4000-8000-000000000003', 'en', 'Components', 'Parts for building and upgrading.', 'demo-components'),
+  ('a0000000-0000-4000-8000-000000000004', 'en', 'Peripherals', 'Everything you plug in.', 'demo-peripherals');
 
 insert into public.categories (
   id, parent_id, display_order
@@ -141,13 +141,13 @@ insert into public.categories (
 insert into public.category_translations (
   category_id, locale, name, slug
 ) values
-  ('a0000000-0000-4000-8000-000000000011', 'en', 'Gaming laptops', 'gaming-laptops'),
-  ('a0000000-0000-4000-8000-000000000012', 'en', 'Ultrabooks', 'ultrabooks'),
-  ('a0000000-0000-4000-8000-000000000021', 'en', 'Graphics cards', 'graphics-cards'),
-  ('a0000000-0000-4000-8000-000000000022', 'en', 'Processors', 'processors'),
-  ('a0000000-0000-4000-8000-000000000023', 'en', 'Memory', 'memory'),
-  ('a0000000-0000-4000-8000-000000000031', 'en', 'Keyboards', 'keyboards'),
-  ('a0000000-0000-4000-8000-000000000032', 'en', 'Monitors', 'monitors');
+  ('a0000000-0000-4000-8000-000000000011', 'en', 'Gaming laptops', 'demo-gaming-laptops'),
+  ('a0000000-0000-4000-8000-000000000012', 'en', 'Ultrabooks', 'demo-ultrabooks'),
+  ('a0000000-0000-4000-8000-000000000021', 'en', 'Graphics cards', 'demo-graphics-cards'),
+  ('a0000000-0000-4000-8000-000000000022', 'en', 'Processors', 'demo-processors'),
+  ('a0000000-0000-4000-8000-000000000023', 'en', 'Memory', 'demo-memory'),
+  ('a0000000-0000-4000-8000-000000000031', 'en', 'Keyboards', 'demo-keyboards'),
+  ('a0000000-0000-4000-8000-000000000032', 'en', 'Monitors', 'demo-monitors');
 
 -- Third level, so `depth = 2` and the descendant rebuild are both exercised.
 insert into public.categories (
@@ -161,8 +161,8 @@ insert into public.categories (
 insert into public.category_translations (
   category_id, locale, name, slug
 ) values
-  ('a0000000-0000-4000-8000-000000000211', 'en', 'NVIDIA', 'nvidia-graphics-cards'),
-  ('a0000000-0000-4000-8000-000000000212', 'en', 'AMD', 'amd-graphics-cards');
+  ('a0000000-0000-4000-8000-000000000211', 'en', 'NVIDIA', 'demo-nvidia-graphics-cards'),
+  ('a0000000-0000-4000-8000-000000000212', 'en', 'AMD', 'demo-amd-graphics-cards');
 
 -- -----------------------------------------------------------------------------
 -- Brands

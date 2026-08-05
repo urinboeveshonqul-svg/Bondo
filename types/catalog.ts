@@ -190,15 +190,29 @@ export type Category = {
  * that customer's words. When reviews come from the database they carry the
  * locale they were written in, and the UI labels that rather than rewriting it.
  */
+/**
+ * A customer review.
+ *
+ * **`title` and `body` are plain strings, not `LocalizedText`.** A review is
+ * something a person wrote, in the language they wrote it in, and translating it
+ * would be putting words in their mouth — the roadmap has said so since Phase
+ * 3B. The row carries no locale column either: the text is displayed as typed,
+ * to every visitor, in every language.
+ *
+ * There is no `verified` flag because there is nothing to flag. `product_reviews`
+ * only accepts a row from a customer whose own order containing that product
+ * reached `delivered`, enforced by RLS (ADR-66) — so every review that exists is
+ * a verified purchase, and a badge distinguishing them would distinguish nothing.
+ */
 export type Review = {
   id: string;
   author: string;
   initials: string;
   rating: number;
-  title: LocalizedText;
-  body: LocalizedText;
+  title: string | null;
+  body: string | null;
   productName: string;
-  verified: boolean;
+  createdAt: string;
 };
 
 /** Stock bands the UI reacts to, so the thresholds live in one place. */
