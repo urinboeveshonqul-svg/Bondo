@@ -12,6 +12,65 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Removed — the admin dashboard's fake analytics
+
+A dashboard whose numbers are decoration is worse than no dashboard: it is the
+one screen an owner checks before deciding something, and a plausible fake
+number is indistinguishable from a real one until a decision has been made on
+it. The page used to render a generated 30-day revenue series, a generated order
+series, two charts over them, a customer count, a units-on-hand total and a
+low-stock list — all from `mocks/admin.ts`, under a banner admitting the figures
+were illustrative.
+
+Every figure now comes from a query, or is gone:
+
+| Widget                            | Now                              |
+| --------------------------------- | -------------------------------- |
+| Waiting on a call                 | `orders` at `new`                |
+| Orders                            | `orders` count                   |
+| Revenue                           | sum of **delivered** orders      |
+| Products                          | `products` count                 |
+| Latest orders                     | `listOrders`, seven rows         |
+| Recent activity                   | `audit_logs`                     |
+| Revenue and orders charts         | **deleted**                      |
+| Customers                         | **deleted**                      |
+| Units on hand, low stock          | **deleted**                      |
+| Pending reviews                   | **deleted**                      |
+| "Figures are illustrative" banner | **deleted** — they no longer are |
+
+Revenue counts **delivered orders only**. Bondo settles at the door (ADR-63), so
+money is taken when an order arrives, not when it is placed; booking a `new`
+order as revenue would count a phone call nobody has made.
+
+The charts went rather than getting a real data source because nothing records a
+daily series. That needs either thirty days of orders or a rollup table, and
+until one exists the honest thing is to draw nothing. "Customers" went for a
+different reason: it counted fixtures, and most orders are placed by guests, so
+the figure needs a definition before it needs a widget.
+
+**The notification bell and two command-palette groups went with them.** The bell
+rendered three fixtures — a low-stock warning, a new order, a scheduled publish —
+corresponding to nothing; the schema has no notification source, so it is empty
+until it does. The palette no longer lists customers or orders, because a search
+that answers confidently and wrongly is worse than one that does not cover a
+resource yet.
+
+Each widget now degrades independently: a failed read logs at `error` and costs
+that panel rather than the page. That matters because the orders migration has
+not been pushed to the hosted project yet.
+
+**A live bug fell out of this.** `adminDashboard.orderStatus` still held the old
+payment vocabulary — `pending`, `paid`, `fulfilled`, `refunded` — while
+`OrderStatus` became `new … delivered` two changes ago. Every order status badge
+would have rendered a raw translation key. `npm run i18n:check` cannot catch it:
+it compares the locales against each other, and the key was equally wrong in all
+three. Now `new`, `contacted`, `confirmed`, `preparing`, `shipped`, `delivered`,
+`cancelled`, written in each language.
+
+**No bundle change**: the dashboard is 134 kB First Load JS, exactly as before.
+The charts were server-rendered SVG (ADR-6), so deleting them saved no client
+JavaScript — only the fiction.
+
 ### Added — the shop's real category taxonomy
 
 **`20260810001000_default_categories.sql`** seeds the twenty categories the

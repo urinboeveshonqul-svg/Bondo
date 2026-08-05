@@ -397,6 +397,51 @@ export async function exportOrders(
   });
 }
 
+export type OrderTotals = {
+  /** Orders at `new` — the ones with a customer waiting for a call. */
+  awaitingContact: number;
+  total: number;
+  /**
+   * Money actually taken, in minor units.
+   *
+   * **Delivered orders only.** Bondo settles at the door (ADR-63), so an order
+   * is revenue when it arrives, not when it is placed — counting a `new` order
+   * would book money from a phone call nobody has made yet.
+   */
+  deliveredRevenueCents: number;
+  deliveredCount: number;
+};
+
+/**
+ * The figures the dashboard shows.
+ *
+ * One query, summed here rather than in Postgres: PostgREST cannot express
+ * `sum(total_cents) filter (where status = 'delivered')` without a view or an
+ * RPC, and at the volume a single shop's order table reaches this is a few
+ * thousand integers. When it is not, this becomes a view and the call site does
+ * not change.
+ */
+export async function getOrderTotals(supabase: Client): Promise<OrderTotals> {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("status, total_cents");
+
+  if (error) throw toAppError(error, "load the order figures");
+
+  const rows = data ?? [];
+  const delivered = rows.filter((row) => row.status === "delivered");
+
+  return {
+    awaitingContact: rows.filter((row) => row.status === "new").length,
+    total: rows.length,
+    deliveredRevenueCents: delivered.reduce(
+      (sum, row) => sum + row.total_cents,
+      0,
+    ),
+    deliveredCount: delivered.length,
+  };
+}
+
 /** How many orders sit at each status. Drives the filter chips. */
 export async function countOrdersByStatus(
   supabase: Client,

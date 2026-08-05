@@ -1,15 +1,8 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
-import {
-  Boxes,
-  MessageSquare,
-  Package,
-  Receipt,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { unstable_rethrow } from "next/navigation";
+import { Package, Receipt, TrendingUp } from "lucide-react";
 
-import { BarChart, LineChart } from "@/components/admin/module/charts";
 import { ModuleHeader } from "@/components/admin/module/module-header";
 import { guardModule } from "@/components/admin/module/module-permission-guard";
 import {
@@ -23,20 +16,15 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/auth/guards";
 import { can } from "@/lib/admin/permissions";
+import { logger } from "@/lib/logger";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import {
-  adminCustomers,
-  adminOrders,
-  adminProducts,
-  auditEntries,
-  inventoryRecords,
-  ordersSeries,
-  revenueSeries,
-} from "@/mocks/admin";
+import { createClient } from "@/supabase/server";
+import * as auditService from "@/services/audit.service";
+import * as ordersService from "@/services/orders.service";
+import * as productsService from "@/services/products.service";
 import type { PageParams } from "@/types";
 import type { OrderStatus } from "@/types/admin";
-import { percentChange } from "@/utils/admin";
 import { formatDate, formatNumber, formatPrice } from "@/utils/format";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -57,13 +45,62 @@ const ORDER_TONE: Record<
 };
 
 /**
+ * Runs one widget's read, degrading to a fallback instead of taking the page.
+ *
+ * A dashboard is a summary of several independent things. One of them being
+ * unreadable — a table that has not been migrated yet, a permission that turns
+ * out narrower than the gate assumed — should cost that panel, not the whole
+ * screen. The failure is logged at `error`, because an empty widget in
+ * production means something is wrong and nothing else on the page will say so.
+ *
+ * This is the same argument `listNavigationCategories` makes for the category
+ * menu, applied per widget.
+ */
+async function widget<T>(name: string, read: () => Promise<T>, fallback: T) {
+  try {
+    return await read();
+  } catch (error) {
+    unstable_rethrow(error);
+
+    logger.error(`[admin] dashboard widget "${name}" failed`, error);
+
+    return fallback;
+  }
+}
+
+/**
  * Admin dashboard.
  *
- * A Server Component end to end — the charts are SVG, the tables are markup, and
- * the only JavaScript on this route is the shell's (ADR-6). Widgets gate
- * themselves on permission: an inventory manager sees stock and no revenue,
- * because `users.read` is what makes a customer count meaningful and they do
- * not hold it.
+ * A Server Component end to end — the tables are markup, and the only
+ * JavaScript on this route is the shell's (ADR-6). Widgets gate themselves on
+ * permission: a catalog manager sees the product count and no revenue, because
+ * `orders.read` is what makes an order figure meaningful and they may not hold
+ * it.
+ *
+ * ## Every number here is real
+ *
+ * It did not use to be. This page rendered generated revenue and order series,
+ * a customer count, a units-on-hand total and two charts, all from
+ * `mocks/admin.ts`, under a banner admitting the figures were illustrative. A
+ * dashboard whose numbers are decoration is worse than no dashboard: it is the
+ * one screen an owner checks to decide something, and a plausible fake number
+ * is indistinguishable from a real one until a decision has been made on it.
+ *
+ * So the rule now is that a figure appears only if a query produces it:
+ *
+ *  * **Revenue is delivered orders only.** Bondo settles at the door (ADR-63),
+ *    so money is taken when an order arrives, not when it is placed.
+ *  * **The charts are gone.** Both plotted a thirty-day series that nothing
+ *    records. Daily revenue history needs either an orders table with thirty
+ *    days in it or a rollup, and the honest thing until then is to draw nothing.
+ *  * **The customer count is gone.** It counted `mocks/admin.ts`. Most orders
+ *    are placed by guests (ADR-63), so "customers" is not `profiles` either —
+ *    it needs a definition before it needs a widget.
+ *  * **The units-on-hand and low-stock widgets are gone.** This shop does not
+ *    track stock; a published product is orderable.
+ *  * **The pending-reviews stat is gone.** It was hardcoded to zero, and there
+ *    is no moderation queue for it to count — `product_reviews` only accepts a
+ *    row from a delivered buyer, so nothing is pending.
  */
 export default async function AdminDashboardPage({
   params,
@@ -74,47 +111,66 @@ export default async function AdminDashboardPage({
   setRequestLocale(locale);
 
   const t = await getTranslations("adminDashboard");
-  const tAdmin = await getTranslations("admin");
   const activeLocale = (await getLocale()) as Locale;
   const { authorization } = await requireAdmin();
   const { permissions } = authorization;
   await guardModule("dashboard", permissions);
 
-  // Split the series in half to get a comparable previous period, rather than
-  // inventing a "last month" figure that nothing produced.
-  const half = Math.floor(revenueSeries.length / 2);
-  const recent = revenueSeries.slice(half);
-  const previous = revenueSeries.slice(0, half);
-
-  const sum = (points: typeof revenueSeries) =>
-    points.reduce((total, point) => total + point.value, 0);
-
-  const revenueNow = sum(recent);
-  const revenueDelta = percentChange(revenueNow, sum(previous));
-
-  const ordersNow = ordersSeries
-    .slice(half)
-    .reduce((total, point) => total + point.value, 0);
-  const ordersDelta = percentChange(
-    ordersNow,
-    ordersSeries
-      .slice(0, half)
-      .reduce((total, point) => total + point.value, 0),
-  );
-
-  const lowStock = inventoryRecords
-    .filter((record) => record.quantityOnHand <= record.lowStockThreshold)
-    .sort((a, b) => a.quantityOnHand - b.quantityOnHand);
-
-  const unitsOnHand = inventoryRecords.reduce(
-    (total, record) => total + record.quantityOnHand,
-    0,
-  );
-
-  const canSeeCommerce = can(permissions, "users.read");
+  const canSeeOrders = can(permissions, "orders.read");
   const canSeeProducts = can(permissions, "products.read");
-  const canSeeInventory = can(permissions, "inventory.read");
   const canSeeAudit = can(permissions, "audit.read");
+
+  const supabase = await createClient();
+
+  // Fetched concurrently, and only what this administrator may read — a query
+  // whose result would be hidden is a query not worth issuing.
+  const [totals, recentOrders, productCount, activity] = await Promise.all([
+    canSeeOrders
+      ? widget(
+          "orderTotals",
+          () => ordersService.getOrderTotals(supabase),
+          null,
+        )
+      : Promise.resolve(null),
+    canSeeOrders
+      ? widget(
+          "recentOrders",
+          async () =>
+            (
+              await ordersService.listOrders(
+                supabase,
+                {},
+                { page: 1, perPage: 7 },
+              )
+            ).items,
+          [],
+        )
+      : Promise.resolve([]),
+    canSeeProducts
+      ? widget<number | null>(
+          "productCount",
+          async () =>
+            // `pageSize: 1` because only the count is wanted — the row itself is
+            // discarded, and asking for fifty to count them would be waste.
+            (
+              await productsService.listProducts(supabase, {
+                page: 1,
+                pageSize: 1,
+              })
+            ).total,
+          null,
+        )
+      : Promise.resolve(null),
+    canSeeAudit
+      ? widget(
+          "activity",
+          async () =>
+            (await auditService.listAuditEntries(supabase, { pageSize: 5 }))
+              .rows,
+          [] as auditService.AuditRow[],
+        )
+      : Promise.resolve([] as auditService.AuditRow[]),
+  ]);
 
   const money = (cents: number) => formatPrice(cents, activeLocale);
 
@@ -126,264 +182,124 @@ export default async function AdminDashboardPage({
         description={t("subtitle")}
       />
 
-      <p className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
-        <span className="font-medium text-foreground">
-          {t("notWired.title")}
-        </span>{" "}
-        {t("notWired.body")}
-      </p>
-
       <StatisticsCards>
-        {canSeeCommerce ? (
+        {totals ? (
           <>
             <StatCard
-              label={t("stats.revenue")}
-              value={money(revenueNow)}
-              icon={TrendingUp}
-              deltaPercent={revenueDelta}
-              deltaLabel={t("range.vsPrevious")}
+              label={t("stats.awaitingContact")}
+              value={formatNumber(totals.awaitingContact, activeLocale)}
+              icon={Receipt}
+              footnote={t("stats.awaitingContactHint")}
             />
             <StatCard
               label={t("stats.orders")}
-              value={formatNumber(ordersNow, activeLocale)}
+              value={formatNumber(totals.total, activeLocale)}
               icon={Receipt}
-              deltaPercent={ordersDelta}
-              deltaLabel={t("range.vsPrevious")}
+              footnote={t("stats.ordersHint")}
+            />
+            <StatCard
+              label={t("stats.revenue")}
+              value={money(totals.deliveredRevenueCents)}
+              icon={TrendingUp}
+              footnote={t("stats.revenueHint")}
             />
           </>
         ) : null}
 
-        {canSeeProducts ? (
+        {productCount !== null ? (
           <StatCard
             label={t("stats.products")}
-            value={formatNumber(adminProducts.length, activeLocale)}
+            value={formatNumber(productCount, activeLocale)}
             icon={Package}
-            footnote={t("range.last30")}
+            footnote={t("stats.productsHint")}
           />
         ) : null}
-
-        {canSeeCommerce ? (
-          <StatCard
-            label={t("stats.customers")}
-            value={formatNumber(adminCustomers.length, activeLocale)}
-            icon={Users}
-            footnote={t("range.last30")}
-          />
-        ) : null}
-
-        {canSeeInventory ? (
-          <StatCard
-            label={t("stats.inventoryUnits")}
-            value={formatNumber(unitsOnHand, activeLocale)}
-            icon={Boxes}
-            footnote={t("range.last30")}
-          />
-        ) : null}
-
-        <StatCard
-          label={t("stats.pendingReviews")}
-          value={formatNumber(0, activeLocale)}
-          icon={MessageSquare}
-          footnote={t("pendingReviews.emptyDescription")}
-        />
       </StatisticsCards>
 
-      {canSeeCommerce ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <section
-            aria-labelledby="revenue-chart"
-            className="rounded-xl border bg-card p-5"
-          >
-            <h2 id="revenue-chart" className="font-semibold tracking-tight">
-              {t("charts.revenueTitle")}
+      {canSeeOrders ? (
+        <section
+          aria-labelledby="recent-orders"
+          className="rounded-xl border bg-card"
+        >
+          <div className="border-b p-5">
+            <h2 id="recent-orders" className="font-semibold tracking-tight">
+              {t("recentOrders.title")}
             </h2>
-            <p className="mb-4 text-sm text-muted-foreground">
-              {t("charts.revenueDescription")}
+            <p className="text-sm text-muted-foreground">
+              {t("recentOrders.description")}
             </p>
-            <LineChart
-              points={revenueSeries}
-              label={`${t("charts.revenueTitle")} — ${t("range.last30")}`}
-              dateHeader={t("recentOrders.placed")}
-              valueHeader={t("stats.revenue")}
-              format={money}
+          </div>
+
+          {recentOrders.length === 0 ? (
+            <EmptyState
+              icon={Receipt}
+              title={t("recentOrders.emptyTitle")}
+              description={t("recentOrders.emptyDescription")}
             />
-          </section>
-
-          <section
-            aria-labelledby="orders-chart"
-            className="rounded-xl border bg-card p-5"
-          >
-            <h2 id="orders-chart" className="font-semibold tracking-tight">
-              {t("charts.ordersTitle")}
-            </h2>
-            <p className="mb-4 text-sm text-muted-foreground">
-              {t("charts.ordersDescription")}
-            </p>
-            <BarChart
-              points={ordersSeries}
-              label={`${t("charts.ordersTitle")} — ${t("range.last30")}`}
-              dateHeader={t("recentOrders.placed")}
-              valueHeader={t("stats.orders")}
-              format={(value) => formatNumber(value, activeLocale)}
-            />
-          </section>
-        </div>
-      ) : null}
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        {canSeeCommerce ? (
-          <section
-            aria-labelledby="recent-orders"
-            className="rounded-xl border bg-card lg:col-span-2"
-          >
-            <div className="border-b p-5">
-              <h2 id="recent-orders" className="font-semibold tracking-tight">
-                {t("recentOrders.title")}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {t("recentOrders.description")}
-              </p>
-            </div>
-
-            {adminOrders.length === 0 ? (
-              <EmptyState
-                icon={Receipt}
-                title={t("recentOrders.emptyTitle")}
-                description={t("recentOrders.emptyDescription")}
-              />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b text-xs text-muted-foreground">
-                    <tr>
-                      <th
-                        scope="col"
-                        className="px-5 py-2.5 text-start font-medium"
-                      >
-                        {t("recentOrders.reference")}
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-5 py-2.5 text-start font-medium"
-                      >
-                        {t("recentOrders.customer")}
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-5 py-2.5 text-start font-medium"
-                      >
-                        {t("recentOrders.status")}
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-5 py-2.5 text-end font-medium"
-                      >
-                        {t("recentOrders.total")}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {adminOrders.map((order) => (
-                      <tr key={order.id}>
-                        <th
-                          scope="row"
-                          className="px-5 py-3 text-start font-mono text-xs font-normal"
-                        >
-                          {order.reference}
-                        </th>
-                        <td className="px-5 py-3">
-                          <span className="block truncate">
-                            {order.customerName}
-                          </span>
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {formatDate(order.placedAt, activeLocale)}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3">
-                          <ModuleStatusBadge tone={ORDER_TONE[order.status]}>
-                            {t(`orderStatus.${order.status}`)}
-                          </ModuleStatusBadge>
-                        </td>
-                        <td className="px-5 py-3 text-end tabular-nums">
-                          {money(order.totalCents)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        ) : null}
-
-        {canSeeInventory ? (
-          <section
-            aria-labelledby="low-stock"
-            className="rounded-xl border bg-card"
-          >
-            <div className="border-b p-5">
-              <h2 id="low-stock" className="font-semibold tracking-tight">
-                {t("lowStock.title")}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {t("lowStock.description")}
-              </p>
-            </div>
-
-            {lowStock.length === 0 ? (
-              <EmptyState
-                icon={Boxes}
-                title={t("lowStock.emptyTitle")}
-                description={t("lowStock.emptyDescription")}
-              />
-            ) : (
-              <>
-                <ul className="divide-y">
-                  {lowStock.slice(0, 6).map((record) => (
-                    <li
-                      key={record.productId}
-                      className="flex items-center justify-between gap-3 px-5 py-3"
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b text-xs text-muted-foreground">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-5 py-2.5 text-start font-medium"
                     >
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium">
-                          {record.productName}
-                        </span>
-                        <span className="block truncate font-mono text-xs text-muted-foreground">
-                          {record.sku}
-                        </span>
-                      </span>
-                      <ModuleStatusBadge
-                        tone={
-                          record.quantityOnHand === 0 ? "danger" : "warning"
-                        }
+                      {t("recentOrders.reference")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-2.5 text-start font-medium"
+                    >
+                      {t("recentOrders.customer")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-2.5 text-start font-medium"
+                    >
+                      {t("recentOrders.status")}
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-5 py-2.5 text-end font-medium"
+                    >
+                      {t("recentOrders.total")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {recentOrders.map((order) => (
+                    <tr key={order.id}>
+                      <th
+                        scope="row"
+                        className="px-5 py-3 text-start font-mono text-xs font-normal"
                       >
-                        {t("lowStock.remaining", {
-                          count: formatNumber(
-                            record.quantityOnHand,
-                            activeLocale,
-                          ),
-                        })}
-                      </ModuleStatusBadge>
-                    </li>
+                        {order.reference}
+                      </th>
+                      <td className="px-5 py-3">
+                        <span className="block truncate">
+                          {order.customer_name}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {formatDate(order.placed_at, activeLocale)}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <ModuleStatusBadge tone={ORDER_TONE[order.status]}>
+                          {t(`orderStatus.${order.status}`)}
+                        </ModuleStatusBadge>
+                      </td>
+                      <td className="px-5 py-3 text-end tabular-nums">
+                        {money(order.total_cents)}
+                      </td>
+                    </tr>
                   ))}
-                </ul>
-                <div className="border-t p-3">
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                  >
-                    <Link href={routes.admin.inventory}>
-                      {t("lowStock.viewAll")}
-                    </Link>
-                  </Button>
-                </div>
-              </>
-            )}
-          </section>
-        ) : null}
-      </div>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ) : null}
 
       {canSeeAudit ? (
         <section
@@ -404,7 +320,7 @@ export default async function AdminDashboardPage({
             </Button>
           </div>
 
-          {auditEntries.length === 0 ? (
+          {activity.length === 0 ? (
             <EmptyState
               icon={Receipt}
               title={t("activity.emptyTitle")}
@@ -412,23 +328,25 @@ export default async function AdminDashboardPage({
             />
           ) : (
             <ul className="divide-y">
-              {auditEntries.slice(0, 5).map((entry) => (
+              {activity.map((entry) => (
                 <li key={entry.id} className="flex items-start gap-3 px-5 py-3">
                   <Avatar className="size-8 shrink-0">
                     <AvatarFallback className="text-xs">
-                      {entry.actorInitials}
+                      {(entry.actor_email ?? "?").slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm">
-                      <span className="font-medium">{entry.actorName}</span>{" "}
+                      <span className="font-medium">
+                        {entry.actor_email ?? t("activity.systemActor")}
+                      </span>{" "}
                       <span className="text-muted-foreground">
-                        {entry.summary[activeLocale]}
+                        {entry.action}
                       </span>
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {entry.entityLabel} ·{" "}
-                      {formatDate(entry.createdAt, activeLocale, {
+                      {entry.resource_type} ·{" "}
+                      {formatDate(entry.created_at, activeLocale, {
                         dateStyle: "medium",
                         timeStyle: "short",
                       })}
@@ -440,8 +358,6 @@ export default async function AdminDashboardPage({
           )}
         </section>
       ) : null}
-
-      <p className="text-xs text-muted-foreground">{tAdmin("preview.body")}</p>
     </>
   );
 }

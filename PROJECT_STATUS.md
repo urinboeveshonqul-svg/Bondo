@@ -1388,12 +1388,41 @@ the `low-stock` badge is deleted. `Review` now matches the schema — plain
 strings, no `LocalizedText`, no `verified` flag, because RLS already guarantees
 every review is a verified purchase.
 
+**The admin dashboard shows only real numbers.** Every figure now comes from a
+query or is absent:
+
+| Widget                            | Now                                                           |
+| --------------------------------- | ------------------------------------------------------------- |
+| Waiting on a call                 | `orders` at `new` — real                                      |
+| Orders                            | `orders` count — real                                         |
+| Revenue                           | sum of **delivered** orders — real (ADR-63: cash at the door) |
+| Products                          | `products` count — real                                       |
+| Latest orders                     | `listOrders`, 7 rows — real                                   |
+| Recent activity                   | `audit_logs` — real                                           |
+| Revenue + orders charts           | **deleted** — nothing records a 30-day series                 |
+| Customers                         | **deleted** — counted mocks, and most orders are guests       |
+| Units on hand, low stock          | **deleted** — this shop does not track stock                  |
+| Pending reviews                   | **deleted** — hardcoded zero, and no moderation queue         |
+| "Figures are illustrative" banner | **deleted** — they no longer are                              |
+
+The notification bell and the command palette's customer and order groups were
+fed from `mocks/admin.ts` too. The bell is now empty — nothing in the schema
+produces a notification, so there is nothing to list — and the palette no longer
+answers a search for a customer, because answering confidently and wrongly is
+worse than not covering a resource yet.
+
+Each widget degrades independently: a read that fails logs at `error` and costs
+that panel, not the page. That matters here because the orders migration has not
+been pushed to the hosted project.
+
+**A live bug fell out of this.** `adminDashboard.orderStatus` still held the old
+payment vocabulary — `pending`, `paid`, `fulfilled`, `refunded` — while
+`OrderStatus` became `new … delivered` two changes ago. Every order badge would
+have rendered a raw key. The translation checker cannot catch it: it compares
+locales against each other, and the key was equally wrong in all three.
+
 ### Not done
 
-- **The admin dashboard still renders fake analytics.** Revenue, orders,
-  customers, the two charts, the low-stock widget and the notifications all come
-  from `mocks/admin.ts`. It carries a banner saying the figures are
-  illustrative, which is honest but is not what was asked. Tracked as **D-15**.
 - **Inventory management is still in the admin.** The module, its route, its
   screens and `adminInventory` in all three locales are untouched. Removing it
   touches the module registry, the quick actions, the dashboard's low-stock

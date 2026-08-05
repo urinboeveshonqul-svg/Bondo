@@ -22,17 +22,9 @@ import { createClient } from "@/supabase/server";
 import { navItems, visibleNav } from "@/lib/admin/navigation";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import {
-  adminCustomers,
-  adminNotifications,
-  adminOrders,
-  adminProducts,
-  adminRoles,
-  contentPages,
-} from "@/mocks/admin";
+import { adminProducts, adminRoles, contentPages } from "@/mocks/admin";
 import { brands, categories } from "@/mocks/catalog";
 import type { PageParams } from "@/types";
-import { formatDate } from "@/utils/format";
 
 /**
  * The admin panel is never indexed. It is not public, its content is not
@@ -162,26 +154,11 @@ export default async function AdminLayout({
           icon: "Tag",
         }))
       : []),
-    ...(can(permissions, "users.read")
-      ? adminCustomers.map((customer) => ({
-          id: `customer-${customer.id}`,
-          group: "customers",
-          label: customer.fullName,
-          hint: customer.email,
-          href: routes.admin.users,
-          icon: "Users",
-        }))
-      : []),
-    ...(can(permissions, "users.read")
-      ? adminOrders.map((order) => ({
-          id: `order-${order.id}`,
-          group: "orders",
-          label: order.reference,
-          hint: order.customerName,
-          href: routes.admin.index,
-          icon: "ScrollText",
-        }))
-      : []),
+    // Customers and orders are deliberately absent from the palette. Both used
+    // to be listed from `mocks/admin.ts`, which meant typing a real customer's
+    // name found nothing and typing an invented one found a row that does not
+    // exist. A search that answers confidently and wrongly is worse than one
+    // that does not cover a resource yet; they come back when each is a query.
     ...(can(permissions, ["banners.read", "banners.manage"])
       ? contentPages.map((page) => ({
           id: `page-${page.slug}`,
@@ -204,20 +181,12 @@ export default async function AdminLayout({
       : []),
   ];
 
-  const notifications: AdminNotificationItem[] = adminNotifications.map(
-    (notification) => ({
-      id: notification.id,
-      kind: notification.kind,
-      title: notification.title[activeLocale],
-      body: notification.body[activeLocale],
-      href: notification.href,
-      when: formatDate(notification.createdAt, activeLocale, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }),
-      isRead: notification.isRead,
-    }),
-  );
+  // **Empty, and honestly so.** The bell used to render three fixtures — a
+  // low-stock warning, a new order, a scheduled publish — none of which
+  // corresponded to anything. Nothing in the schema produces a notification yet:
+  // there is no subscription table, no delivery record and no read state, so
+  // there is nothing to list. The bell shows its empty state until there is.
+  const notifications: AdminNotificationItem[] = [];
 
   const roleLabel = user.roles
     .map(

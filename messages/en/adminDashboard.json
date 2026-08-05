@@ -1,66 +1,41 @@
 {
   "title": "Dashboard",
-  "subtitle": "How the store is doing today.",
-  "range": {
-    "label": "Period",
-    "last30": "Last 30 days",
-    "vsPrevious": "vs previous 30 days"
-  },
+  "subtitle": "How the shop is doing today.",
   "stats": {
-    "revenue": "Revenue",
+    "awaitingContact": "Waiting on a call",
+    "awaitingContactHint": "New orders nobody has rung yet",
     "orders": "Orders",
+    "ordersHint": "Since the shop opened",
+    "revenue": "Revenue",
+    "revenueHint": "Delivered orders only",
     "products": "Products",
-    "customers": "Customers",
-    "inventoryUnits": "Units in stock",
-    "pendingReviews": "Reviews awaiting moderation"
-  },
-  "charts": {
-    "revenueTitle": "Revenue",
-    "revenueDescription": "Daily totals for the last 30 days.",
-    "ordersTitle": "Orders per day",
-    "ordersDescription": "Order count for the same period.",
-    "noData": "Not enough data to draw a chart yet."
-  },
-  "lowStock": {
-    "title": "Low stock",
-    "description": "Products at or below their threshold.",
-    "emptyTitle": "Everything is stocked",
-    "emptyDescription": "No product is below its threshold.",
-    "remaining": "{count} left",
-    "viewAll": "Open inventory"
+    "productsHint": "Every record in the catalog"
   },
   "recentOrders": {
-    "title": "Recent orders",
-    "description": "The seven most recent, newest first.",
+    "title": "Latest orders",
+    "description": "The seven most recent.",
     "emptyTitle": "No orders yet",
-    "emptyDescription": "Orders appear here once checkout is live.",
+    "emptyDescription": "The first one shows up here the moment it is placed.",
     "reference": "Order",
     "customer": "Customer",
     "status": "Status",
-    "total": "Total",
-    "placed": "Placed"
+    "total": "Total"
   },
   "activity": {
     "title": "Recent activity",
-    "description": "The last changes anyone made.",
-    "emptyTitle": "No activity",
-    "emptyDescription": "Changes made in the admin are recorded here.",
-    "viewAll": "Open audit log"
-  },
-  "pendingReviews": {
-    "title": "Reviews awaiting moderation",
-    "emptyTitle": "Nothing to moderate",
-    "emptyDescription": "Reviews arrive with the reviews module."
+    "description": "Who changed what in the panel.",
+    "emptyTitle": "Nothing recorded yet",
+    "emptyDescription": "Changes land here as soon as somebody makes one.",
+    "viewAll": "Open the audit log",
+    "systemActor": "System"
   },
   "orderStatus": {
-    "pending": "Pending",
-    "paid": "Paid",
-    "fulfilled": "Fulfilled",
-    "cancelled": "Cancelled",
-    "refunded": "Refunded"
-  },
-  "notWired": {
-    "title": "Figures are illustrative",
-    "body": "Revenue, orders and customers are sample figures. The orders section opens in the next phase."
+    "new": "New",
+    "contacted": "Contacted",
+    "confirmed": "Confirmed",
+    "preparing": "Preparing",
+    "shipped": "Shipped",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled"
   }
 }

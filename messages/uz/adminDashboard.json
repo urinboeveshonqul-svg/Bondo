@@ -1,66 +1,41 @@
 {
   "title": "Boshqaruv paneli",
   "subtitle": "Do'kon bugun qanday ishlayapti.",
-  "range": {
-    "label": "Davr",
-    "last30": "So'nggi 30 kun",
-    "vsPrevious": "oldingi 30 kunga nisbatan"
-  },
   "stats": {
+    "awaitingContact": "Qo'ng'iroq kutmoqda",
+    "awaitingContactHint": "Hali bog'lanilmagan yangi buyurtmalar",
+    "orders": "Jami buyurtmalar",
+    "ordersHint": "Do'kon ochilganidan beri",
     "revenue": "Tushum",
-    "orders": "Buyurtmalar",
+    "revenueHint": "Yetkazib berilgan buyurtmalar bo'yicha",
     "products": "Mahsulotlar",
-    "customers": "Mijozlar",
-    "inventoryUnits": "Ombordagi birliklar",
-    "pendingReviews": "Moderatsiya kutayotgan sharhlar"
-  },
-  "charts": {
-    "revenueTitle": "Tushum",
-    "revenueDescription": "So'nggi 30 kunlik kunlik jami.",
-    "ordersTitle": "Kunlik buyurtmalar",
-    "ordersDescription": "Shu davr uchun buyurtmalar soni.",
-    "noData": "Grafik chizish uchun ma'lumot yetarli emas."
-  },
-  "lowStock": {
-    "title": "Ombor tugayapti",
-    "description": "Chegara darajasida yoki undan past mahsulotlar.",
-    "emptyTitle": "Hammasi yetarli",
-    "emptyDescription": "Hech bir mahsulot chegaradan past emas.",
-    "remaining": "{count} ta qoldi",
-    "viewAll": "Omborni ochish"
+    "productsHint": "Katalogdagi barcha yozuvlar"
   },
   "recentOrders": {
     "title": "So'nggi buyurtmalar",
     "description": "Eng yangi yettitasi.",
     "emptyTitle": "Hozircha buyurtma yo'q",
-    "emptyDescription": "Buyurtma qabul qilish ishga tushgach, buyurtmalar shu yerda ko'rinadi.",
+    "emptyDescription": "Birinchi buyurtma tushishi bilan shu yerda ko'rinadi.",
     "reference": "Buyurtma",
     "customer": "Mijoz",
     "status": "Holati",
-    "total": "Jami",
-    "placed": "Berilgan"
+    "total": "Jami"
   },
   "activity": {
     "title": "So'nggi harakatlar",
-    "description": "Oxirgi kiritilgan o'zgarishlar.",
-    "emptyTitle": "Harakat yo'q",
-    "emptyDescription": "Boshqaruv panelidagi o'zgarishlar shu yerda qayd etiladi.",
-    "viewAll": "Audit jurnalini ochish"
-  },
-  "pendingReviews": {
-    "title": "Moderatsiya kutayotgan sharhlar",
-    "emptyTitle": "Moderatsiya uchun hech narsa yo'q",
-    "emptyDescription": "Sharhlar sharhlar moduli bilan birga keladi."
+    "description": "Panelda kim nima o'zgartirgani.",
+    "emptyTitle": "Harakat qayd etilmagan",
+    "emptyDescription": "Kimdir o'zgartirish kiritishi bilan shu yerga yoziladi.",
+    "viewAll": "Audit jurnalini ochish",
+    "systemActor": "Dastur"
   },
   "orderStatus": {
-    "pending": "Kutilmoqda",
-    "paid": "To'langan",
-    "fulfilled": "Yetkazilgan",
-    "cancelled": "Bekor qilingan",
-    "refunded": "Qaytarilgan"
-  },
-  "notWired": {
-    "title": "Raqamlar namunaviy",
-    "body": "Tushum, buyurtma va mijoz raqamlari namuna uchun ko'rsatilgan. Buyurtmalar bo'limi keyingi bosqichda ochiladi."
+    "new": "Yangi",
+    "contacted": "Bog'lanildi",
+    "confirmed": "Tasdiqlandi",
+    "preparing": "Tayyorlanmoqda",
+    "shipped": "Jo'natildi",
+    "delivered": "Yetkazildi",
+    "cancelled": "Bekor qilindi"
   }
 }

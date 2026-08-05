@@ -369,12 +369,17 @@ nothing uses yet.
 - [x] **Fake product ratings zeroed**
 - [x] **`low-stock` badge removed** — it was derived from a stock level this shop
       does not maintain
+- [x] **Admin dashboard analytics are real or absent** — orders, revenue
+      (delivered only), product count, latest orders and activity all query;
+      both charts, the customer count, units-on-hand, low stock, pending reviews
+      and the "illustrative figures" banner are deleted
+- [x] **Fake notification feed removed**, and the command palette no longer
+      answers a customer or order search from fixtures
+- [x] Fixed `adminDashboard.orderStatus`, which still held the pre-ADR-63
+      payment vocabulary and would have rendered raw keys on every badge
 
 ### Outstanding
 
-- [ ] **Fake analytics in the admin dashboard** — revenue, orders, customers, two
-      charts, the low-stock widget and the notification feed are all still
-      `mocks/admin.ts` (**D-15**)
 - [ ] **Remove inventory management from the admin.** The module, route, screens
       and `adminInventory` messages are untouched. The tables stay — dropping an
       append-only ledger to simplify a screen would be destroying data to hide a
