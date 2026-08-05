@@ -9,6 +9,7 @@ import { passwordSchema } from "@/lib/auth/password";
 import { safeRedirectPath } from "@/lib/auth/redirect";
 import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { claimPendingOrders } from "@/lib/orders/claim";
 import { routes } from "@/lib/routes";
 import { createClient } from "@/supabase/server";
 import * as authService from "@/services/auth.service";
@@ -176,9 +177,15 @@ export const signInAction = createAction(
 
       const user = await authService.currentUser(supabase);
 
+      // A shopper who ordered as a guest, tapped "Maybe later", and signs in a
+      // week from now has the same claim as one who registered on the spot. The
+      // callback covers registration; this covers everybody else. Never throws.
+      const claimed = await claimPendingOrders();
+
       return {
         email: input.email,
         isVerified: authService.isEmailVerified(user),
+        claimedOrders: claimed,
         redirectTo: safeRedirectPath(input.redirectTo, routes.account.index),
       };
     }),

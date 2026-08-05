@@ -87,7 +87,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 17,
+  migrationCount === 18,
   `${migrationCount} files`,
 );
 
@@ -1324,6 +1324,208 @@ try {
   );
 } catch (error) {
   check("service highlights behave", false, error.message);
+}
+
+// -----------------------------------------------------------------------------
+// Claiming a guest order
+// -----------------------------------------------------------------------------
+// The security-critical half of post-order registration. Asserted behaviourally,
+// including the attacks the design exists to refuse.
+try {
+  const PRODUCT = "c0000000-0000-4000-8000-000000000001";
+  await db.query(
+    `update public.products set status = 'active', visibility = 'public',
+       published_at = now() - interval '1 day', price_cents = 100000,
+       sale_price_cents = null
+     where id = $1`,
+    [PRODUCT],
+  );
+
+  const basket = JSON.stringify([{ product_id: PRODUCT, quantity: 1 }]);
+
+  // A guest order: no JWT claim set, so auth.uid() is null.
+  await db.query(`reset request.jwt.claim.sub`);
+  const guest = (
+    await db.query(
+      `select * from public.place_order('Dilnoza Karimova', '+998901112233',
+         'Toshkent, Chilonzor 5', $1::jsonb)`,
+      [basket],
+    )
+  ).rows[0];
+
+  check(
+    "a guest order is issued a claim token",
+    guest.claim_token !== null && guest.user_id === null,
+    `token ${guest.claim_token ? "present" : "missing"}, user_id ${guest.user_id}`,
+  );
+
+  const buyer = (
+    await db.query(
+      `insert into auth.users (id, email) values (gen_random_uuid(), 'claimer@bondo.test')
+       returning id`,
+    )
+  ).rows[0].id;
+
+  const other = (
+    await db.query(
+      `insert into auth.users (id, email) values (gen_random_uuid(), 'other@bondo.test')
+       returning id`,
+    )
+  ).rows[0].id;
+
+  const asUser = async (userId, sql, params = []) => {
+    await db.query(`set request.jwt.claim.sub = '${userId}'`);
+    const result = await db.query(sql, params).then(
+      (r) => r,
+      () => null,
+    );
+    await db.query(`reset request.jwt.claim.sub`);
+    return result;
+  };
+
+  // The attack the design exists to refuse: knowing the phone number is not
+  // enough, and neither is knowing the reference.
+  const guessed = await asUser(
+    other,
+    `select public.claim_orders(array[gen_random_uuid()]) as n`,
+  );
+
+  check(
+    "a stranger with a guessed token claims nothing",
+    guessed?.rows[0].n === 0,
+    `claimed ${guessed?.rows[0].n}`,
+  );
+
+  const stillGuest = (
+    await db.query(`select user_id from public.orders where id = $1`, [
+      guest.id,
+    ])
+  ).rows[0];
+
+  check(
+    "the order is still unowned after a failed claim",
+    stillGuest.user_id === null,
+  );
+
+  // The real claim.
+  const claimed = await asUser(
+    buyer,
+    `select public.claim_orders(array[$1::uuid]) as n`,
+    [guest.claim_token],
+  );
+
+  check(
+    "holding the token claims exactly one order",
+    claimed?.rows[0].n === 1,
+    `claimed ${claimed?.rows[0].n}`,
+  );
+
+  const afterClaim = (
+    await db.query(
+      `select user_id, claimed_at, claim_token, reference from public.orders where id = $1`,
+      [guest.id],
+    )
+  ).rows[0];
+
+  check(
+    "the order moved to the new account",
+    afterClaim.user_id === buyer && afterClaim.claimed_at !== null,
+  );
+
+  check(
+    "the reference did not change — the row moved, it was not copied",
+    afterClaim.reference === guest.reference,
+    afterClaim.reference,
+  );
+
+  const orderCount = (
+    await db.query(
+      `select count(*)::int as n from public.orders where reference = $1`,
+      [guest.reference],
+    )
+  ).rows[0];
+
+  check("no duplicate order was created", orderCount.n === 1);
+
+  check("the token is spent on use", afterClaim.claim_token === null);
+
+  // Replay: the same token again, by the same person and by somebody else.
+  const replay = await asUser(
+    buyer,
+    `select public.claim_orders(array[$1::uuid]) as n`,
+    [guest.claim_token],
+  );
+
+  check(
+    "replaying a spent token claims nothing",
+    replay?.rows[0].n === 0,
+    `claimed ${replay?.rows[0].n}`,
+  );
+
+  const steal = await asUser(
+    other,
+    `select public.claim_orders(array[$1::uuid]) as n`,
+    [guest.claim_token],
+  );
+
+  check(
+    "a spent token cannot move an owned order to somebody else",
+    steal?.rows[0].n === 0,
+  );
+
+  const ownerNow = (
+    await db.query(`select user_id from public.orders where id = $1`, [
+      guest.id,
+    ])
+  ).rows[0];
+
+  check("the original claimant still owns it", ownerNow.user_id === buyer);
+
+  // An order placed while signed in needs no token.
+  const signedIn = await asUser(
+    buyer,
+    `select * from public.place_order('Dilnoza Karimova', '+998901112233',
+       'Toshkent, Chilonzor 5', $1::jsonb)`,
+    [basket],
+  );
+
+  check(
+    "an order placed by a signed-in customer gets no claim token",
+    signedIn?.rows[0].claim_token === null &&
+      signedIn?.rows[0].user_id === buyer,
+  );
+
+  // Anonymous callers cannot claim at all.
+  await db.query(`reset request.jwt.claim.sub`);
+  const anonClaim = await db
+    .query(`select public.claim_orders(array[gen_random_uuid()])`)
+    .then(
+      () => false,
+      () => true,
+    );
+
+  check("an anonymous caller cannot claim", anonClaim);
+
+  // And the claimed order is readable by its new owner under RLS — which is
+  // what makes it appear in order history.
+  await db.query(`set request.jwt.claim.sub = '${buyer}'`);
+  await db.query(`set role authenticated`);
+  const visible = await db
+    .query(`select reference from public.orders where id = $1`, [guest.id])
+    .then(
+      (r) => r.rows.length,
+      () => -1,
+    );
+  await db.query(`reset role`);
+  await db.query(`reset request.jwt.claim.sub`);
+
+  check(
+    "the claimed order is readable by its new owner under RLS",
+    visible === 1,
+    `${visible} row(s)`,
+  );
+} catch (error) {
+  check("guest order claiming behaves", false, error.message);
 }
 
 await db.close();

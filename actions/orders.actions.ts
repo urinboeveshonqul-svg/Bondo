@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { createAction } from "@/actions/safe-action";
 import { requirePermission } from "@/lib/admin/action-guard";
+import { rememberClaimToken } from "@/lib/orders/claim-cookie";
 import { routes } from "@/lib/routes";
 import { locales } from "@/lib/site-config";
 import { createClient } from "@/supabase/server";
@@ -123,6 +124,15 @@ export const placeOrder = createAction(
         quantity: item.quantity,
       })),
     });
+
+    // A guest order comes back with a single-use claim token. It is stored in an
+    // httpOnly cookie and **never returned to the browser**: the token is a
+    // capability, and a capability in a response body ends up in a log, an
+    // analytics payload or a screenshot. The confirmation page needs to know
+    // only that a claim is pending, which it reads from the cookie server-side.
+    if (order.claim_token) {
+      await rememberClaimToken(order.claim_token);
+    }
 
     // Only the reference crosses back. The order row carries the customer's
     // address and phone, and there is no reason for any of it to travel to a

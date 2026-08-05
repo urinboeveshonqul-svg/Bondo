@@ -707,6 +707,8 @@ export type Database = {
         Row: {
           address: string
           city: string | null
+          claim_token: string | null
+          claimed_at: string | null
           created_at: string
           currency: string
           customer_name: string
@@ -729,6 +731,8 @@ export type Database = {
         Insert: {
           address: string
           city?: string | null
+          claim_token?: string | null
+          claimed_at?: string | null
           created_at?: string
           currency?: string
           customer_name: string
@@ -751,6 +755,8 @@ export type Database = {
         Update: {
           address?: string
           city?: string | null
+          claim_token?: string | null
+          claimed_at?: string | null
           created_at?: string
           currency?: string
           customer_name?: string
@@ -1705,6 +1711,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_orders: { Args: { p_tokens: string[] }; Returns: number }
       has_permission: { Args: { permission_key: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_product_published: { Args: { p_product_id: string }; Returns: boolean }
@@ -1723,6 +1730,8 @@ export type Database = {
         Returns: {
           address: string
           city: string | null
+          claim_token: string | null
+          claimed_at: string | null
           created_at: string
           currency: string
           customer_name: string

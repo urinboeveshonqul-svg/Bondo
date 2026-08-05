@@ -12,6 +12,52 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — guest orders can be claimed by a new account
+
+A shopper orders as a guest, registers afterwards, and the order they already
+placed appears in their history. **The same row, moved — never copied.**
+
+**The security decision is the feature** (**ADR-70**). The obvious implementation
+is "claim every order whose phone matches the new account", and it is a
+data-disclosure hole: a phone number is not a secret, so anyone who knows a
+customer's could register with it and read that customer's name, delivery
+address, basket and totals. Matching the order reference is worse, because
+`BND-001042` is sequential by design so a manager can read it down the phone.
+
+So a claim requires proof that the claimant placed the order, and the only party
+holding that proof is the browser that placed it:
+
+- `place_order()` issues `claim_token` — random, and **only** for guest orders.
+- The token goes into an **httpOnly cookie** and is never returned to the
+  browser, never put in a URL, never logged. A capability in a response body ends
+  up in an analytics payload or a screenshot.
+- `claim_orders(uuid[])` moves ownership where the token matches **and** the
+  order is still unowned, then spends the token. Single use, idempotent, bounded
+  to twenty, and refused outright to anonymous callers.
+- Claiming runs where a session first exists: after the email verification link
+  is exchanged, and after any sign-in — so "Maybe later" followed by signing in a
+  week later works identically.
+- It **never throws**. A failed claim must not turn a successful verification
+  into an error page; it logs loudly instead.
+
+The trade is that a guest who clears cookies loses the automatic link. That fails
+in the safe direction — they still have the order, the shop still has their phone
+number, and support attaches it by hand.
+
+`db:verify` grew from 126 to **140 assertions**, eleven of them this feature,
+including the attacks it exists to refuse: a stranger with a guessed token claims
+nothing; a replayed token claims nothing; a spent token cannot move an owned
+order to somebody else; the reference does not change and no duplicate order is
+created; an order placed while signed in gets no token at all; an anonymous
+caller cannot claim; and the claimed order is readable by its new owner under
+RLS.
+
+**The screens are not built.** The flow cannot be walked in a browser, because it
+starts at a checkout that does not exist — `/checkout`, `/checkout/success`
+with its account invitation, registration pre-fill, `/account/orders` and the
+"Leave a review" button are all outstanding (**D-30**, **D-31**). What landed
+here is the mechanism underneath them, and it is proven.
+
 ### Deployed — the last three migrations are live
 
 `supabase db push` applied `20260809001000_orders_and_reviews`,

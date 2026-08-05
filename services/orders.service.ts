@@ -397,6 +397,29 @@ export async function exportOrders(
   });
 }
 
+/**
+ * Attaches guest orders the caller holds tokens for.
+ *
+ * Thin wrapper over `claim_orders`, which is where every guard lives: the token
+ * must match, the order must still be unowned, and the token is spent on use.
+ * Returns how many moved — zero is a normal outcome (nothing held, or already
+ * claimed) and not an error.
+ */
+export async function claimOrders(
+  supabase: Client,
+  tokens: string[],
+): Promise<number> {
+  if (tokens.length === 0) return 0;
+
+  const { data, error } = await supabase.rpc("claim_orders", {
+    p_tokens: tokens,
+  });
+
+  if (error) throw toAppError(error, "attach your earlier orders");
+
+  return data ?? 0;
+}
+
 export type OrderTotals = {
   /** Orders at `new` — the ones with a customer waiting for a call. */
   awaitingContact: number;

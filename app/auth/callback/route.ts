@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { safeRedirectPath } from "@/lib/auth/redirect";
 import { logger } from "@/lib/logger";
+import { claimPendingOrders } from "@/lib/orders/claim";
 import { defaultLocale, isLocale } from "@/lib/site-config";
 import { localizePath, routes } from "@/lib/routes";
 import { createClient } from "@/supabase/server";
@@ -73,6 +74,13 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     await authService.exchangeCodeForSession(supabase, code);
+
+    // There is now a session, which is the first moment a guest order can be
+    // attached to it. This is the reliable hook: a registration that requires
+    // email confirmation has no session until the link is clicked, and the link
+    // lands here. `claimPendingOrders` never throws — a failed claim must not
+    // turn a successful verification into an error page.
+    await claimPendingOrders();
   } catch (error) {
     logger.warn("auth callback could not exchange the code", {
       cause: error instanceof Error ? error.message : String(error),
