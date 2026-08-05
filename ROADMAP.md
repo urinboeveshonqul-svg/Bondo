@@ -307,6 +307,50 @@ Lighthouse SEO and accessibility both ≥ 95; First Load JS still under 200 kB.
 
 ---
 
+## Phase 3E — Responsive UI & Performance
+
+**Status:** 🟡 Started, mostly outstanding · **Target version:** v0.4.0
+
+Added at the user's request; it was not in the original nine. The premise is
+that the UI works but does not feel premium, and the two things measured so far
+say the premise is right.
+
+### Done
+
+- [x] **Horizontal scroll at 320px** — 35px of overflow on the home page, traced
+      to `min-width: auto` on the reviews grid items. Measured before and after
+      in a real browser: 35px → 0
+- [x] **Footer redesign** — 1062px → 543px at 320px (−49%). Mobile disclosures
+      closed by default, built on `<details>` so the footer stays a Server
+      Component and ships no JavaScript; desktop columns unchanged
+- [x] Footer link rows to 44px touch targets
+
+### Outstanding
+
+- [ ] **The full breakpoint sweep.** Only 320px and the pane's desktop width were
+      audited, and only on the home page. 360 / 375 / 390 / 414 / 768 / 1024 /
+      1280 / 1440 / 1920 across the listing, product, auth, account and all
+      thirteen admin routes have **not** been checked
+- [ ] **The "freezes when buttons are pressed" report — not investigated.** No
+      interaction latency was measured, so the cause is unknown and no fix has
+      been attempted. This is the item most worth doing next, and it needs a
+      profile rather than a guess
+- [ ] **Header optimisation** — height, spacing, search, category nav, menu
+      animation. Measured at 65px on mobile; nothing changed
+- [ ] **17 tap targets under 40px**, including the header's 32×32 icon buttons.
+      Found and recorded, not fixed
+- [ ] Client Component audit — 74 files carry `"use client"`; no reduction
+      attempted
+- [ ] First Load JS is unchanged at 143 kB (home) / 103 kB shared
+- [ ] Dialogs, drawers, filters, product grid, admin tables at every width
+- [ ] Skeletons, loading states, scroll behaviour, animation polish
+- [ ] Keyboard, focus, screen reader and contrast pass
+
+**Exit criteria:** no horizontal overflow on any route at any of the ten widths;
+interaction latency measured and within budget; First Load JS not regressed.
+
+---
+
 ## Phase 4 — Cart & Checkout
 
 **Status:** Not started · **Target version:** v0.4.0

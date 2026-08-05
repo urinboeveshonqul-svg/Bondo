@@ -12,6 +12,47 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Fixed — horizontal scroll at 320px, and a footer 1.3 screens tall
+
+Both were measured in a real browser before anything was changed, and measured
+again after. Neither was diagnosed by reading the code.
+
+**The page scrolled sideways at 320px.** `document.scrollWidth` was 355 against a
+`clientWidth` of 320 — 35px of overflow on the home page. The source was the
+reviews grid: a grid item defaults to `min-width: auto`, which refuses to shrink
+below its content's min-content width, and the product name under each review
+carries `truncate` — whose `white-space: nowrap` set that min-content to 193px.
+The card measured 339px inside a 288px column and pushed the document wider than
+the viewport.
+
+Fixed with `min-w-0` on the grid item and `break-words` on the review prose.
+**35px → 0.** The same `min-width: auto` trap is latent in any grid whose cards
+contain a `truncate`, so the comment at the fix says what to look for.
+
+**The footer was 1062px tall at 320px** — 1.33 phone screens of links under every
+page. Redesigned: the brand block is compact, the three link groups and the
+newsletter collapse into disclosures closed by default, and the bottom bar lost
+a `<Separator />` plus its 64px of margin in favour of a `border-t` and 20px.
+Desktop keeps its columns unchanged in substance. **1062px → 543px, −49%**, and
+0.75 screens rather than 1.33.
+
+The disclosures are `<details>`/`<summary>`, not the Radix Accordion primitive.
+Radix is a Client Component, and the footer renders on every page of the site —
+using it would have added a hydration root to animate four triangles. `<details>`
+opens with no JavaScript, is keyboard operable and correctly announced with no
+ARIA, and works if hydration never happens. It cannot be forced open by CSS at a
+breakpoint, so the group markup is rendered twice with the link list shared
+between them; that trade is written up at the component.
+
+Footer link rows gained `py-1.5`, taking a 20px text line to a 44px touch target
+without loosening the desktop column.
+
+**No bundle change.** First Load JS is 143 kB on the home page, exactly as
+before — the footer was already a Server Component, so nothing moved off the
+client. Removing `<Separator />` took one Radix component out of the footer's
+tree, but `MobileNav` still imports it on every page, so the shared chunk is
+unmoved at 103 kB. Claiming an improvement here would be inventing one.
+
 ### Added — orders and reviews, without a payment gateway
 
 Bondo does not take money online, so this is not a checkout with the payment

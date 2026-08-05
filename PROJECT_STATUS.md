@@ -1319,6 +1319,50 @@ The four review rows run with RLS enforced and a real JWT claim, not around it.
 
 ---
 
+## Responsive UI (Phase 3E)
+
+🟡 **Two defects found by measurement and fixed. The audit itself is barely
+started.**
+
+Both fixes were measured in a browser before and after, not reasoned about:
+
+| Defect                     | Before                | After            |
+| -------------------------- | --------------------- | ---------------- |
+| Horizontal scroll at 320px | 35px of overflow      | **0**            |
+| Footer height at 320px     | 1062px (1.33 screens) | **543px (0.75)** |
+| Footer link touch target   | ~20px                 | 44px             |
+
+**The overflow was a `min-width: auto` trap.** A CSS grid item will not shrink
+below its content's min-content width, and `truncate` sets that to the full
+string because of `white-space: nowrap`. The reviews card measured 339px inside a
+288px column. `min-w-0` on the item fixes it, and the same trap is latent in any
+grid whose cards contain a truncating line.
+
+**The footer collapses with `<details>`, not Radix** — the footer is on every
+page, and the Accordion primitive is a Client Component. `<details>` needs no
+JavaScript, no ARIA and no hydration. It cannot be forced open by CSS at a
+breakpoint, so the groups render twice with the link list shared; the trade is
+argued at the component.
+
+### Not done — most of the brief
+
+Stated plainly because the request was much larger than what was delivered:
+
+- **The "freezes when buttons are pressed" report was not investigated.** No
+  latency was measured. The cause is unknown and nothing was changed for it.
+- **The breakpoint sweep covered 320px and one desktop width, on the home page
+  only.** Eight of the ten widths, and every route other than the home page,
+  are unaudited.
+- **The header was measured (65px) and not changed.**
+- **17 tap targets under 40px** were found — mostly the header's 32×32 icon
+  buttons — and not fixed.
+- **No Client Component was removed.** 74 files still carry `"use client"`.
+- **First Load JS is unchanged**: 143 kB home, 103 kB shared, 104 kB middleware.
+
+Tracked as Phase 3E in [ROADMAP.md](ROADMAP.md#phase-3e--responsive-ui--performance).
+
+---
+
 ## Next task
 
 **Push the orders migration, then build the screens over it.**

@@ -26,20 +26,26 @@ export function Reviews({ reviews }: { reviews: Review[] }) {
     <Section id="reviews" title={t("title")} description={t("description")}>
       <ul className="grid gap-6 lg:grid-cols-3">
         {reviews.map((review) => (
-          <li key={review.id}>
-            <figure className="flex h-full flex-col gap-4 rounded-xl border bg-card p-6">
+          // `min-w-0` is load-bearing, not defensive. A grid item defaults to
+          // `min-width: auto`, which refuses to shrink below its content's
+          // min-content width — and the product name below sets that with
+          // `truncate`'s `white-space: nowrap`. Without this the card measured
+          // 339px inside a 288px column and pushed the whole document into
+          // horizontal scroll at 320px.
+          <li key={review.id} className="min-w-0">
+            <figure className="flex h-full min-w-0 flex-col gap-4 rounded-xl border bg-card p-5 sm:p-6">
               <Rating rating={review.rating} size="small" />
 
-              <blockquote className="flex-1 space-y-2">
-                <p className="font-medium tracking-tight">
+              <blockquote className="min-w-0 flex-1 space-y-2">
+                <p className="font-medium tracking-tight break-words">
                   {review.title[locale]}
                 </p>
-                <p className="text-sm text-pretty text-muted-foreground">
+                <p className="text-sm text-pretty break-words text-muted-foreground">
                   {review.body[locale]}
                 </p>
               </blockquote>
 
-              <figcaption className="flex items-center gap-3 border-t pt-4">
+              <figcaption className="flex min-w-0 items-center gap-3 border-t pt-4">
                 <Avatar className="size-9">
                   <AvatarFallback className="text-xs">
                     {review.initials}
