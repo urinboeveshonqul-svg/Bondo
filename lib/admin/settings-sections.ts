@@ -11,19 +11,17 @@
  * `components/admin/modules/settings/settings-form.tsx`, and it inherits the
  * tab strip, the ordering, the translated label and the permission gate.
  *
- * ## Why these six and not the eight a store eventually needs
+ * ## `status` is the honest part
  *
- * `shipping` and `taxes` are **not** here, and the omission is deliberate rather
- * than an oversight. Tax rate and delivery thresholds are already fields inside
- * `commerce`, backed by real `settings` rows; a Shipping section in the sense a
- * store needs — zones, rates, carriers — needs tables that do not exist and
- * arrive with Phase 8. Declaring the tab now would put an empty screen behind a
- * real-looking label, which is the shape of problem ADR-20 exists to prevent.
+ * A section is `"live"` when it edits real `settings` rows, and `"planned"` when
+ * the tab exists but the feature does not. A planned tab renders a stated
+ * "not built yet" panel naming the phase that brings it — it never renders an
+ * empty form, and it never renders controls that discard what you type.
  *
- * The same reasoning keeps `appearance` and `localization` out: the theme is a
- * per-visitor choice held in `next-themes`, and the locale list is an enum in
- * the database (adding one is a migration, not a setting). Both would be
- * controls that look like settings and change nothing.
+ * That distinction is why the planned tabs are allowed here at all. ADR-20
+ * forbids placeholder *data*; a labelled, self-describing gap is the opposite —
+ * it tells an operator what the store will do and what it cannot do yet, which
+ * is information they otherwise have to ask a developer for.
  *
  * Pure data, no React — `lib/` may be imported from anywhere (§ 4).
  */
@@ -35,45 +33,100 @@ export const SETTINGS_SECTIONS = [
     id: "store",
     /** Key into `adminSystem.settings.tabs`. */
     labelKey: "store",
-    /** The `settings` key prefix this section owns, for the eventual service. */
+    /** The `settings` key prefix this section owns. */
     prefix: "store",
     permission: "settings.read",
+    status: "live",
   },
   {
     id: "commerce",
     labelKey: "commerce",
     prefix: "commerce",
     permission: "settings.read",
+    status: "live",
+  },
+  {
+    id: "localization",
+    labelKey: "localization",
+    prefix: "localization",
+    permission: "settings.read",
+    status: "planned",
+    /** What has to exist first, shown to the operator rather than hidden. */
+    blockedBy: "perUserLocale",
+  },
+  {
+    id: "appearance",
+    labelKey: "appearance",
+    prefix: "appearance",
+    permission: "settings.read",
+    status: "planned",
+    blockedBy: "themeIsPerVisitor",
   },
   {
     id: "email",
     labelKey: "email",
     prefix: "email",
     permission: "settings.read",
+    status: "live",
   },
   {
     id: "social",
     labelKey: "social",
     prefix: "social",
     permission: "settings.read",
+    status: "live",
   },
   {
     id: "branding",
     labelKey: "branding",
     prefix: "branding",
     permission: "settings.read",
+    status: "live",
   },
   {
     id: "hours",
     labelKey: "hours",
     prefix: "hours",
     permission: "settings.read",
+    status: "live",
+  },
+  {
+    id: "taxes",
+    labelKey: "taxes",
+    prefix: "taxes",
+    permission: "settings.read",
+    status: "planned",
+    blockedBy: "needsCheckout",
+  },
+  {
+    id: "shipping",
+    labelKey: "shipping",
+    prefix: "shipping",
+    permission: "settings.read",
+    status: "planned",
+    blockedBy: "needsShippingTables",
+  },
+  {
+    id: "payments",
+    labelKey: "payments",
+    prefix: "payments",
+    permission: "settings.read",
+    status: "planned",
+    blockedBy: "needsCheckout",
   },
 ] as const satisfies readonly {
   id: string;
   labelKey: string;
   prefix: string;
   permission: Permission;
+  status: "live" | "planned";
+  blockedBy?: string;
 }[];
 
-export type SettingsSectionId = (typeof SETTINGS_SECTIONS)[number]["id"];
+export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
+export type SettingsSectionId = SettingsSection["id"];
+
+/** The sections that actually edit something. */
+export const LIVE_SETTINGS_SECTIONS = SETTINGS_SECTIONS.filter(
+  (section) => section.status === "live",
+);

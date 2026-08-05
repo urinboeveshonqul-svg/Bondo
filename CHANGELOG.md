@@ -12,6 +12,86 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — product variants, in the database (D-8 closed)
+
+The admin has had a variant editor since Phase 3A with **no table under it**. A
+laptop sold in 16GB and 32GB needed two product rows, with two descriptions, two
+image sets and two SEO records to keep in step.
+`20260808001000_product_variants.sql` closes that:
+
+```
+product_options → product_option_values → product_variants
+                                        → product_variant_options
+```
+
+Five tables, normalized rather than a `jsonb` blob of `{ ram: "32GB" }`, for the
+reasons ADR-51 already gives: a blob cannot enforce "exactly one value per
+axis", cannot be indexed usefully, and cannot carry a foreign key — so renaming
+a value silently orphans every variant that used it. The axis display name is a
+`product_option_translations` row like every other piece of localized copy;
+the _values_ are deliberately not localized, because "32GB" is a specification
+and "32ГБ" is unsearchable (**D-27**).
+
+**Stock did not move onto the variant** (**ADR-62**). `inventory` and
+`inventory_movements` gained a nullable `variant_id` instead —
+`variant_id IS NULL` is the product's own stock, not-null is that
+configuration's — so one ledger, one append-only guard and one movement enum
+serve both levels. The alternative, a `stock_on_hand` column on the variant, is
+exactly the second writable copy of a quantity ADR-24 exists to forbid.
+
+That restructuring moved `inventory`'s primary key off `product_id` onto a
+surrogate, with **two partial unique indexes** carrying what the key used to
+mean. A plain `unique (product_id, variant_id)` does not work: NULLs are
+distinct in a unique index, so a product could quietly acquire two product-level
+rows.
+
+`product_images` gained a nullable `variant_id` rather than a second image
+table — one uploader, one bucket, one ordering rule.
+
+**The seed caught a real break during verification.**
+`create_inventory_for_product()` targeted `on conflict (product_id)`, which
+resolved to the primary key the migration had just dropped; it now names the
+partial unique index. That is what running the seed inside `db:verify` is for.
+
+`npm run db:verify` grew from 76 to **89 assertions**, re-proving ADR-24 at the
+new level: a variant gets an inventory row from birth, a direct write to variant
+stock is refused, a variant movement moves variant stock **and leaves the
+product's alone**, a variant cannot hold two values on one axis, and a variant
+SKU is unique across the catalog.
+
+### Added — `services/variants.service.ts`
+
+The fold between the axis matrix the editor speaks and the normalized rows the
+database holds. Nothing above it sees a join table; nothing below it sees a
+matrix.
+
+`syncVariants` reconciles **by option combination, never by array position**, so
+regenerating after adding a value to an axis leaves the prices already entered on
+every combination that survives — the behaviour the Phase 3A editor described and
+could not implement without a table to persist it to. A combination that
+disappears is soft-deleted, because an order will reference it once checkout
+exists.
+
+There is deliberately **no stock setter**: `Variant.stockOnHand` is read from
+`inventory` and changing it goes through `recordMovement`. A setter here would be
+the obvious place to get ADR-24 wrong.
+
+Verified against the hosted project: the full nested read — variants, their
+options, the option translations and the joined inventory row — returns `200`
+with every column and embed resolving.
+
+### Added — settings sections for what does not exist yet
+
+`SETTINGS_SECTIONS` gained a `status` of `live` or `planned`. Localization,
+Appearance, Taxes, Shipping and Payments are declared and render a stated gap:
+what is missing, and **what has to land first** — the checkout phase, shipping
+tables, a per-account locale column, a store-level theme.
+
+A planned tab has no inputs at all. Hiding it makes the roadmap invisible to the
+person running the store; rendering an empty form invites them to fill it in and
+lose the work, which is ADR-20's failure arrived at from the other direction —
+not fake data, but a fake control.
+
 ### Added — Phase 4A: authentication, complete (K-1 and K-2 closed)
 
 **The panel is no longer open.** `requireAdmin()` reads the `admins` register

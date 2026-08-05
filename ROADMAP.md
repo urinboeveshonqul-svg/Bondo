@@ -384,7 +384,10 @@ Built for 10+ concurrent admins.
 - [ ] Customer lookup against real profiles
 - [ ] Move pagination and search into the query; the current in-memory filter
       does not survive 50k products (**D-2**)
-- [ ] `product_variants` table to back the variant editor (**D-8**)
+- [x] `product_variants` table to back the variant editor (**D-8 closed**, ADR-62)
+- [x] `services/variants.service.ts` — the axis-matrix fold, verified live
+- [x] Settings sections declared for what does not exist yet, each stating its blocker
+- [ ] Re-point the product editor and variant editor at the real service (**D-29**)
 - [ ] Write real audit rows for every privileged mutation
 
 **Exit criteria:** a non-admin account is denied at the layout _and_ by RLS

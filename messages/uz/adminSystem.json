@@ -8,7 +8,12 @@
       "email": "Pochta",
       "social": "Ijtimoiy tarmoqlar",
       "branding": "Brending",
-      "hours": "Ish vaqti"
+      "hours": "Ish vaqti",
+      "localization": "Tillar",
+      "appearance": "Ko'rinish",
+      "taxes": "Soliqlar",
+      "shipping": "Yetkazib berish",
+      "payments": "To'lovlar"
     },
     "store": {
       "title": "Do'kon ma'lumotlari",
@@ -70,6 +75,18 @@
         "5": "Juma",
         "6": "Shanba",
         "7": "Yakshanba"
+      }
+    },
+    "planned": {
+      "badge": "Hali qurilmagan",
+      "title": "Bu bo'lim rejalashtirilgan, lekin amalga oshirilmagan",
+      "body": "Do'kon nimalarni boshqarishini ko'rishingiz uchun ushbu ilova shu yerda. Unda hech narsani tahrirlab bo'lmaydi, chunki uning ortida hali hech narsa yo'q — yozganingizni yo'qotadigan shakl bo'shidan yomonroq.",
+      "blocked": "Kutilmoqda",
+      "reasons": {
+        "needsCheckout": "to'lov bosqichi — ushbu sozlamalar ishlaydigan buyurtmalar va to'lovlar jadvallarini olib keladi",
+        "needsShippingTables": "yetkazib berish hududlari va tariflari — operatsiyalar bosqichida keladi",
+        "perUserLocale": "hisob uchun til ustuni. Hozir interfeys tili URL va NEXT_LOCALE cookie'siga bog'liq, bu esa xat yuborilmaguncha to'g'ri",
+        "themeIsPerVisitor": "do'kon bo'yicha mavzu. Yorug' va qorong'i hozircha har bir tashrifchining o'z tanlovi va brauzerida saqlanadi, shuning uchun do'kon darajasida sozlanadigan narsa yo'q"
       }
     }
   },

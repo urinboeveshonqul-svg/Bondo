@@ -19,6 +19,11 @@
 import { applySeed, createSchema } from "./db-harness.mjs";
 
 const EXPECTED_TABLES = [
+  "product_option_translations",
+  "product_option_values",
+  "product_options",
+  "product_variant_options",
+  "product_variants",
   "admins",
   "audit_logs",
   "banner_translations",
@@ -76,7 +81,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 13,
+  migrationCount === 14,
   `${migrationCount} files`,
 );
 
@@ -647,6 +652,163 @@ try {
   );
 } catch (error) {
   check("supabase/seed.sql applies against the schema", false, error.message);
+}
+
+// -----------------------------------------------------------------------------
+// Variants (20260808001000_product_variants.sql)
+// -----------------------------------------------------------------------------
+// These exist because that migration restructured a table Phase 2 had verified:
+// `inventory`'s primary key moved off `product_id`, and a partial unique index
+// now carries what the key used to mean. The guarantee to re-prove is ADR-24 —
+// stock changes only through the ledger — at the level that is new.
+try {
+  const indexes = (
+    await db.query(`
+      select indexname, indexdef from pg_indexes
+      where schemaname = 'public'
+        and indexname in ('idx_inventory_product_level', 'idx_inventory_variant_level')
+    `)
+  ).rows;
+
+  const productLevel = indexes.find(
+    (i) => i.indexname === "idx_inventory_product_level",
+  );
+  const variantLevel = indexes.find(
+    (i) => i.indexname === "idx_inventory_variant_level",
+  );
+
+  check(
+    "one product-level inventory row per product",
+    Boolean(productLevel) && /UNIQUE/i.test(productLevel.indexdef),
+  );
+  check(
+    "one inventory row per (product, variant)",
+    Boolean(variantLevel) && /UNIQUE/i.test(variantLevel.indexdef),
+  );
+
+  const productId = (await db.query(`select id from public.products limit 1`))
+    .rows[0].id;
+
+  await db.query(
+    `insert into public.product_variants (product_id, sku, price_cents)
+     values ($1, 'VERIFY-VARIANT-1', 100000)`,
+    [productId],
+  );
+
+  const variantId = (
+    await db.query(
+      `select id from public.product_variants where sku = 'VERIFY-VARIANT-1'`,
+    )
+  ).rows[0].id;
+
+  const born = (
+    await db.query(
+      `select count(*)::int as n from public.inventory where variant_id = $1`,
+      [variantId],
+    )
+  ).rows[0];
+
+  check("a new variant gets an inventory row from birth", born.n === 1);
+
+  const guarded = await db
+    .query(
+      `update public.inventory set quantity_on_hand = 500 where variant_id = $1`,
+      [variantId],
+    )
+    .then(
+      () => false,
+      () => true,
+    );
+
+  check(
+    "variant stock cannot be written directly — ADR-24 still holds",
+    guarded,
+  );
+
+  await db.query(
+    `insert into public.inventory_movements (product_id, variant_id, movement_type, quantity_delta)
+     values ($1, $2, 'purchase', 7)`,
+    [productId, variantId],
+  );
+
+  const applied = (
+    await db.query(
+      `select quantity_on_hand::int as qty from public.inventory where variant_id = $1`,
+      [variantId],
+    )
+  ).rows[0];
+
+  check(
+    "a variant movement moves variant stock",
+    applied.qty === 7,
+    `quantity_on_hand=${applied.qty}`,
+  );
+
+  // The product's own row must be untouched by a variant movement, or the two
+  // levels would double-count on every listing.
+  const productStock = (
+    await db.query(
+      `select quantity_on_hand::int as qty from public.inventory
+       where product_id = $1 and variant_id is null`,
+      [productId],
+    )
+  ).rows[0];
+
+  check(
+    "a variant movement leaves product-level stock alone",
+    productStock.qty !== 7,
+    `product-level quantity_on_hand=${productStock.qty}`,
+  );
+
+  const optionId = (
+    await db.query(
+      `insert into public.product_options (product_id, key)
+       values ($1, 'ram') returning id`,
+      [productId],
+    )
+  ).rows[0].id;
+
+  const values = (
+    await db.query(
+      `insert into public.product_option_values (option_id, value)
+       values ($1, '16GB'), ($1, '32GB') returning id`,
+      [optionId],
+    )
+  ).rows;
+
+  await db.query(
+    `insert into public.product_variant_options (variant_id, option_id, value_id)
+     values ($1, $2, $3)`,
+    [variantId, optionId, values[0].id],
+  );
+
+  const twoValues = await db
+    .query(
+      `insert into public.product_variant_options (variant_id, option_id, value_id)
+       values ($1, $2, $3)`,
+      [variantId, optionId, values[1].id],
+    )
+    .then(
+      () => false,
+      () => true,
+    );
+
+  check("a variant cannot hold two values on one axis", twoValues);
+
+  const duplicateSku = await db
+    .query(
+      `insert into public.product_variants (product_id, sku, price_cents)
+       values ($1, 'VERIFY-VARIANT-1', 5000)`,
+      [productId],
+    )
+    .then(
+      () => false,
+      () => true,
+    );
+
+  check("a variant SKU is unique across the catalog", duplicateSku);
+} catch (error) {
+  check("variant schema behaves", false, error.message);
 }
 
 await db.close();

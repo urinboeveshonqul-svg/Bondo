@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { ModuleCapabilities } from "@/lib/admin/module";
+import { PlannedSection } from "@/components/admin/modules/settings/planned-section";
 import {
   SETTINGS_SECTIONS,
   type SettingsSectionId,
@@ -59,6 +60,21 @@ export function SettingsForm({
    * so adding a section cannot mean forgetting to add its tab.
    */
   const panels: Record<SettingsSectionId, React.ReactNode> = {
+    // The planned tabs, rendered from the registry rather than written out
+    // here — so promoting one to `live` is one edit in one file.
+    ...(Object.fromEntries(
+      SETTINGS_SECTIONS.filter((section) => section.status === "planned").map(
+        (section) => [
+          section.id,
+          <PlannedSection
+            key={section.id}
+            id={section.id}
+            blockedBy={"blockedBy" in section ? section.blockedBy : undefined}
+          />,
+        ],
+      ),
+    ) as Record<SettingsSectionId, React.ReactNode>),
+
     store: (
       <ModuleFormSection
         id="store"

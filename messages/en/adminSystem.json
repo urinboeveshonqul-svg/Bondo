@@ -8,7 +8,12 @@
       "email": "Email",
       "social": "Social",
       "branding": "Branding",
-      "hours": "Business hours"
+      "hours": "Business hours",
+      "localization": "Localization",
+      "appearance": "Appearance",
+      "taxes": "Taxes",
+      "shipping": "Shipping",
+      "payments": "Payments"
     },
     "store": {
       "title": "Store information",
@@ -70,6 +75,18 @@
         "5": "Friday",
         "6": "Saturday",
         "7": "Sunday"
+      }
+    },
+    "planned": {
+      "badge": "Not built yet",
+      "title": "This section is planned, not implemented",
+      "body": "The tab is here so you can see what the store will manage. Nothing on it can be edited, because there is nothing behind it yet — a form that discarded what you typed would be worse than an empty one.",
+      "blocked": "Waiting on",
+      "reasons": {
+        "needsCheckout": "the checkout phase, which brings the orders and payments tables these settings act on",
+        "needsShippingTables": "shipping zones and rates, which arrive with the operations phase",
+        "perUserLocale": "a per-account language column. Today the interface language follows the URL and the NEXT_LOCALE cookie, which is correct until something sends email",
+        "themeIsPerVisitor": "a store-wide theme. Light and dark are currently each visitor's own choice, stored in their browser, so there is nothing store-level to set"
       }
     }
   },
