@@ -87,7 +87,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 18,
+  migrationCount === 19,
   `${migrationCount} files`,
 );
 
@@ -832,8 +832,9 @@ try {
   const placed = (
     await db.query(
       `select * from public.place_order(
-         'Anvar Karimov', '+998901234567', 'Toshkent, Amir Temur 108',
-         $1::jsonb, null, 'Toshkent', 'Kechqurun qo''ng''iroq qiling', 'uz'
+         'Anvar', 'Karimov', '+998901234567', 'Toshkent, Amir Temur 108',
+         $1::jsonb, '+998911234567', null, 'Toshkent shahri', 'Yunusobod',
+         'delivery', null, 'Kechqurun qo''ng''iroq qiling', 'uz'
        )`,
       [JSON.stringify([{ product_id: PRODUCT, quantity: 2 }])],
     )
@@ -843,6 +844,48 @@ try {
     "place_order issues a readable reference",
     /^BND-\d{6,}$/.test(placed.reference),
     placed.reference,
+  );
+
+  check(
+    "checkout fields are recorded",
+    placed.first_name === "Anvar" &&
+      placed.last_name === "Karimov" &&
+      placed.customer_name === "Anvar Karimov" &&
+      placed.phone_secondary === "+998911234567" &&
+      placed.region === "Toshkent shahri" &&
+      placed.city === "Yunusobod" &&
+      placed.delivery_method === "delivery",
+    `${placed.customer_name}, ${placed.region}/${placed.city}, ${placed.delivery_method}`,
+  );
+
+  // A pickup order needs a shop; a delivery does not.
+  const pickupWithoutShop = await db
+    .query(
+      `select public.place_order('A', 'B', '+998901112233', 'Olib ketish', $1::jsonb,
+         null, null, null, null, 'pickup', null)`,
+      [JSON.stringify([{ product_id: PRODUCT, quantity: 1 }])],
+    )
+    .then(
+      () => false,
+      () => true,
+    );
+
+  check("a pickup order with no location is refused", pickupWithoutShop);
+
+  const pickup = (
+    await db.query(
+      `select * from public.place_order('Aziz', 'Tursunov', '+998901112244', 'Olib ketish',
+         $1::jsonb, null, null, 'Toshkent shahri', 'Chilonzor', 'pickup',
+         'Chilonzor filiali')`,
+      [JSON.stringify([{ product_id: PRODUCT, quantity: 1 }])],
+    )
+  ).rows[0];
+
+  check(
+    "a pickup order records its shop",
+    pickup.delivery_method === "pickup" &&
+      pickup.pickup_location === "Chilonzor filiali",
+    `${pickup.delivery_method} at ${pickup.pickup_location}`,
   );
 
   check("a new order starts at 'new'", placed.status === "new", placed.status);
@@ -979,7 +1022,7 @@ try {
 
   const emptyOrder = await db
     .query(
-      `select public.place_order('X Y', '+998901112233', 'Somewhere 1', '[]'::jsonb)`,
+      `select public.place_order('X', 'Y', '+998901112233', 'Somewhere 1', '[]'::jsonb)`,
     )
     .then(
       () => false,
@@ -990,7 +1033,7 @@ try {
 
   const draftOrder = await db
     .query(
-      `select public.place_order('X Y', '+998901112233', 'Somewhere 1', $1::jsonb)`,
+      `select public.place_order('X', 'Y', '+998901112233', 'Somewhere 1', $1::jsonb)`,
       [JSON.stringify([{ product_id: DRAFT_PRODUCT, quantity: 1 }])],
     )
     .then(
@@ -1347,7 +1390,7 @@ try {
   await db.query(`reset request.jwt.claim.sub`);
   const guest = (
     await db.query(
-      `select * from public.place_order('Dilnoza Karimova', '+998901112233',
+      `select * from public.place_order('Dilnoza', 'Karimova', '+998901112233',
          'Toshkent, Chilonzor 5', $1::jsonb)`,
       [basket],
     )
@@ -1484,7 +1527,7 @@ try {
   // An order placed while signed in needs no token.
   const signedIn = await asUser(
     buyer,
-    `select * from public.place_order('Dilnoza Karimova', '+998901112233',
+    `select * from public.place_order('Dilnoza', 'Karimova', '+998901112233',
        'Toshkent, Chilonzor 5', $1::jsonb)`,
     [basket],
   );

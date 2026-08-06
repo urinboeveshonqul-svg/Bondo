@@ -1,0 +1,82 @@
+{
+  "metaTitle": "Buyurtma berish",
+  "metaDescription": "Buyurtmangizni rasmiylashtiring. Menejerimiz bog'lanib tasdiqlaydi.",
+  "title": "Buyurtma berish",
+  "subtitle": "Ma'lumotlaringizni qoldiring, menejerimiz bog'lanib tasdiqlaydi.",
+  "submit": "Buyurtmani yuborish",
+  "noPaymentNote": "Saytda to'lov qilinmaydi. Hisob-kitob mahsulotni olganda amalga oshiriladi.",
+  "emptyTitle": "Savat bo'sh",
+  "emptyDescription": "Avval katalogdan mahsulot tanlang.",
+  "sections": {
+    "contact": "Aloqa ma'lumotlari",
+    "delivery": "Yetkazib berish"
+  },
+  "deliveryMethods": {
+    "delivery": {
+      "label": "Manzilga yetkazish",
+      "hint": "Kuryer manzilingizga olib boradi"
+    },
+    "pickup": {
+      "label": "O'zim olib ketaman",
+      "hint": "Do'kondan olib ketasiz"
+    }
+  },
+  "fields": {
+    "firstName": "Ism",
+    "lastName": "Familiya",
+    "phone": "Telefon raqami",
+    "phoneHint": "Menejer shu raqamga qo'ng'iroq qiladi",
+    "phoneSecondary": "Qo'shimcha raqam",
+    "phoneSecondaryHint": "Ixtiyoriy. Birinchi raqam javob bermasa ishlatiladi.",
+    "telegram": "Telegram",
+    "telegramHint": "Ixtiyoriy. Qo'ng'iroq o'rniga yozishimiz mumkin.",
+    "region": "Viloyat",
+    "city": "Shahar yoki tuman",
+    "address": "To'liq manzil",
+    "addressHint": "Ko'cha, uy va xonadon raqami",
+    "pickupLocation": "Qaysi do'kondan olasiz",
+    "pickupLocationHint": "Sizga qulay filialni yozing",
+    "deliveryMethod": "Yetkazib berish usuli",
+    "notes": "Izoh",
+    "notesHint": "Ixtiyoriy. Qo'shimcha aytmoqchi bo'lgan narsangiz."
+  },
+  "summary": {
+    "title": "Buyurtma tarkibi",
+    "deliveryNote": "Yetkazib berish narxi manzilga qarab qo'ng'iroq paytida aytiladi."
+  },
+  "success": {
+    "title": "Buyurtmangiz qabul qilindi",
+    "reference": "Buyurtma raqami:",
+    "willContact": "Menejerimiz tez orada telefon yoki Telegram orqali bog'lanadi.",
+    "buildTime": "Buyurtma tasdiqlangach, kompyuterni odatda 24 soat ichida yig'ib, sinovdan o'tkazamiz.",
+    "continueShopping": "Xaridni davom ettirish"
+  },
+  "invitation": {
+    "title": "Bondoda bepul hisob ochasizmi?",
+    "body": "Hisob ochsangiz, hozirgi buyurtmangiz ham o'sha yerda saqlanadi.",
+    "benefits": {
+      "orderHistory": "Buyurtmalaringiz tarixini ko'rasiz",
+      "trackOrders": "Buyurtma qay bosqichda ekanini kuzatasiz",
+      "savedDetails": "Manzilingiz saqlanadi",
+      "fasterCheckout": "Keyingi safar tezroq buyurtma berasiz",
+      "wishlist": "Yoqqan mahsulotlarni saqlab qo'yasiz",
+      "reviews": "Mahsulot yetib kelgach sharh yozasiz"
+    },
+    "createAccount": "Bepul hisob ochish",
+    "maybeLater": "Keyinroq"
+  },
+  "errors": {
+    "firstNameRequired": "Ismingizni yozing.",
+    "lastNameRequired": "Familiyangizni yozing.",
+    "nameTooLong": "Juda uzun.",
+    "phoneRequired": "Telefon raqamingizni yozing.",
+    "phoneInvalid": "Raqam to'liq emas. Masalan: +998 90 123 45 67",
+    "telegramInvalid": "Telegram nomi noto'g'ri. Masalan: @username",
+    "regionRequired": "Viloyatni yozing.",
+    "cityRequired": "Shahar yoki tumanni yozing.",
+    "addressRequired": "Manzilni to'liq yozing.",
+    "pickupRequired": "Qaysi do'kondan olishingizni yozing.",
+    "basketEmpty": "Savat bo'sh.",
+    "basketTooLarge": "Bir buyurtmada juda ko'p mahsulot."
+  }
+}

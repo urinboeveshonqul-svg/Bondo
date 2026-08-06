@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { CartProvider } from "@/components/cart/cart-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { localeAlternates } from "@/i18n/metadata";
@@ -174,19 +175,27 @@ export default async function LocaleLayout({
         */}
         <NextIntlClientProvider>
           <ThemeProvider>
-            <a
-              href="#main"
-              className="sr-only rounded-md bg-background px-4 py-2 focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:ring-2 focus:ring-ring"
-            >
-              {t("skipToContent")}
-            </a>
+            {/*
+              Inside ThemeProvider rather than around it: the basket is storefront
+              state and the theme wraps the whole document. Its own state is
+              localStorage-backed and read after mount, so mounting it here costs
+              one small context and no server work (ADR-64).
+            */}
+            <CartProvider>
+              <a
+                href="#main"
+                className="sr-only rounded-md bg-background px-4 py-2 focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:ring-2 focus:ring-ring"
+              >
+                {t("skipToContent")}
+              </a>
 
-            <SiteHeader categories={categories} />
-            <main id="main" className="flex-1">
-              {children}
-            </main>
-            <SiteFooter categories={categories} />
-            <Toaster />
+              <SiteHeader categories={categories} />
+              <main id="main" className="flex-1">
+                {children}
+              </main>
+              <SiteFooter categories={categories} />
+              <Toaster />
+            </CartProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

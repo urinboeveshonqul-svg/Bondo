@@ -26,7 +26,8 @@
   },
   "card": {
     "saveToWishlist": "Добавить «{name}» в избранное",
-    "addToBasket": "Добавить «{name}» в корзину"
+    "addToBasket": "Добавить «{name}» в корзину",
+    "removeFromBasket": "Убрать «{name}» из корзины"
   },
   "theme": {
     "toLight": "Переключить на светлую тему",
@@ -35,5 +36,11 @@
   "language": {
     "label": "Язык",
     "change": "Сменить язык"
-  }
+  },
+  "addedToBasket": "Добавлено",
+  "checkout": "Оформить заказ",
+  "subtotal": "Стоимость товаров",
+  "deliveryQuotedOnCall": "Стоимость доставки назовём при звонке.",
+  "increaseQuantity": "Увеличить количество",
+  "decreaseQuantity": "Уменьшить количество"
 }

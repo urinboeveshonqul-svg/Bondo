@@ -84,38 +84,98 @@ const basketItemSchema = z.object({
   quantity: z.number().int().min(1).max(100),
 });
 
-export const placeOrder = createAction(
-  "placeOrder",
-  z.object({
-    customerName: z
+/**
+ * The checkout payload.
+ *
+ * `superRefine` rather than two schemas, because the two fulfilment paths differ by
+ * exactly one required field and everything else is identical. Splitting them
+ * would duplicate eleven rules to vary one.
+ */
+const checkoutSchema = z
+  .object({
+    firstName: z
       .string()
       .trim()
-      .min(2, "checkout.errors.nameRequired")
-      .max(120, "checkout.errors.nameTooLong"),
+      .min(2, "checkout.errors.firstNameRequired")
+      .max(60, "checkout.errors.nameTooLong"),
+    lastName: z
+      .string()
+      .trim()
+      .min(2, "checkout.errors.lastNameRequired")
+      .max(60, "checkout.errors.nameTooLong"),
     phone: phoneSchema,
-    telegram: telegramSchema.nullish(),
-    address: z
+    // Optional, and normalised the same way when present — a second number
+    // stored in a different shape is a second number nobody can search for.
+    phoneSecondary: z
       .string()
       .trim()
-      .min(5, "checkout.errors.addressRequired")
-      .max(500, "checkout.errors.addressTooLong"),
-    city: z.string().trim().max(120).nullish(),
+      .transform((value) => (value === "" ? null : value))
+      .nullish()
+      .refine(
+        (value) => value == null || PHONE_PATTERN.test(value),
+        "checkout.errors.phoneInvalid",
+      )
+      .transform((value) => (value == null ? null : normalizePhone(value))),
+    telegram: telegramSchema.nullish(),
+    region: z.string().trim().min(2, "checkout.errors.regionRequired").max(120),
+    city: z.string().trim().min(2, "checkout.errors.cityRequired").max(120),
+    deliveryMethod: z.enum(["delivery", "pickup"]),
+    address: z.string().trim().max(500).optional(),
+    pickupLocation: z.string().trim().max(200).optional(),
     notes: z.string().trim().max(2000).nullish(),
     locale: z.enum(locales),
     items: z
       .array(basketItemSchema)
       .min(1, "checkout.errors.basketEmpty")
       .max(50, "checkout.errors.basketTooLarge"),
-  }),
+  })
+  .superRefine((value, ctx) => {
+    if (value.deliveryMethod === "delivery") {
+      if (!value.address || value.address.length < 5) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["address"],
+          message: "checkout.errors.addressRequired",
+        });
+      }
+    } else if (!value.pickupLocation || value.pickupLocation.length < 2) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["pickupLocation"],
+        message: "checkout.errors.pickupRequired",
+      });
+    }
+  });
+
+export const placeOrder = createAction(
+  "placeOrder",
+  checkoutSchema,
   async (input) => {
     const supabase = await createClient();
 
+    // `orders.address` is NOT NULL from the original migration, so a pickup
+    // stores the shop there as well as in `pickup_location`. That keeps every
+    // existing reader — the admin list, the CSV export, the order detail — from
+    // needing to learn about a second "where does this go" column.
+    const address =
+      input.deliveryMethod === "delivery"
+        ? (input.address ?? "")
+        : (input.pickupLocation ?? "");
+
     const order = await ordersService.placeOrder(supabase, {
-      customerName: input.customerName,
+      firstName: input.firstName,
+      lastName: input.lastName,
       phone: input.phone,
+      phoneSecondary: input.phoneSecondary ?? null,
       telegram: input.telegram ?? null,
-      address: input.address,
-      city: input.city ?? null,
+      region: input.region,
+      city: input.city,
+      deliveryMethod: input.deliveryMethod,
+      address,
+      pickupLocation:
+        input.deliveryMethod === "pickup"
+          ? (input.pickupLocation ?? null)
+          : null,
       notes: input.notes ?? null,
       locale: input.locale,
       items: input.items.map((item) => ({
@@ -125,11 +185,12 @@ export const placeOrder = createAction(
       })),
     });
 
-    // A guest order comes back with a single-use claim token. It is stored in an
-    // httpOnly cookie and **never returned to the browser**: the token is a
-    // capability, and a capability in a response body ends up in a log, an
-    // analytics payload or a screenshot. The confirmation page needs to know
-    // only that a claim is pending, which it reads from the cookie server-side.
+    // A guest order comes back with a single-use claim token (ADR-70). It is
+    // stored in an httpOnly cookie and **never returned to the browser**: the
+    // token is a capability, and a capability in a response body ends up in a
+    // log, an analytics payload or a screenshot. The confirmation page needs to
+    // know only that a claim is pending, which it reads from the cookie
+    // server-side.
     if (order.claim_token) {
       await rememberClaimToken(order.claim_token);
     }
@@ -190,22 +251,36 @@ export const updateOrderStatus = createAction(
   },
 );
 
+/**
+ * Hoisted out of the `createAction` call on purpose.
+ *
+ * A `"use server"` module is compiled with the rule that every top-level
+ * function is a Server Action and must be async — and SWC applies that to
+ * *every* function expression in an exported initializer, including the arrow
+ * passed to `.refine()`. Inlining this schema made the build fail with
+ * "Server Actions must be async functions" pointing at the predicate.
+ *
+ * Declaring the schema separately puts the arrow in a non-exported const, where
+ * the rule does not reach. Every other schema in this codebase is written this
+ * way; this one was the exception and it is why.
+ */
+const updateOrderDetailsSchema = z
+  .object({
+    id: z.uuid(),
+    internalNote: z.string().trim().max(2000).nullish(),
+    // Minor units (ADR-2). The form sends whole currency units and converts;
+    // accepting a float here would land a rounding error in a total.
+    deliveryFeeCents: z.number().int().min(0).max(100_000_000).optional(),
+  })
+  .refine(
+    (value) =>
+      value.internalNote !== undefined || value.deliveryFeeCents !== undefined,
+    "orders.errors.nothingToChange",
+  );
+
 export const updateOrderDetails = createAction(
   "updateOrderDetails",
-  z
-    .object({
-      id: z.uuid(),
-      internalNote: z.string().trim().max(2000).nullish(),
-      // Minor units (ADR-2). The form sends whole currency units and converts;
-      // accepting a float here would land a rounding error in a total.
-      deliveryFeeCents: z.number().int().min(0).max(100_000_000).optional(),
-    })
-    .refine(
-      (value) =>
-        value.internalNote !== undefined ||
-        value.deliveryFeeCents !== undefined,
-      "orders.errors.nothingToChange",
-    ),
+  updateOrderDetailsSchema,
   async (input) => {
     await requirePermission("orders.update");
 

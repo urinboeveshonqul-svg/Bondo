@@ -1,0 +1,82 @@
+{
+  "metaTitle": "Checkout",
+  "metaDescription": "Place your order and we will ring you back to confirm it.",
+  "title": "Checkout",
+  "subtitle": "Leave your details and we'll ring you back to confirm the order.",
+  "submit": "Place order",
+  "noPaymentNote": "No payment is taken on the site. You pay when the order arrives.",
+  "emptyTitle": "Your basket is empty",
+  "emptyDescription": "Pick something from the catalog first.",
+  "sections": {
+    "contact": "Contact details",
+    "delivery": "Delivery"
+  },
+  "deliveryMethods": {
+    "delivery": {
+      "label": "Deliver to me",
+      "hint": "A courier brings it to your address"
+    },
+    "pickup": {
+      "label": "I'll collect it",
+      "hint": "Pick it up from one of our shops"
+    }
+  },
+  "fields": {
+    "firstName": "First name",
+    "lastName": "Last name",
+    "phone": "Phone number",
+    "phoneHint": "This is the number we'll ring",
+    "phoneSecondary": "Second number",
+    "phoneSecondaryHint": "Optional. We'll try it if the first one doesn't answer.",
+    "telegram": "Telegram",
+    "telegramHint": "Optional. We can message instead of calling.",
+    "region": "Region",
+    "city": "City or district",
+    "address": "Full address",
+    "addressHint": "Street, building and apartment",
+    "pickupLocation": "Which shop",
+    "pickupLocationHint": "Tell us the branch that suits you",
+    "deliveryMethod": "How you want it",
+    "notes": "Notes",
+    "notesHint": "Optional. Anything we should know."
+  },
+  "summary": {
+    "title": "Your order",
+    "deliveryNote": "Delivery is priced by address and quoted when we call."
+  },
+  "success": {
+    "title": "Order received",
+    "reference": "Order number:",
+    "willContact": "One of our sales team will contact you shortly by phone or Telegram.",
+    "buildTime": "Once the order is confirmed we usually assemble and test the computer within 24 hours.",
+    "continueShopping": "Keep shopping"
+  },
+  "invitation": {
+    "title": "Want a free Bondo account?",
+    "body": "This order will be waiting in it, already linked.",
+    "benefits": {
+      "orderHistory": "See every order you've placed",
+      "trackOrders": "Follow an order as it progresses",
+      "savedDetails": "Keep your delivery details on file",
+      "fasterCheckout": "Check out faster next time",
+      "wishlist": "Save products you're considering",
+      "reviews": "Review what you bought once it arrives"
+    },
+    "createAccount": "Create free account",
+    "maybeLater": "Maybe later"
+  },
+  "errors": {
+    "firstNameRequired": "Add your first name.",
+    "lastNameRequired": "Add your last name.",
+    "nameTooLong": "That's too long.",
+    "phoneRequired": "Add a phone number.",
+    "phoneInvalid": "That number looks incomplete. For example: +998 90 123 45 67",
+    "telegramInvalid": "That Telegram name isn't valid. For example: @username",
+    "regionRequired": "Add a region.",
+    "cityRequired": "Add a city or district.",
+    "addressRequired": "Add the full address.",
+    "pickupRequired": "Tell us which shop you'll collect from.",
+    "basketEmpty": "Your basket is empty.",
+    "basketTooLarge": "That's too many items for one order."
+  }
+}

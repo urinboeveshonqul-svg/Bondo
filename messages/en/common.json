@@ -26,7 +26,8 @@
   },
   "card": {
     "saveToWishlist": "Save {name} to wishlist",
-    "addToBasket": "Add {name} to basket"
+    "addToBasket": "Add {name} to basket",
+    "removeFromBasket": "Remove {name} from the basket"
   },
   "theme": {
     "toLight": "Switch to light theme",
@@ -35,5 +36,11 @@
   "language": {
     "label": "Language",
     "change": "Change language"
-  }
+  },
+  "addedToBasket": "Added",
+  "checkout": "Checkout",
+  "subtotal": "Subtotal",
+  "deliveryQuotedOnCall": "Delivery is quoted when we call.",
+  "increaseQuantity": "Increase quantity",
+  "decreaseQuantity": "Decrease quantity"
 }

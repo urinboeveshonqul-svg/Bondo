@@ -8,7 +8,8 @@
     "overview": "Обзор",
     "profile": "Профиль",
     "security": "Безопасность",
-    "admin": "Админ-панель"
+    "admin": "Админ-панель",
+    "orders": "Мои заказы"
   },
   "overview": {
     "identity": "Ваши данные",
@@ -57,5 +58,63 @@
     "thisDevice": "Это устройство",
     "signedIn": "Вход выполнен",
     "signedInAt": "Вход выполнен {when}"
+  },
+  "orders": {
+    "title": "Мои заказы",
+    "subtitle": "Все оформленные вами заказы.",
+    "emptyTitle": "Заказов пока нет",
+    "emptyDescription": "Первый заказ появится здесь.",
+    "startShopping": "Перейти в каталог",
+    "itemCount": "{count, plural, one {# товар} few {# товара} many {# товаров} other {# товара}}",
+    "deliveryMethod": {
+      "delivery": "Доставка",
+      "pickup": "Самовывоз"
+    }
+  },
+  "orderDetail": {
+    "back": "К списку заказов",
+    "timeline": "Статус заказа",
+    "currentStep": "текущий этап",
+    "items": "Товары",
+    "subtotal": "Стоимость товаров",
+    "delivery": "Доставка",
+    "deliveryPending": "Назовём при звонке",
+    "total": "Итого",
+    "deliveryDetails": "Данные доставки",
+    "area": "Регион",
+    "contact": "Получатель",
+    "phone": "Телефон",
+    "notes": "Комментарий",
+    "leaveReview": "Оставить отзыв"
+  },
+  "orderStatus": {
+    "new": {
+      "label": "Новый",
+      "body": "Мы получили ваш заказ."
+    },
+    "contacted": {
+      "label": "Связались",
+      "body": "Менеджер уже связывается с вами."
+    },
+    "confirmed": {
+      "label": "Подтверждён",
+      "body": "Заказ подтверждён и передан в работу."
+    },
+    "preparing": {
+      "label": "Собирается",
+      "body": "Собираем и тестируем ваш компьютер."
+    },
+    "shipped": {
+      "label": "В пути",
+      "body": "Заказ выехал из магазина."
+    },
+    "delivered": {
+      "label": "Доставлен",
+      "body": "Спасибо за покупку."
+    },
+    "cancelled": {
+      "label": "Отменён",
+      "body": "Этот заказ отменён."
+    }
   }
 }

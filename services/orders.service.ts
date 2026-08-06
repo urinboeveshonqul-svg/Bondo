@@ -18,6 +18,7 @@ export type OrderListRow = Pick<
   | "status"
   | "customer_name"
   | "phone"
+  | "delivery_method"
   | "telegram"
   | "city"
   | "total_cents"
@@ -87,7 +88,7 @@ function applyFilters<T>(query: T, filters: OrderFilters): T {
 }
 
 const LIST_COLUMNS = `id, reference, status, customer_name, phone, telegram, city,
-   total_cents, currency, locale, placed_at,
+   delivery_method, total_cents, currency, locale, placed_at,
    items:order_items ( count )`;
 
 /** PostgREST returns an embedded `count` as `[{ count: n }]`. */
@@ -482,12 +483,20 @@ export async function countOrdersByStatus(
   return counts;
 }
 
+export type DeliveryMethod = Enums<"delivery_method">;
+
 export type PlaceOrderInput = {
-  customerName: string;
+  firstName: string;
+  lastName: string;
   phone: string;
-  address: string;
+  phoneSecondary?: string | null;
   telegram?: string | null;
+  region?: string | null;
   city?: string | null;
+  deliveryMethod: DeliveryMethod;
+  /** Where it goes, or — for a pickup — the shop it is collected from. */
+  address: string;
+  pickupLocation?: string | null;
   notes?: string | null;
   locale: Locale;
   items: { productId: string; variantId?: string | null; quantity: number }[];
@@ -511,7 +520,8 @@ export async function placeOrder(
   }
 
   const { data, error } = await supabase.rpc("place_order", {
-    p_customer_name: input.customerName,
+    p_first_name: input.firstName,
+    p_last_name: input.lastName,
     p_phone: input.phone,
     p_address: input.address,
     p_items: input.items.map((item) => ({
@@ -523,8 +533,12 @@ export async function placeOrder(
     // omitted argument as absent, and PostgREST then lets the function's own
     // `default null` apply. Sending an explicit null would work too, but only
     // for as long as every one of these keeps its default.
+    p_phone_secondary: input.phoneSecondary ?? undefined,
     p_telegram: input.telegram ?? undefined,
+    p_region: input.region ?? undefined,
     p_city: input.city ?? undefined,
+    p_delivery_method: input.deliveryMethod,
+    p_pickup_location: input.pickupLocation ?? undefined,
     p_notes: input.notes ?? undefined,
     p_locale: input.locale,
   });

@@ -26,7 +26,8 @@
   },
   "card": {
     "saveToWishlist": "{name}ni saralanganlarga qo'shish",
-    "addToBasket": "{name}ni savatga qo'shish"
+    "addToBasket": "{name}ni savatga qo'shish",
+    "removeFromBasket": "{name} savatdan olib tashlash"
   },
   "theme": {
     "toLight": "Yorug' rejimga o'tish",
@@ -35,5 +36,11 @@
   "language": {
     "label": "Til",
     "change": "Tilni o'zgartirish"
-  }
+  },
+  "addedToBasket": "Qo'shildi",
+  "checkout": "Buyurtma berish",
+  "subtotal": "Mahsulotlar narxi",
+  "deliveryQuotedOnCall": "Yetkazib berish narxi qo'ng'iroqda aytiladi.",
+  "increaseQuantity": "Sonini oshirish",
+  "decreaseQuantity": "Sonini kamaytirish"
 }

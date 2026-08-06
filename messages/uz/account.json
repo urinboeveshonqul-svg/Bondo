@@ -8,7 +8,8 @@
     "overview": "Umumiy",
     "profile": "Profil",
     "security": "Xavfsizlik",
-    "admin": "Admin panel"
+    "admin": "Admin panel",
+    "orders": "Buyurtmalarim"
   },
   "overview": {
     "identity": "Ma'lumotlaringiz",
@@ -57,5 +58,63 @@
     "thisDevice": "Ushbu qurilma",
     "signedIn": "Kirgansiz",
     "signedInAt": "{when}da kirgansiz"
+  },
+  "orders": {
+    "title": "Buyurtmalarim",
+    "subtitle": "Siz bergan barcha buyurtmalar.",
+    "emptyTitle": "Hozircha buyurtma yo'q",
+    "emptyDescription": "Birinchi buyurtmangiz shu yerda ko'rinadi.",
+    "startShopping": "Katalogni ochish",
+    "itemCount": "{count, plural, one {# ta mahsulot} other {# ta mahsulot}}",
+    "deliveryMethod": {
+      "delivery": "Yetkazib berish",
+      "pickup": "Olib ketish"
+    }
+  },
+  "orderDetail": {
+    "back": "Buyurtmalarga qaytish",
+    "timeline": "Buyurtma holati",
+    "currentStep": "hozirgi bosqich",
+    "items": "Mahsulotlar",
+    "subtotal": "Mahsulotlar narxi",
+    "delivery": "Yetkazib berish",
+    "deliveryPending": "Qo'ng'iroqda aytiladi",
+    "total": "Jami",
+    "deliveryDetails": "Yetkazib berish ma'lumotlari",
+    "area": "Hudud",
+    "contact": "Qabul qiluvchi",
+    "phone": "Telefon",
+    "notes": "Izoh",
+    "leaveReview": "Sharh yozish"
+  },
+  "orderStatus": {
+    "new": {
+      "label": "Yangi",
+      "body": "Buyurtmangizni oldik."
+    },
+    "contacted": {
+      "label": "Bog'lanildi",
+      "body": "Menejerimiz siz bilan bog'lanmoqda."
+    },
+    "confirmed": {
+      "label": "Tasdiqlandi",
+      "body": "Buyurtma tasdiqlandi va tayyorlashga qabul qilindi."
+    },
+    "preparing": {
+      "label": "Tayyorlanmoqda",
+      "body": "Kompyuterni yig'ib, sinovdan o'tkazyapmiz."
+    },
+    "shipped": {
+      "label": "Yo'lda",
+      "body": "Buyurtma do'kondan chiqdi."
+    },
+    "delivered": {
+      "label": "Yetkazildi",
+      "body": "Xaridingiz uchun rahmat."
+    },
+    "cancelled": {
+      "label": "Bekor qilindi",
+      "body": "Bu buyurtma bekor qilingan."
+    }
   }
 }

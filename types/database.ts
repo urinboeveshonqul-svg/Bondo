@@ -713,13 +713,19 @@ export type Database = {
           currency: string
           customer_name: string
           delivery_fee_cents: number
+          delivery_method: Database["public"]["Enums"]["delivery_method"]
+          first_name: string | null
           id: string
           internal_note: string | null
+          last_name: string | null
           locale: Database["public"]["Enums"]["locale"]
           notes: string | null
           phone: string
+          phone_secondary: string | null
+          pickup_location: string | null
           placed_at: string
           reference: string
+          region: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal_cents: number
           telegram: string | null
@@ -737,13 +743,19 @@ export type Database = {
           currency?: string
           customer_name: string
           delivery_fee_cents?: number
+          delivery_method?: Database["public"]["Enums"]["delivery_method"]
+          first_name?: string | null
           id?: string
           internal_note?: string | null
+          last_name?: string | null
           locale?: Database["public"]["Enums"]["locale"]
           notes?: string | null
           phone: string
+          phone_secondary?: string | null
+          pickup_location?: string | null
           placed_at?: string
           reference: string
+          region?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_cents: number
           telegram?: string | null
@@ -761,13 +773,19 @@ export type Database = {
           currency?: string
           customer_name?: string
           delivery_fee_cents?: number
+          delivery_method?: Database["public"]["Enums"]["delivery_method"]
+          first_name?: string | null
           id?: string
           internal_note?: string | null
+          last_name?: string | null
           locale?: Database["public"]["Enums"]["locale"]
           notes?: string | null
           phone?: string
+          phone_secondary?: string | null
+          pickup_location?: string | null
           placed_at?: string
           reference?: string
+          region?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_cents?: number
           telegram?: string | null
@@ -1720,11 +1738,16 @@ export type Database = {
         Args: {
           p_address: string
           p_city?: string
-          p_customer_name: string
+          p_delivery_method?: Database["public"]["Enums"]["delivery_method"]
+          p_first_name: string
           p_items: Json
+          p_last_name: string
           p_locale?: Database["public"]["Enums"]["locale"]
           p_notes?: string
           p_phone: string
+          p_phone_secondary?: string
+          p_pickup_location?: string
+          p_region?: string
           p_telegram?: string
         }
         Returns: {
@@ -1736,13 +1759,19 @@ export type Database = {
           currency: string
           customer_name: string
           delivery_fee_cents: number
+          delivery_method: Database["public"]["Enums"]["delivery_method"]
+          first_name: string | null
           id: string
           internal_note: string | null
+          last_name: string | null
           locale: Database["public"]["Enums"]["locale"]
           notes: string | null
           phone: string
+          phone_secondary: string | null
+          pickup_location: string | null
           placed_at: string
           reference: string
+          region: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal_cents: number
           telegram: string | null
@@ -1766,6 +1795,7 @@ export type Database = {
     Enums: {
       banner_placement:
         "home_hero" | "home_secondary" | "category_top" | "site_wide_notice"
+      delivery_method: "delivery" | "pickup"
       inventory_movement_type:
         "purchase" | "adjustment" | "correction" | "sale" | "return"
       locale: "uz" | "ru" | "en"
@@ -1910,6 +1940,7 @@ export const Constants = {
         "category_top",
         "site_wide_notice",
       ],
+      delivery_method: ["delivery", "pickup"],
       inventory_movement_type: [
         "purchase",
         "adjustment",

@@ -8,7 +8,8 @@
     "overview": "Overview",
     "profile": "Profile",
     "security": "Security",
-    "admin": "Admin panel"
+    "admin": "Admin panel",
+    "orders": "My orders"
   },
   "overview": {
     "identity": "Your details",
@@ -57,5 +58,63 @@
     "thisDevice": "This device",
     "signedIn": "Signed in",
     "signedInAt": "Signed in {when}"
+  },
+  "orders": {
+    "title": "My orders",
+    "subtitle": "Every order you've placed.",
+    "emptyTitle": "No orders yet",
+    "emptyDescription": "Your first order will show up here.",
+    "startShopping": "Browse the catalog",
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "deliveryMethod": {
+      "delivery": "Delivery",
+      "pickup": "Collection"
+    }
+  },
+  "orderDetail": {
+    "back": "Back to orders",
+    "timeline": "Progress",
+    "currentStep": "current step",
+    "items": "Items",
+    "subtotal": "Items",
+    "delivery": "Delivery",
+    "deliveryPending": "Quoted on the call",
+    "total": "Total",
+    "deliveryDetails": "Delivery details",
+    "area": "Area",
+    "contact": "Recipient",
+    "phone": "Phone",
+    "notes": "Notes",
+    "leaveReview": "Leave a review"
+  },
+  "orderStatus": {
+    "new": {
+      "label": "New",
+      "body": "We've got your order."
+    },
+    "contacted": {
+      "label": "Contacted",
+      "body": "One of our team is getting in touch."
+    },
+    "confirmed": {
+      "label": "Confirmed",
+      "body": "Your order is confirmed and approved for building."
+    },
+    "preparing": {
+      "label": "Preparing",
+      "body": "We're assembling and testing your computer."
+    },
+    "shipped": {
+      "label": "On its way",
+      "body": "Your order has left the shop."
+    },
+    "delivered": {
+      "label": "Delivered",
+      "body": "Thanks for shopping with us."
+    },
+    "cancelled": {
+      "label": "Cancelled",
+      "body": "This order was cancelled."
+    }
   }
 }
