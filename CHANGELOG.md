@@ -12,6 +12,60 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — the customer order experience, and two more ownership paths
+
+**Phase 4B — the customer flow.** `/checkout` (guest-only, delivery or pickup,
+first/last name, two phone numbers, region, district, Telegram, notes and an
+optional email), `/checkout/success` with the account invitation, and
+`/account/orders` plus `/account/orders/[id]` with a status timeline and
+review gating. The basket is wired end to end. `20260813001000` added the
+columns the form needed, because the schema comes before the screen (§ 12).
+
+**Phase 4C — the ownership hierarchy.** An order now gets an owner in exactly
+one of three ways, ranked by the strength of the proof:
+
+1. **Claim token** (ADR-70, unchanged) — the caller _is the browser that placed
+   the order_. Tried first, always.
+2. **Verified email** (**ADR-71**) — the caller _controls the mailbox the order
+   was placed with_. Sweeps what the token did not.
+3. **An administrator, by hand** — no automatic proof; a human is named in the
+   audit log.
+
+ADR-71 is not phone matching with a different column. A phone number is not a
+secret; a **confirmed** mailbox is proof, and the check is
+`email_confirmed_at is not null` read at call time rather than trusted from a
+JWT issued earlier. Without that line the path would let anybody register with
+any address and take the orders under it — so it is the whole security of the
+mechanism, and it is asserted directly.
+
+**Every ownership change is now audited.** All three paths call
+`log_order_ownership`, which writes an append-only row recording the method and
+the actor — immutable even to `service_role` (ADR-27). For the manual path the
+actor is the administrator and the recipient is the customer, which is the one
+case where they differ.
+
+**No path overwrites an owner**, including the administrator's. Asserted: a
+stranger with a guessed token, a second verified account on the same address,
+and an administrator attempting reassignment all claim **0**.
+
+The status enum kept `contacted` rather than becoming
+`awaiting_customer_confirmation`. The label and its explanation already say what
+the longer name describes, and renaming an enum in a live database to restate
+copy is churn.
+
+`db:verify` grew from 143 to **162 assertions**.
+
+**Not built:** the admin "Link Order to Customer" button and the guest-vs-
+registered badge — both need the admin orders module, which does not exist and
+is held out of the registry so the sidebar cannot link to a 404. Also
+outstanding: registration pre-fill from the order, and the review form itself.
+
+A build failure worth recording from 4B: a `"use server"` module compiles with
+the rule that every top-level function is async, and SWC applies it to every
+function expression in an exported initializer — including the arrow passed to
+Zod's `.refine()`. Inlining a schema inside `createAction` failed the build
+pointing at the predicate. Hoisting the schema fixes it.
+
 ### Added — guest orders can be claimed by a new account
 
 A shopper orders as a guest, registers afterwards, and the order they already

@@ -23,11 +23,20 @@ import * as ordersService from "@/services/orders.service";
  */
 export async function claimPendingOrders(): Promise<number> {
   try {
-    const tokens = await readClaimTokens();
-    if (tokens.length === 0) return 0;
-
     const supabase = await createClient();
-    const claimed = await ordersService.claimOrders(supabase, tokens);
+    const tokens = await readClaimTokens();
+
+    // **Token first, always.** It is the stronger proof — a capability this
+    // browser was issued, rather than an address it typed — so it is tried
+    // before the email path even when both would match the same order.
+    const byToken =
+      tokens.length > 0 ? await ordersService.claimOrders(supabase, tokens) : 0;
+
+    // Then anything left over that was placed with an address this account has
+    // since verified (ADR-71). Runs even when no token was held: the customer
+    // who ordered on their phone and registered on a laptop has no cookie.
+    const byEmail = await ordersService.claimOrdersByEmail(supabase);
+    const claimed = byToken + byEmail;
 
     // Cleared whichever way it went. The tokens are spent server-side on a
     // successful claim, and a token that matched nothing will never match
@@ -35,7 +44,11 @@ export async function claimPendingOrders(): Promise<number> {
     await clearClaimTokens();
 
     if (claimed > 0) {
-      logger.info("attached guest orders to a new account", { claimed });
+      logger.info("attached guest orders to a new account", {
+        claimed,
+        byToken,
+        byEmail,
+      });
     }
 
     return claimed;

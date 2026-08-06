@@ -75,6 +75,7 @@ export function CheckoutForm() {
         phone: value("phone"),
         phoneSecondary: value("phoneSecondary") || null,
         telegram: value("telegram") || null,
+        email: value("email") || null,
         region: value("region"),
         city: value("city"),
         deliveryMethod: method,
@@ -168,7 +169,15 @@ export function CheckoutForm() {
               hint={t("fields.telegramHint")}
               error={fieldError("telegram")}
               placeholder="@username"
-              className="sm:col-span-2"
+            />
+            <Field
+              name="email"
+              label={t("fields.email")}
+              hint={t("fields.emailHint")}
+              error={fieldError("email")}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
             />
           </div>
         </fieldset>

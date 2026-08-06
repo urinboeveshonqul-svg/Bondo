@@ -117,6 +117,20 @@ const checkoutSchema = z
       )
       .transform((value) => (value == null ? null : normalizePhone(value))),
     telegram: telegramSchema.nullish(),
+    // **Optional, and it stays optional.** Checkout must not start demanding an
+    // email: this shop rings people, and a required field nobody reads costs
+    // orders (ADR-63). It is here only so a guest who leaves one can be
+    // reunited with the order after verifying it (ADR-71).
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .transform((value) => (value === "" ? null : value))
+      .nullish()
+      .refine(
+        (value) => value == null || /^[^@s]+@[^@s]+.[^@s]+$/.test(value),
+        "checkout.errors.emailInvalid",
+      ),
     region: z.string().trim().min(2, "checkout.errors.regionRequired").max(120),
     city: z.string().trim().min(2, "checkout.errors.cityRequired").max(120),
     deliveryMethod: z.enum(["delivery", "pickup"]),
@@ -168,6 +182,7 @@ export const placeOrder = createAction(
       phone: input.phone,
       phoneSecondary: input.phoneSecondary ?? null,
       telegram: input.telegram ?? null,
+      email: input.email ?? null,
       region: input.region,
       city: input.city,
       deliveryMethod: input.deliveryMethod,

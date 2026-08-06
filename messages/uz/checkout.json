@@ -38,7 +38,9 @@
     "pickupLocationHint": "Sizga qulay filialni yozing",
     "deliveryMethod": "Yetkazib berish usuli",
     "notes": "Izoh",
-    "notesHint": "Ixtiyoriy. Qo'shimcha aytmoqchi bo'lgan narsangiz."
+    "notesHint": "Ixtiyoriy. Qo'shimcha aytmoqchi bo'lgan narsangiz.",
+    "email": "Elektron pochta",
+    "emailHint": "Ixtiyoriy. Keyin hisob ochsangiz, shu buyurtma avtomatik biriktiriladi."
   },
   "summary": {
     "title": "Buyurtma tarkibi",
@@ -77,6 +79,7 @@
     "addressRequired": "Manzilni to'liq yozing.",
     "pickupRequired": "Qaysi do'kondan olishingizni yozing.",
     "basketEmpty": "Savat bo'sh.",
-    "basketTooLarge": "Bir buyurtmada juda ko'p mahsulot."
+    "basketTooLarge": "Bir buyurtmada juda ko'p mahsulot.",
+    "emailInvalid": "Pochta manzili noto'g'ri."
   }
 }

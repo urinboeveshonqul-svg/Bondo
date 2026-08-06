@@ -421,6 +421,45 @@ export async function claimOrders(
   return data ?? 0;
 }
 
+/**
+ * Attaches unowned guest orders whose email matches the caller's verified one.
+ *
+ * The verification check lives in the function, not here: it reads
+ * `auth.users.email_confirmed_at` at call time rather than trusting a claim in
+ * a token that was issued earlier (ADR-71). Zero is a normal answer — an
+ * unverified account, or nothing to claim.
+ */
+export async function claimOrdersByEmail(supabase: Client): Promise<number> {
+  const { data, error } = await supabase.rpc("claim_orders_by_email");
+
+  if (error) throw toAppError(error, "attach your earlier orders");
+
+  return data ?? 0;
+}
+
+/**
+ * Attaches an unowned guest order to a customer, by hand.
+ *
+ * For support who verified ownership out of band — the fallback ADR-70 left
+ * open for a customer who cleared their cookies and gave no email. Returns
+ * false when the order already has an owner, which the function refuses to
+ * change even for an administrator.
+ */
+export async function adminLinkOrder(
+  supabase: Client,
+  orderId: string,
+  userId: string,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("admin_link_order", {
+    p_order_id: orderId,
+    p_user_id: userId,
+  });
+
+  if (error) throw toAppError(error, "link the order to that customer");
+
+  return data ?? false;
+}
+
 export type OrderTotals = {
   /** Orders at `new` — the ones with a customer waiting for a call. */
   awaitingContact: number;
@@ -491,6 +530,8 @@ export type PlaceOrderInput = {
   phone: string;
   phoneSecondary?: string | null;
   telegram?: string | null;
+  /** Optional. Only ever used to reunite a guest with this order (ADR-71). */
+  email?: string | null;
   region?: string | null;
   city?: string | null;
   deliveryMethod: DeliveryMethod;
@@ -535,6 +576,7 @@ export async function placeOrder(
     // for as long as every one of these keeps its default.
     p_phone_secondary: input.phoneSecondary ?? undefined,
     p_telegram: input.telegram ?? undefined,
+    p_email: input.email ?? undefined,
     p_region: input.region ?? undefined,
     p_city: input.city ?? undefined,
     p_delivery_method: input.deliveryMethod,

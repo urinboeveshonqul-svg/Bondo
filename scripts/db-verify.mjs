@@ -87,7 +87,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 19,
+  migrationCount === 20,
   `${migrationCount} files`,
 );
 
@@ -1569,6 +1569,328 @@ try {
   );
 } catch (error) {
   check("guest order claiming behaves", false, error.message);
+}
+
+// -----------------------------------------------------------------------------
+// Ownership hierarchy — three paths, ranked by the proof they demand
+// -----------------------------------------------------------------------------
+try {
+  const PRODUCT = "c0000000-0000-4000-8000-000000000001";
+  const basket = JSON.stringify([{ product_id: PRODUCT, quantity: 1 }]);
+
+  const newUser = async (email, confirmed) =>
+    (
+      await db.query(
+        `insert into auth.users (id, email, email_confirmed_at)
+         values (gen_random_uuid(), $1, $2) returning id`,
+        [email, confirmed ? new Date().toISOString() : null],
+      )
+    ).rows[0].id;
+
+  const asUser = async (userId, sql, params = []) => {
+    await db.query(`set request.jwt.claim.sub = '${userId}'`);
+    const result = await db.query(sql, params).then(
+      (r) => r,
+      () => null,
+    );
+    await db.query(`reset request.jwt.claim.sub`);
+    return result;
+  };
+
+  const auditCount = async () =>
+    (
+      await db.query(
+        `select count(*)::int as n from public.audit_logs
+         where action = 'order.ownership_transferred'`,
+      )
+    ).rows[0].n;
+
+  // ---------------------------------------------------------------------------
+  // Path 1 — the claim token still works, and now logs
+  // ---------------------------------------------------------------------------
+  await db.query(`reset request.jwt.claim.sub`);
+  const tokenOrder = (
+    await db.query(
+      `select * from public.place_order('Aziza', 'Yusupova', '+998901230001',
+         'Toshkent, Yunusobod 4', $1::jsonb)`,
+      [basket],
+    )
+  ).rows[0];
+
+  const tokenUser = await newUser("token-claimer@bondo.test", true);
+  const beforeAudit = await auditCount();
+
+  const tokenClaim = await asUser(
+    tokenUser,
+    `select public.claim_orders(array[$1::uuid]) as n`,
+    [tokenOrder.claim_token],
+  );
+
+  check(
+    "ADR-70 still works: the claim token claims its order",
+    tokenClaim?.rows[0].n === 1,
+    `claimed ${tokenClaim?.rows[0].n}`,
+  );
+
+  check(
+    "a token claim writes an audit row",
+    (await auditCount()) === beforeAudit + 1,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Path 2 — verified email
+  // ---------------------------------------------------------------------------
+  await db.query(`reset request.jwt.claim.sub`);
+  const emailOrderA = (
+    await db.query(
+      `select * from public.place_order('Bekzod', 'Aliyev', '+998901230002',
+         'Toshkent, Chilonzor 7', $1::jsonb, null, null, null, null,
+         'delivery', null, null, 'uz', 'Bekzod@Example.com')`,
+      [basket],
+    )
+  ).rows[0];
+
+  const emailOrderB = (
+    await db.query(
+      `select * from public.place_order('Bekzod', 'Aliyev', '+998901230002',
+         'Toshkent, Chilonzor 7', $1::jsonb, null, null, null, null,
+         'delivery', null, null, 'uz', 'bekzod@example.com')`,
+      [basket],
+    )
+  ).rows[0];
+
+  check(
+    "an email given at checkout is stored lower-cased",
+    emailOrderA.email === "bekzod@example.com",
+    emailOrderA.email,
+  );
+
+  // An account with the right address but NOT verified must claim nothing.
+  const unverified = await newUser("bekzod@example.com", false);
+  const unverifiedClaim = await asUser(
+    unverified,
+    `select public.claim_orders_by_email() as n`,
+  );
+
+  check(
+    "an unverified account claims nothing by email",
+    unverifiedClaim?.rows[0].n === 0,
+    `claimed ${unverifiedClaim?.rows[0].n}`,
+  );
+
+  // A verified account with a different address must also claim nothing.
+  const stranger = await newUser("someone-else@bondo.test", true);
+  const strangerClaim = await asUser(
+    stranger,
+    `select public.claim_orders_by_email() as n`,
+  );
+
+  check(
+    "a verified account with a different address claims nothing",
+    strangerClaim?.rows[0].n === 0,
+  );
+
+  // The real one: verified, matching, and both orders move.
+  const verified = await newUser("bekzod@example.com", true);
+  const beforeEmailAudit = await auditCount();
+  const emailClaim = await asUser(
+    verified,
+    `select public.claim_orders_by_email() as n`,
+  );
+
+  check(
+    "a verified email claims every eligible order",
+    emailClaim?.rows[0].n === 2,
+    `claimed ${emailClaim?.rows[0].n}`,
+  );
+
+  check(
+    "each email claim writes an audit row",
+    (await auditCount()) === beforeEmailAudit + 2,
+  );
+
+  const emailOwned = (
+    await db.query(
+      `select user_id, reference from public.orders where id = any($1::uuid[])`,
+      [[emailOrderA.id, emailOrderB.id]],
+    )
+  ).rows;
+
+  check(
+    "both orders moved to the verified account",
+    emailOwned.every((row) => row.user_id === verified),
+  );
+
+  check(
+    "the references did not change — rows moved, nothing was copied",
+    emailOwned.some((r) => r.reference === emailOrderA.reference) &&
+      emailOwned.some((r) => r.reference === emailOrderB.reference),
+  );
+
+  // Replay: a second call claims nothing, and cannot take them from the owner.
+  const replay = await asUser(
+    verified,
+    `select public.claim_orders_by_email() as n`,
+  );
+  check("re-running the email claim claims nothing", replay?.rows[0].n === 0);
+
+  const thief = await newUser("bekzod@example.com", true);
+  const thiefClaim = await asUser(
+    thief,
+    `select public.claim_orders_by_email() as n`,
+  );
+
+  check(
+    "a second verified account with the same address cannot take an owned order",
+    thiefClaim?.rows[0].n === 0,
+    `claimed ${thiefClaim?.rows[0].n}`,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Path 3 — an administrator, by hand
+  // ---------------------------------------------------------------------------
+  await db.query(`reset request.jwt.claim.sub`);
+  const manualOrder = (
+    await db.query(
+      `select * from public.place_order('Kamola', 'Ergasheva', '+998901230003',
+         'Samarqand, Registon 1', $1::jsonb)`,
+      [basket],
+    )
+  ).rows[0];
+
+  const customer = await newUser("kamola@bondo.test", true);
+
+  // A customer without orders.update must be refused outright.
+  const notAdmin = await asUser(
+    customer,
+    `select public.admin_link_order($1::uuid, $2::uuid)`,
+    [manualOrder.id, customer],
+  );
+
+  check("a customer cannot link an order by hand", notAdmin === null);
+
+  // Make an administrator the way the schema does.
+  const adminUser = await newUser("ops@bondo.test", true);
+  await db.query(
+    `insert into public.profiles (id, full_name) values ($1, 'Ops') on conflict do nothing`,
+    [adminUser],
+  );
+  await db.query(
+    `insert into public.admins (user_id, is_active) values ($1, true)
+     on conflict do nothing`,
+    [adminUser],
+  );
+  await db.query(
+    `insert into public.user_roles (user_id, role_id)
+     select $1, r.id from public.roles r where r.key = 'super_admin'
+     on conflict do nothing`,
+    [adminUser],
+  );
+
+  const beforeManualAudit = await auditCount();
+  const manualLink = await asUser(
+    adminUser,
+    `select public.admin_link_order($1::uuid, $2::uuid) as ok`,
+    [manualOrder.id, customer],
+  );
+
+  check(
+    "an administrator can link an unowned order to a customer",
+    manualLink?.rows[0].ok === true,
+  );
+
+  check(
+    "a manual link writes an audit row naming the administrator",
+    (await auditCount()) === beforeManualAudit + 1,
+  );
+
+  const manualAudit = (
+    await db.query(
+      `select actor_id, metadata from public.audit_logs
+       where action = 'order.ownership_transferred' and resource_id = $1`,
+      [manualOrder.id],
+    )
+  ).rows[0];
+
+  check(
+    "the audit row records the administrator as actor and the customer as owner",
+    manualAudit.actor_id === adminUser &&
+      manualAudit.metadata.new_owner === customer &&
+      manualAudit.metadata.method === "admin_manual",
+    `method=${manualAudit.metadata.method}`,
+  );
+
+  // And an owned order stays put, even for an administrator.
+  const reassign = await asUser(
+    adminUser,
+    `select public.admin_link_order($1::uuid, $2::uuid) as ok`,
+    [manualOrder.id, stranger],
+  );
+
+  check(
+    "an administrator cannot reassign an order that already has an owner",
+    reassign?.rows[0].ok === false,
+  );
+
+  const finalOwner = (
+    await db.query(`select user_id from public.orders where id = $1`, [
+      manualOrder.id,
+    ])
+  ).rows[0];
+
+  check("the original owner kept the order", finalOwner.user_id === customer);
+
+  // ---------------------------------------------------------------------------
+  // Reviews follow status, not ownership
+  // ---------------------------------------------------------------------------
+  await db.query(
+    `update public.orders set status = 'cancelled' where id = $1`,
+    [manualOrder.id],
+  );
+
+  // `asUser` sets the JWT claim but not the role, so RLS is not enforced under
+  // it — fine for calling a `security definer` function, wrong for asserting a
+  // policy. A review insert is a policy test and needs the role switch, or the
+  // superuser sails through and the assertion proves nothing.
+  const asCustomerRls = async (userId, sql, params = []) => {
+    await db.query(`set request.jwt.claim.sub = '${userId}'`);
+    await db.query(`set role authenticated`);
+    const allowed = await db.query(sql, params).then(
+      () => true,
+      () => false,
+    );
+    await db.query(`reset role`);
+    await db.query(`reset request.jwt.claim.sub`);
+    return allowed;
+  };
+
+  const INSERT_REVIEW = `insert into public.product_reviews
+     (product_id, user_id, order_id, rating) values ($1, $2, $3, 5)`;
+
+  check(
+    "a cancelled order earns no review",
+    !(await asCustomerRls(customer, INSERT_REVIEW, [
+      PRODUCT,
+      customer,
+      manualOrder.id,
+    ])),
+  );
+
+  await db.query(
+    `update public.orders set status = 'delivered' where id = $1`,
+    [manualOrder.id],
+  );
+
+  check(
+    "a delivered order earns a review, through the order it was linked by",
+    await asCustomerRls(customer, INSERT_REVIEW, [
+      PRODUCT,
+      customer,
+      manualOrder.id,
+    ]),
+  );
+} catch (error) {
+  check("ownership hierarchy behaves", false, error.message);
 }
 
 await db.close();

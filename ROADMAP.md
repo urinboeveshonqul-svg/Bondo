@@ -399,6 +399,28 @@ nothing uses yet.
 
 ---
 
+## Phase 4B/4C — Customer order experience & ownership ✅
+
+**Status:** Complete through the customer flow · **Target version:** v0.4.0
+
+- [x] `/checkout` — guest-only, delivery or pickup, every field backed by a column
+- [x] `/checkout/success` — confirmation + account invitation, fetches nothing
+- [x] `/account/orders` and `/account/orders/[id]` — history, timeline, totals
+- [x] Review gating on `delivered`, enforced by RLS underneath
+- [x] Basket wired end to end
+- [x] **Ownership hierarchy**: claim token (ADR-70) → verified email (ADR-71) →
+      administrator by hand, ranked by proof and audited at every step
+- [x] Every ownership change writes an append-only audit row
+- [ ] Admin "Link Order to Customer" button — **blocked on the admin orders module**
+- [ ] Registration pre-fill from the order
+- [ ] The review form itself
+- [ ] Admin guest-vs-registered badge — same blocker
+
+**Exit criteria:** met for the customer half. The admin half waits on
+`app/[locale]/admin/orders/` (**D-31**).
+
+---
+
 ## Phase 4 — Cart & Checkout
 
 **Status:** Not started · **Target version:** v0.4.0

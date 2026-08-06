@@ -38,7 +38,9 @@
     "pickupLocationHint": "Tell us the branch that suits you",
     "deliveryMethod": "How you want it",
     "notes": "Notes",
-    "notesHint": "Optional. Anything we should know."
+    "notesHint": "Optional. Anything we should know.",
+    "email": "Email",
+    "emailHint": "Optional. If you make an account later, this order attaches itself."
   },
   "summary": {
     "title": "Your order",
@@ -77,6 +79,7 @@
     "addressRequired": "Add the full address.",
     "pickupRequired": "Tell us which shop you'll collect from.",
     "basketEmpty": "Your basket is empty.",
-    "basketTooLarge": "That's too many items for one order."
+    "basketTooLarge": "That's too many items for one order.",
+    "emailInvalid": "That email address is not valid."
   }
 }

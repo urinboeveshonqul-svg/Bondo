@@ -714,6 +714,7 @@ export type Database = {
           customer_name: string
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          email: string | null
           first_name: string | null
           id: string
           internal_note: string | null
@@ -744,6 +745,7 @@ export type Database = {
           customer_name: string
           delivery_fee_cents?: number
           delivery_method?: Database["public"]["Enums"]["delivery_method"]
+          email?: string | null
           first_name?: string | null
           id?: string
           internal_note?: string | null
@@ -774,6 +776,7 @@ export type Database = {
           customer_name?: string
           delivery_fee_cents?: number
           delivery_method?: Database["public"]["Enums"]["delivery_method"]
+          email?: string | null
           first_name?: string | null
           id?: string
           internal_note?: string | null
@@ -1729,16 +1732,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_link_order: {
+        Args: { p_order_id: string; p_user_id: string }
+        Returns: boolean
+      }
       claim_orders: { Args: { p_tokens: string[] }; Returns: number }
+      claim_orders_by_email: { Args: never; Returns: number }
       has_permission: { Args: { permission_key: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_product_published: { Args: { p_product_id: string }; Returns: boolean }
       is_valid_slug: { Args: { value: string }; Returns: boolean }
+      log_order_ownership: {
+        Args: {
+          p_actor: string
+          p_method: string
+          p_new_owner: string
+          p_order_id: string
+        }
+        Returns: undefined
+      }
       place_order: {
         Args: {
           p_address: string
           p_city?: string
           p_delivery_method?: Database["public"]["Enums"]["delivery_method"]
+          p_email?: string
           p_first_name: string
           p_items: Json
           p_last_name: string
@@ -1760,6 +1778,7 @@ export type Database = {
           customer_name: string
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          email: string | null
           first_name: string | null
           id: string
           internal_note: string | null

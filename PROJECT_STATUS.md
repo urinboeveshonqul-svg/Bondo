@@ -1129,6 +1129,7 @@ reversal here.**
 
 | ID     | Decision                                                                                                                                                                                                                                                                                                                      | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ADR-71 | **A verified email is a second, weaker ownership path — never a replacement for the claim token, and never the same thing as matching a phone number.** `claim_orders_by_email()` attaches unowned orders whose `email` equals the caller's **confirmed** address.                                                            | ADR-70 refused phone matching because a phone number is not a secret. A verified email is different in kind, not degree: Supabase has proven the caller opened mail sent to that mailbox, and the guest chose that address at checkout, so two independent facts line up. It is still weaker than a capability the browser was issued — the address is typed, not granted — so the token is tried first and this only sweeps what is left. The whole security of the path is `email_confirmed_at is not null`, read at call time rather than taken from a JWT issued earlier; without it anybody could register with any address and take the orders under it. The column is optional and must stay optional: a checkout that demands an email to enable a convenience has traded orders for tidiness.                                                                                                                                                                                                      |
 | ADR-70 | **A guest order is claimed with a single-use capability token in an httpOnly cookie — never by matching the phone number, the email or the order reference.** `place_order()` issues `claim_token` for guest orders only; `claim_orders()` moves ownership and spends the token.                                              | Phone matching is the obvious implementation and it is a data-disclosure hole: a phone number is not a secret, so anybody who knows a customer's could register with it and read that customer's name, delivery address, basket and totals. The reference is worse — it is sequential by design so a manager can read it down the phone, so one reference implies a thousand others. A claim therefore needs proof that the claimant is the person who placed the order, and the only party holding that proof is the browser that placed it. The token is random, returned only to the placing caller, kept httpOnly so no script can read it, never put in a URL or a response body, spent on use, and refused against an order that already has an owner. The cost is that clearing cookies loses the automatic link — which fails in the safe direction: the customer still has the order and support can attach it by hand, where phone matching fails silently in favour of whoever guessed a number. |
 | ADR-69 | **A service highlight's icon is a lucide _name_ stored as text, validated against the component's own map — not an upload, and not a database enum.**                                                                                                                                                                         | Three options and each fails differently. An upload lets an operator put a 900 kB PNG above the fold and makes the trust row an asset-management problem; the glyphs are already in the design system. A database enum makes adding one a migration, for a change that is purely presentational. Free text with no validation renders a hole when somebody types `Sheild`. So: the check constraint enforces the _shape_ of an identifier (rejecting markup and paths), the Server Action enforces _membership_ against `HIGHLIGHT_ICONS`, and the component falls back to a neutral glyph for a name that predates a rename. One list drives the picker and the storefront, so the two cannot drift, and extending the set is a change to one file.                                                                                                                                                                                                                                                        |
 | ADR-68 | **The default category taxonomy ships in a migration, not in `seed.sql`.** Twenty categories in three languages, inserted idempotently by `20260810001000_default_categories.sql`.                                                                                                                                            | ADR-20 forbids _fake_ data, and this is not fake: it is the shop's own taxonomy, decided by the business, and a computer store that sells laptops has a Laptops category the day it opens. The distinction that decides the file is deployability — `seed.sql` is development fixture data and never runs on `db push` (ADR-25), so reference data the application cannot function without has to be a migration, exactly as the roles and permissions in 20260801000200 already are. Inserted flat rather than nested because that is the list the business gave; `parent_id` and the `path` trigger already support nesting, so an operator can build a hierarchy without a migration. Keyed on the Uzbek slug for idempotency, because `categories` carries no name or slug of its own since the localization migration and there is nothing else on the parent to match.                                                                                                                                |
@@ -1609,6 +1610,127 @@ Tracked with the rest of the order UI as **D-31**.
 > phone number**. `orders` has one `phone`, required, plus an optional
 > `telegram`. Adding a second is a migration and a form field; it was not
 > invented here because a column nothing writes is worse than an absent one.
+
+---
+
+## Order ownership and the customer experience
+
+🟢 **Complete through the customer flow.** Guest checkout, confirmation, order
+history and the ownership hierarchy all exist and are verified.
+
+### Ownership hierarchy — three paths, ranked by proof
+
+An order gets an owner in exactly one of three ways, and they are ordered by how
+strong the evidence is. Nothing else moves ownership.
+
+| #   | Path                        | Proof it demands                                                                                                        | Where                          |
+| --- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 1   | **Claim token** (ADR-70)    | The caller _is the browser that placed the order_ — an unguessable, single-use capability that never leaves the server  | `claim_orders(uuid[])`         |
+| 2   | **Verified email** (ADR-71) | The caller _controls the mailbox the order was placed with_ — Supabase confirmed it, and the guest typed it at checkout | `claim_orders_by_email()`      |
+| 3   | **An administrator**        | None automatic. A human verified it out of band and is named in the audit log                                           | `admin_link_order(uuid, uuid)` |
+
+**Token is tried first**, always, even when both would match — a capability
+beats a typed address. The email path runs afterwards for anything left, which
+is what covers the customer who ordered on a phone and registered on a laptop.
+
+**Never ownership paths, and never will be:** phone number and order reference.
+Neither is secret. A phone number is on a business card; `BND-001042` is
+sequential so a manager can read it down the phone. Rejected in ADR-70 and the
+reasoning has not changed.
+
+### Security model
+
+| Rule                                     | How it holds                                                                                                                                                           |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claim tokens are never exposed           | httpOnly cookie; never in a URL, a response body or a log. `placeOrder` stores it server-side and returns only the reference                                           |
+| An unverified account claims nothing     | `claim_orders_by_email` reads `auth.users.email_confirmed_at` **at call time** rather than trusting a JWT claim issued earlier                                         |
+| No path overwrites an existing owner     | Every one matches `user_id is null`. An administrator cannot reassign either                                                                                           |
+| A spent token is dead                    | Claiming nulls it; replay matches nothing                                                                                                                              |
+| One customer cannot take another's order | Asserted directly: a stranger with a guessed token, a second verified account on the same address, and an administrator attempting reassignment all claim **0**        |
+| Every ownership change is logged         | All three paths call `log_order_ownership`, which writes an append-only `audit_logs` row recording the method and the actor. Immutable even to `service_role` (ADR-27) |
+
+The email column is **optional and stays optional**. Checkout does not require
+an address and must not start: this shop rings people, and a required field
+nobody reads costs orders.
+
+### Status workflow
+
+Seven statuses; six form the pipeline and `cancelled` leaves it.
+
+| Status      | What it means                                                                        |
+| ----------- | ------------------------------------------------------------------------------------ |
+| `new`       | Submitted. Nobody has rung yet                                                       |
+| `contacted` | A salesperson is reaching the customer to confirm details, availability and delivery |
+| `confirmed` | The customer agreed. Approved for building                                           |
+| `preparing` | Being assembled, tested and packed                                                   |
+| `shipped`   | It has left the shop                                                                 |
+| `delivered` | Received. **Reviews unlock here**                                                    |
+| `cancelled` | Will not be fulfilled. Terminal, reachable from anywhere                             |
+
+> **The enum kept `contacted` rather than becoming
+> `awaiting_customer_confirmation`** — a decision taken explicitly rather than by
+> omission. The label and its one-line explanation already say exactly what the
+> longer name describes ("Menejerimiz siz bilan bog'lanmoqda" / "Менеджер уже
+> связывается с вами" / "One of our team is getting in touch"), and renaming an
+> enum in a live database to restate copy is churn without a reader who benefits.
+
+The customer timeline draws the six pipeline steps with completed, current and
+upcoming states, and a sentence under the current one. A cancelled order gets
+**no timeline at all** rather than a broken one: five greyed steps under a red
+banner reads as "still in progress", which is the opposite of true.
+
+### Built
+
+| Piece                   | State                                                              |
+| ----------------------- | ------------------------------------------------------------------ |
+| `/checkout`             | ✅ guest-only, delivery or pickup, all fields incl. optional email |
+| `/checkout/success`     | ✅ renders from the query string, fetches nothing                  |
+| Account invitation      | ✅ shown only when a claim is pending; two equal buttons           |
+| `/account/orders`       | ✅ RLS-scoped history                                              |
+| `/account/orders/[id]`  | ✅ timeline, items, totals, delivery, contact                      |
+| Review gating           | ✅ `delivered` only, enforced by RLS underneath                    |
+| Basket                  | ✅ provider mounted, add control, sheet with quantities            |
+| `claim_orders_by_email` | ✅ service + wired into every session start                        |
+| `admin_link_order`      | ✅ function + service. **No UI** — see below                       |
+
+### Not built
+
+- **The admin "Link Order to Customer" button**, and the admin orders module it
+  would live in. The function, its permission check and its audit row are done
+  and asserted; there is no `/admin/orders` screen to put a button on, and the
+  module is held out of the registry so the sidebar cannot link to a 404 (D-31).
+- **Registration pre-fill** from the order — the `?from=order` link exists, the
+  sign-up form does not read it yet.
+- **The review form.** Gating works; the form does not exist.
+- **Admin guest-vs-registered badge** — same blocker as the manual link.
+
+### Verified
+
+`npm run verify` passes: **162 assertions** and a production build.
+
+| Assertion                                                                    | Result                |
+| ---------------------------------------------------------------------------- | --------------------- |
+| ADR-70 still works: the token claims its order                               | claimed 1             |
+| a token claim writes an audit row                                            | ✅                    |
+| **an unverified account claims nothing by email**                            | claimed 0             |
+| **a verified account with a different address claims nothing**               | claimed 0             |
+| a verified email claims every eligible order                                 | claimed 2             |
+| each email claim writes an audit row                                         | ✅                    |
+| references unchanged — rows moved, nothing copied                            | ✅                    |
+| re-running the email claim claims nothing                                    | claimed 0             |
+| **a second verified account on the same address cannot take an owned order** | claimed 0             |
+| a customer cannot link an order by hand                                      | refused               |
+| an administrator can link an unowned order                                   | ✅                    |
+| the audit row names the administrator as actor                               | `method=admin_manual` |
+| **an administrator cannot reassign an owned order**                          | ✅                    |
+| a cancelled order earns no review                                            | ✅                    |
+| a delivered order earns a review                                             | ✅                    |
+| checkout fields round-trip; a pickup with no shop is refused                 | ✅                    |
+
+> **Not walked in a browser.** The hosted project does not have the last two
+> migrations, and the catalog has no products, so there is nothing to put in a
+> basket. Everything above is proven by assertions against a real Postgres, plus
+> typecheck and build — not by clicking through it.
 
 ---
 
