@@ -1734,6 +1734,85 @@ banner reads as "still in progress", which is the opposite of true.
 
 ---
 
+## Admin panel — live database connection
+
+🟡 **The data path is proven live. One module is wired to it; the rest are not.**
+
+### What was actually verified, against the hosted project
+
+`npm run admin:verify` (`scripts/verify-admin-crud.mjs`) mints a throwaway
+administrator, signs in **with the public anon key**, and does every write
+through that RLS-enforced session before cleaning up after itself.
+
+That distinction is the point. A service-role script proves the schema accepts a
+row and nothing else; the layer most likely to refuse an admin write is
+`has_permission()`, and bypassing RLS is exactly how you fail to notice.
+
+**23/23 passed** against `pgxqnezwrwfgrmamlxhs`:
+
+| Layer      | Assertion                                                                      | Result            |
+| ---------- | ------------------------------------------------------------------------------ | ----------------- |
+| Auth       | an administrator can sign in                                                   | ✅                |
+| RLS        | `has_permission('products.create')` resolves                                   | `true`            |
+| Brands     | create · read · update · soft delete                                           | ✅ ✅ ✅ ✅       |
+| Categories | create · 3 translations · read · update translation · soft delete              | ✅ ✅ ✅ ✅ ✅    |
+| Products   | create · 3 translations · read · update price+featured · publish · soft delete | ✅ ✅ ✅ ✅ ✅ ✅ |
+| Storefront | anonymous read of the published product                                        | ✅ sees it        |
+| Storefront | anonymous read after reverting to draft                                        | ✅ hidden         |
+| Storage    | upload a PNG to the `products` bucket                                          | ✅                |
+| Storage    | the uploaded file is publicly readable                                         | HTTP 200          |
+| History    | soft delete keeps the row                                                      | ✅                |
+| **RLS**    | **a signed-in customer cannot create a brand**                                 | refused, `42501`  |
+
+So the chain **client → RLS → database → Storage** works, for all three
+resources, in both directions. Nothing in that list is a fixture.
+
+### What is wired to it
+
+| Module                                               | State                                                                                                                                                                                                                            |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Brands**                                           | ✅ **Live.** The page reads `brands` + real product counts; the manager's save and delete call `saveBrand` / `deleteBrand`, which call the services. No local list state — the action revalidates and the server returns the row |
+| Products                                             | ❌ still `mocks/admin`                                                                                                                                                                                                           |
+| Categories                                           | ❌ still `mocks/catalog`                                                                                                                                                                                                         |
+| Inventory, content, homepage, settings, users, audit | ❌ still `mocks/admin`                                                                                                                                                                                                           |
+
+`actions/catalog.actions.ts` exists and covers **all three** resources —
+`saveBrand`, `deleteBrand`, `saveCategory`, `deleteCategory`,
+`reorderCategories`, `saveProduct`, `deleteProduct` — each Zod-validated,
+permission-guarded and revalidating the storefront. Products and categories are
+one manager rewrite away, not one architecture away.
+
+### Two things the mock layer was hiding
+
+Removing it from brands surfaced fields that had **no column behind them**:
+
+- `website` was fabricated from the slug (`https://www.${slug}.com`). The real
+  column is `website_url` and was usually null.
+- `isFeatured` was "the first four rows".
+- A localized **description** input existed on the dialog and wrote nowhere — a
+  brand's prose lives in `brand_translations`, and the form never sent it. It is
+  removed rather than left silently discarding what an operator types.
+
+That is the class of bug ADR-20 and § 12 exist to prevent, and it was invisible
+while the screen rendered fixtures.
+
+### The banner
+
+It said "sample data mode is enabled — changes will not be saved". That is now
+false for brands and true for everything else, so it says which is which rather
+than one blanket claim that is wrong either way. It comes out entirely when the
+last module is wired.
+
+### Not done
+
+- **Products and categories managers** — the actions and services are ready; the
+  two client components (639 and 252 lines) still hold mock-shaped state.
+- **Image upload from the admin UI.** Storage is proven working from a script;
+  `ModuleMediaManager` still does not call it.
+- Inventory, content, homepage, settings, users, audit modules.
+
+---
+
 ## Next task
 
 **Push the orders migration, then build the screens over it.**

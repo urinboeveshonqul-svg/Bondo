@@ -12,6 +12,44 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Changed — the admin writes to the real database
+
+`actions/catalog.actions.ts` adds Zod-validated, permission-guarded Server
+Actions over the existing services for brands, categories and products — create,
+update, soft delete, and category reordering — each revalidating the storefront
+so a product published in the panel appears in the shop without a deploy.
+
+**Brands is wired end to end.** The page reads the `brands` table with real
+product counts, and the manager's save and delete call the actions. The list is
+no longer local state that gets patched in memory and toasted "nothing was
+saved": the action writes, revalidates, and the server returns the row.
+
+**Proven live, through RLS.** `npm run admin:verify` mints a throwaway
+administrator, signs in with the **public anon key**, and runs every write
+through that session — because a service-role script proves the schema accepts a
+row and nothing else, and `has_permission()` is the layer most likely to refuse.
+**23/23 passed** on the hosted project: brand/category/product create, read,
+update and soft delete; three translation rows each; publishing; an anonymous
+storefront read that sees a published product and does **not** see a draft; a
+PNG uploaded to the `products` bucket and fetched back over HTTP 200; and a
+signed-in customer refused a brand insert with `42501`.
+
+Removing the mock layer from brands surfaced two fields with **no column behind
+them**: `website` was fabricated from the slug, `isFeatured` was "the first four
+rows", and a localized description input wrote nowhere at all. The description
+control is removed rather than left silently discarding what an operator types.
+
+The banner now says brands are live and the rest are not, instead of one blanket
+"changes will not be saved" that is wrong either way. It comes out when the last
+module is wired.
+
+**Still on fixtures:** products, categories, inventory, content, homepage,
+settings, users and audit. The actions for products and categories are written
+and tested — those two are a manager rewrite away, not an architecture away.
+
+Also pushed the three pending migrations, so the hosted project is at 20 and
+matches the committed types.
+
 ### Added — the customer order experience, and two more ownership paths
 
 **Phase 4B — the customer flow.** `/checkout` (guest-only, delivery or pickup,

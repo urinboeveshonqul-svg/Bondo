@@ -2,8 +2,8 @@
   "title": "Boshqaruv paneli",
   "backToStore": "Do'konga qaytish",
   "preview": {
-    "label": "Namunaviy ma'lumotlar",
-    "body": "Kirish ishlaydi. Ammo ma'lumotlar namunaviy — kiritgan o'zgarishlaringiz saqlanmaydi."
+    "label": "Qisman ulangan",
+    "body": "Brendlar bazaga yozilmoqda. Mahsulotlar, kategoriyalar va boshqa bo'limlar hali namunaviy ma'lumotlarda."
   },
   "nav": {
     "label": "Boshqaruv navigatsiyasi",

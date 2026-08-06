@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth/guards";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Plus } from "lucide-react";
 
 import { ModuleHeader } from "@/components/admin/module/module-header";
 import {
@@ -9,8 +8,8 @@ import {
   guardModule,
 } from "@/components/admin/module/module-permission-guard";
 import { BrandsManager } from "@/components/admin/modules/brands/brands-manager";
-import { Button } from "@/components/ui/button";
-import { brands } from "@/mocks/catalog";
+import { createClient } from "@/supabase/server";
+import * as brandsService from "@/services/brands.service";
 import type { PageParams } from "@/types";
 
 export const metadata: Metadata = { title: "Brands" };
@@ -29,6 +28,26 @@ export default async function AdminBrandsPage({
 
   const t = await getTranslations("adminCatalog.brands");
 
+  // The real table, including hidden brands — this is the screen that manages
+  // them, and an operator cannot unhide something the list does not show. RLS
+  // allows it because `brands.read` sees all; an anonymous request to the same
+  // table gets only the visible ones.
+  const supabase = await createClient();
+  const [rows, counts] = await Promise.all([
+    brandsService.listBrands(supabase),
+    brandsService.countProductsByBrand(supabase),
+  ]);
+
+  const brands = rows.map((brand) => ({
+    id: brand.id,
+    slug: brand.slug,
+    name: brand.name,
+    websiteUrl: brand.websiteUrl ?? "",
+    isFeatured: brand.isFeatured,
+    isVisible: brand.isVisible,
+    productCount: counts.get(brand.id) ?? 0,
+  }));
+
   return (
     <>
       <ModuleHeader
@@ -36,12 +55,9 @@ export default async function AdminBrandsPage({
         title={t("title")}
         description={t("subtitle")}
         actions={
-          capabilities.create ? (
-            <Button disabled>
-              <Plus aria-hidden="true" />
-              {t("new")}
-            </Button>
-          ) : null
+          // Creating happens in the manager's dialog, which owns the form
+          // state — so the header button is rendered there rather than here.
+          null
         }
       />
 

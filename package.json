@@ -27,7 +27,8 @@
     "db:types:remote": "supabase gen types typescript --linked --schema public > types/database.ts",
     "verify": "npm run check && npm run db:verify && npm run build",
     "admin:bootstrap": "node scripts/bootstrap-admin.mjs",
-    "copy:check": "node scripts/check-copy.mjs"
+    "copy:check": "node scripts/check-copy.mjs",
+    "admin:verify": "node scripts/verify-admin-crud.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

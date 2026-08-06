@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+
+import { deleteBrand, saveBrand } from "@/actions/catalog.actions";
+import { useRouter } from "@/i18n/navigation";
 
 import {
   ModuleTable,
   type ModuleTableColumn,
 } from "@/components/admin/module/module-table";
 import { ModuleFormRow } from "@/components/admin/module/module-form";
-import { LocalizedField } from "@/components/admin/module/module-localized-field";
 import { ModuleStatusBadge } from "@/components/admin/module/module-status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +33,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { ModuleCapabilities } from "@/lib/admin/module";
 import type { Locale } from "@/lib/site-config";
-import type { Brand, LocalizedText } from "@/types/catalog";
 
 /**
  * Brand management.
@@ -44,20 +45,33 @@ import type { Brand, LocalizedText } from "@/types/catalog";
  * The brand *name* is not localized — it is a trademark, and "NVIDIA" is
  * "NVIDIA" everywhere. The description is, because it is prose the store wrote.
  */
-type EditableBrand = Brand & {
-  description: LocalizedText;
-  website: string;
+/**
+ * A row as the database has it.
+ *
+ * Was `Brand & { …invented fields }` built from `mocks/catalog`, with a website
+ * fabricated from the slug and "featured" decided by array index. Every field
+ * here is now a column.
+ */
+export type AdminBrandRow = {
+  id: string;
+  slug: string;
+  name: string;
+  websiteUrl: string;
   isFeatured: boolean;
   isVisible: boolean;
+  productCount: number;
 };
 
-const EMPTY: LocalizedText = { uz: "", ru: "", en: "" };
+type EditableBrand = AdminBrandRow & { monogram: string };
+
+/** Two letters, derived rather than stored — `brands` has no monogram column. */
+const monogramOf = (name: string) => name.slice(0, 2).toUpperCase();
 
 export function BrandsManager({
   brands,
   capabilities,
 }: {
-  brands: readonly Brand[];
+  brands: readonly AdminBrandRow[];
   capabilities: ModuleCapabilities;
 }) {
   // One prop in, resolved server-side from the module registry, so a screen
@@ -67,19 +81,57 @@ export function BrandsManager({
   const tAdmin = useTranslations("admin");
   const locale = useLocale() as Locale;
 
-  const [rows, setRows] = useState<EditableBrand[]>(() =>
-    brands.map((brand, index) => ({
-      ...brand,
-      description: { ...EMPTY },
-      website: `https://www.${brand.slug}.com`,
-      isFeatured: index < 4,
-      isVisible: true,
-    })),
-  );
-  const [editing, setEditing] = useState<EditableBrand | null>(null);
+  const rows: EditableBrand[] = brands.map((brand) => ({
+    ...brand,
+    monogram: monogramOf(brand.name),
+  }));
 
-  function notSaved() {
-    toast(tAdmin("notSaved.title"), { description: tAdmin("notSaved.body") });
+  const [editing, setEditing] = useState<EditableBrand | null>(null);
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  /**
+   * The list is **not** local state any more.
+   *
+   * It was, and every edit patched it in memory and toasted "nothing was
+   * saved". Now the action writes and revalidates, and the server sends the row
+   * back as fresh props — so what is on screen is what is in the database
+   * rather than an optimistic guess that happened to match.
+   */
+  function persist(brand: EditableBrand, onDone?: () => void) {
+    startTransition(async () => {
+      const result = await saveBrand({
+        id: brand.id,
+        name: brand.name,
+        slug: brand.slug,
+        websiteUrl: brand.websiteUrl || null,
+        isFeatured: brand.isFeatured,
+        isVisible: brand.isVisible,
+      });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(tAdmin("actions.save"));
+      onDone?.();
+      router.refresh();
+    });
+  }
+
+  function remove(brand: EditableBrand) {
+    startTransition(async () => {
+      const result = await deleteBrand({ id: brand.id });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(tAdmin("actions.delete"));
+      router.refresh();
+    });
   }
 
   const columns: ModuleTableColumn<EditableBrand>[] = [
@@ -110,7 +162,7 @@ export function BrandsManager({
       hideOnMobile: true,
       cell: (brand) => (
         <span className="truncate text-xs text-muted-foreground">
-          {brand.website}
+          {brand.websiteUrl}
         </span>
       ),
     },
@@ -165,7 +217,11 @@ export function BrandsManager({
                 {tAdmin("actions.edit")}
               </DropdownMenuItem>
               {canManage ? (
-                <DropdownMenuItem variant="destructive" onSelect={notSaved}>
+                <DropdownMenuItem
+                  variant="destructive"
+                  disabled={pending}
+                  onSelect={() => remove(brand)}
+                >
                   <Trash2 aria-hidden="true" />
                   {tAdmin("actions.delete")}
                 </DropdownMenuItem>
@@ -191,13 +247,7 @@ export function BrandsManager({
                 className="space-y-5"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  setRows((current) =>
-                    current.map((row) =>
-                      row.slug === editing.slug ? editing : row,
-                    ),
-                  );
-                  setEditing(null);
-                  notSaved();
+                  persist(editing, () => setEditing(null));
                 }}
               >
                 <ModuleFormRow>
@@ -248,25 +298,26 @@ export function BrandsManager({
                     <Input
                       id="brand-website"
                       type="url"
-                      value={editing.website}
+                      value={editing.websiteUrl}
                       disabled={!canManage}
                       onChange={(event) =>
-                        setEditing({ ...editing, website: event.target.value })
+                        setEditing({
+                          ...editing,
+                          websiteUrl: event.target.value,
+                        })
                       }
                     />
                   </div>
                 </ModuleFormRow>
 
-                <LocalizedField
-                  label={t("fields.description")}
-                  value={editing.description}
-                  multiline
-                  rows={3}
-                  disabled={!canManage}
-                  onChange={(description) =>
-                    setEditing({ ...editing, description })
-                  }
-                />
+                {/*
+                  The description input was removed with the mock layer. It
+                  edited a field that had no column behind it: a brand's prose
+                  lives in `brand_translations`, and the dialog never sent it
+                  anywhere. An input that silently discards what is typed is
+                  worse than an absent one — it comes back when the dialog
+                  writes translations.
+                */}
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="flex items-center justify-between gap-3 rounded-lg border p-3">

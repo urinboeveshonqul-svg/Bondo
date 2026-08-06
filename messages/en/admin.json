@@ -2,8 +2,8 @@
   "title": "Admin",
   "backToStore": "Back to store",
   "preview": {
-    "label": "Preview data",
-    "body": "Sign-in works. The data behind these screens is still sample data, so edits go nowhere."
+    "label": "Partly connected",
+    "body": "Brands now write to the database. Products, categories and the other modules still run on sample data."
   },
   "nav": {
     "label": "Admin navigation",
