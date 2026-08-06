@@ -12,7 +12,6 @@ import {
 } from "@/components/admin/module/module-status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Locale } from "@/lib/site-config";
-import type { AuditAction, AuditEntry } from "@/types/admin";
 import { formatDate } from "@/utils/format";
 
 /**
@@ -23,7 +22,13 @@ import { formatDate } from "@/utils/format";
  * actions because there is nothing an administrator is permitted to do to a
  * recorded event.
  */
-const ACTION_TONE: Record<AuditAction, ModuleStatusTone> = {
+/**
+ * `audit_logs.action` is free text, not an enum — it is declared as such in
+ * `scripts/check-enums.mjs`. So this is a partial lookup with a fallback rather
+ * than an exhaustive record: a new action written by a future migration renders
+ * neutrally instead of crashing the table.
+ */
+const ACTION_TONE: Partial<Record<string, ModuleStatusTone>> = {
   create: "success",
   update: "info",
   delete: "danger",
@@ -31,11 +36,30 @@ const ACTION_TONE: Record<AuditAction, ModuleStatusTone> = {
   adjust: "warning",
 };
 
-export function AuditTable({ entries }: { entries: readonly AuditEntry[] }) {
+/**
+ * One row of `audit_logs`, as this screen renders it.
+ *
+ * Was `AuditEntry` from `types/admin`, which carried a localized `summary` the
+ * fixtures wrote by hand. The real table has no summary column and should not:
+ * an audit row records what happened in machine terms — action, resource, actor,
+ * timestamp — and prose about it would be a second, editorialised copy of the
+ * same fact.
+ */
+export type AuditRow = {
+  id: string;
+  action: string;
+  entityType: string;
+  entityLabel: string;
+  actorName: string;
+  actorInitials: string;
+  createdAt: string;
+};
+
+export function AuditTable({ entries }: { entries: readonly AuditRow[] }) {
   const t = useTranslations("adminSystem.audit");
   const locale = useLocale() as Locale;
 
-  const columns: ModuleTableColumn<AuditEntry>[] = [
+  const columns: ModuleTableColumn<AuditRow>[] = [
     {
       id: "when",
       header: t("columns.when"),
@@ -69,8 +93,13 @@ export function AuditTable({ entries }: { entries: readonly AuditEntry[] }) {
       header: t("columns.action"),
       sortValue: (entry) => entry.action,
       cell: (entry) => (
-        <ModuleStatusBadge tone={ACTION_TONE[entry.action]}>
-          {t(`actions.${entry.action}`)}
+        <ModuleStatusBadge tone={ACTION_TONE[entry.action] ?? "neutral"}>
+          {/* The column is free text (declared in check-enums.mjs), so an
+              action with no translation renders itself rather than a raw key
+              or an empty cell. */}
+          {t.has(`actions.${entry.action}`)
+            ? t(`actions.${entry.action}`)
+            : entry.action}
         </ModuleStatusBadge>
       ),
     },
@@ -88,15 +117,6 @@ export function AuditTable({ entries }: { entries: readonly AuditEntry[] }) {
         </span>
       ),
     },
-    {
-      id: "summary",
-      header: t("columns.summary"),
-      cell: (entry) => (
-        <span className="text-sm text-muted-foreground">
-          {entry.summary[locale]}
-        </span>
-      ),
-    },
   ];
 
   return (
@@ -105,7 +125,7 @@ export function AuditTable({ entries }: { entries: readonly AuditEntry[] }) {
       columns={columns}
       getRowId={(entry) => entry.id}
       searchIn={(entry) =>
-        `${entry.actorName} ${entry.entityLabel} ${entry.entityType} ${entry.summary[locale]}`
+        `${entry.actorName} ${entry.entityLabel} ${entry.entityType} ${entry.action}`
       }
       initialSort={{ columnId: "when", direction: "desc" }}
       filters={[

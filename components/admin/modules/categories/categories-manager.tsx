@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Eye, EyeOff, Pencil, Plus } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
+
+import {
+  deleteCategory,
+  reorderCategories,
+  saveCategory,
+} from "@/actions/catalog.actions";
+import { useRouter } from "@/i18n/navigation";
 
 import {
   ModuleFormRow,
@@ -13,7 +20,6 @@ import { LocalizedField } from "@/components/admin/module/module-localized-field
 import { SortableList } from "@/components/admin/module/module-sortable-list";
 import { ModuleStatusBadge } from "@/components/admin/module/module-status-badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -25,7 +31,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import type { ModuleCapabilities } from "@/lib/admin/module";
 import type { Locale } from "@/lib/site-config";
-import type { Category } from "@/types/catalog";
+import type { LocalizedText } from "@/types/catalog";
 
 /**
  * Category management: ordering on the left, an editor on the right.
@@ -40,17 +46,46 @@ import type { Category } from "@/types/catalog";
  * dialog. Reordering and editing are the two things done here, usually in the
  * same sitting, and a modal makes them alternate instead of coexist.
  */
-type EditableCategory = Category & {
+/**
+ * A row as the database has it.
+ *
+ * Keyed by **id**, not slug. The mock version keyed on slug because a fixture's
+ * slug was stable; a real one is editable, and keying a list on a field the form
+ * can change is how a row loses its own identity mid-edit.
+ *
+ * `icon` and the invented `parentSlug` are gone — `categories` has a
+ * `parent_id`, and there was never an icon column.
+ */
+export type AdminCategoryRow = {
+  id: string;
+  parentId: string | null;
+  displayOrder: number;
   isVisible: boolean;
-  icon: string;
-  parentSlug: string | null;
+  name: LocalizedText;
+  slug: LocalizedText;
+  description: LocalizedText;
+  productCount: number;
 };
+
+const EMPTY: LocalizedText = { uz: "", ru: "", en: "" };
+
+/** A blank row for "new category", saved only once the operator submits. */
+const blankCategory = (order: number): AdminCategoryRow => ({
+  id: "",
+  parentId: null,
+  displayOrder: order,
+  isVisible: true,
+  name: { ...EMPTY },
+  slug: { ...EMPTY },
+  description: { ...EMPTY },
+  productCount: 0,
+});
 
 export function CategoriesManager({
   categories,
   capabilities,
 }: {
-  categories: readonly Category[];
+  categories: readonly AdminCategoryRow[];
   capabilities: ModuleCapabilities;
 }) {
   // One prop in, resolved server-side from the module registry, so a screen
@@ -60,28 +95,83 @@ export function CategoriesManager({
   const tAdmin = useTranslations("admin");
   const locale = useLocale() as Locale;
 
-  const [rows, setRows] = useState<EditableCategory[]>(() =>
-    categories.map((category) => ({
-      ...category,
-      isVisible: true,
-      icon: "",
-      parentSlug: null,
-    })),
-  );
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(
-    categories[0]?.slug ?? null,
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  /**
+   * The **draft** being edited, not a copy of the list.
+   *
+   * The list itself comes from the server on every render — the actions
+   * revalidate, so what is on screen is what is in the database. Only the row
+   * currently open in the editor is local, because a half-typed name must not
+   * be a row anybody else can see.
+   */
+  const [draft, setDraft] = useState<AdminCategoryRow | null>(
+    () => categories[0] ?? null,
   );
 
-  const selected = rows.find((row) => row.slug === selectedSlug) ?? null;
+  const rows = categories;
+  const selected = draft;
 
-  function patch(slug: string, changes: Partial<EditableCategory>) {
-    setRows((current) =>
-      current.map((row) => (row.slug === slug ? { ...row, ...changes } : row)),
-    );
+  function patch(changes: Partial<AdminCategoryRow>) {
+    setDraft((current) => (current ? { ...current, ...changes } : current));
   }
 
-  function notSaved() {
-    toast(tAdmin("notSaved.title"), { description: tAdmin("notSaved.body") });
+  function persist(row: AdminCategoryRow) {
+    startTransition(async () => {
+      const result = await saveCategory({
+        ...(row.id ? { id: row.id } : {}),
+        parentId: row.parentId,
+        displayOrder: row.displayOrder,
+        isVisible: row.isVisible,
+        name: row.name,
+        slug: row.slug,
+        description: row.description,
+      });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(tAdmin("actions.save"));
+      router.refresh();
+    });
+  }
+
+  function remove(row: AdminCategoryRow) {
+    if (!row.id) {
+      setDraft(null);
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await deleteCategory({ id: row.id });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(tAdmin("actions.delete"));
+      setDraft(null);
+      router.refresh();
+    });
+  }
+
+  function persistOrder(next: readonly AdminCategoryRow[]) {
+    startTransition(async () => {
+      const result = await reorderCategories({
+        orderedIds: next.map((row) => row.id).filter(Boolean),
+      });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      router.refresh();
+    });
   }
 
   return (
@@ -92,7 +182,12 @@ export function CategoriesManager({
             {t("columns.position")}
           </h2>
           {canManage ? (
-            <Button size="sm" variant="outline" onClick={notSaved}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={pending}
+              onClick={() => setDraft(blankCategory(rows.length + 1))}
+            >
               <Plus aria-hidden="true" />
               {t("new")}
             </Button>
@@ -106,17 +201,17 @@ export function CategoriesManager({
           // slug and labelled in the active language.
           items={rows.map((row) => ({
             ...row,
-            id: row.slug,
+            id: row.id,
             label: row.name[locale],
           }))}
-          disabled={!canManage}
-          onReorder={(next) => setRows(next)}
+          disabled={!canManage || pending}
+          onReorder={persistOrder}
           renderItem={(row) => (
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setSelectedSlug(row.slug)}
-                aria-current={row.slug === selectedSlug ? "true" : undefined}
+                onClick={() => setDraft(row)}
+                aria-current={row.id === draft?.id ? "true" : undefined}
                 className="min-w-0 rounded-sm text-start focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 <span className="block truncate text-sm font-medium">
@@ -140,7 +235,7 @@ export function CategoriesManager({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                onClick={() => setSelectedSlug(row.slug)}
+                onClick={() => setDraft(row)}
                 aria-label={`${tAdmin("actions.edit")} — ${row.name[locale]}`}
               >
                 <Pencil />
@@ -155,7 +250,7 @@ export function CategoriesManager({
           className="space-y-6"
           onSubmit={(event) => {
             event.preventDefault();
-            notSaved();
+            persist(selected);
           }}
         >
           <ModuleFormSection id="category" title={selected.name[locale]}>
@@ -163,7 +258,18 @@ export function CategoriesManager({
               label={t("fields.name")}
               value={selected.name}
               disabled={!canManage}
-              onChange={(name) => patch(selected.slug, { name })}
+              onChange={(name) => patch({ name })}
+              required
+            />
+
+            {/* The slug is per locale (ADR-52), so it gets the same treatment
+                as the name rather than a single input that could only ever
+                write one language. */}
+            <LocalizedField
+              label={t("fields.slug")}
+              value={selected.slug}
+              disabled={!canManage}
+              onChange={(slug) => patch({ slug })}
               required
             />
 
@@ -173,31 +279,17 @@ export function CategoriesManager({
               multiline
               rows={3}
               disabled={!canManage}
-              onChange={(description) => patch(selected.slug, { description })}
+              onChange={(description) => patch({ description })}
             />
 
             <ModuleFormRow>
               <div className="space-y-1.5">
-                <Label htmlFor="category-slug">{t("fields.slug")}</Label>
-                <Input
-                  id="category-slug"
-                  value={selected.slug}
-                  disabled={!canManage}
-                  onChange={(event) =>
-                    patch(selected.slug, { slug: event.target.value })
-                  }
-                />
-              </div>
-
-              <div className="space-y-1.5">
                 <Label htmlFor="category-parent">{t("fields.parent")}</Label>
                 <Select
-                  value={selected.parentSlug ?? "__none"}
+                  value={selected.parentId ?? "__none"}
                   disabled={!canManage}
                   onValueChange={(value) =>
-                    patch(selected.slug, {
-                      parentSlug: value === "__none" ? null : value,
-                    })
+                    patch({ parentId: value === "__none" ? null : value })
                   }
                 >
                   <SelectTrigger id="category-parent">
@@ -211,9 +303,9 @@ export function CategoriesManager({
                       // A category cannot be its own parent. Deeper cycles are
                       // rejected by the database trigger; this stops the
                       // one-step case reaching it at all.
-                      .filter((row) => row.slug !== selected.slug)
+                      .filter((row) => row.id && row.id !== selected.id)
                       .map((row) => (
-                        <SelectItem key={row.slug} value={row.slug}>
+                        <SelectItem key={row.id} value={row.id}>
                           {row.name[locale]}
                         </SelectItem>
                       ))}
@@ -235,15 +327,28 @@ export function CategoriesManager({
                 id="category-visible"
                 checked={selected.isVisible}
                 disabled={!canManage}
-                onCheckedChange={(isVisible) =>
-                  patch(selected.slug, { isVisible })
-                }
+                onCheckedChange={(isVisible) => patch({ isVisible })}
               />
             </div>
           </ModuleFormSection>
 
           {canManage ? (
-            <Button type="submit">{tAdmin("actions.saveChanges")}</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={pending}>
+                {tAdmin("actions.saveChanges")}
+              </Button>
+              {selected.id && capabilities.delete ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() => remove(selected)}
+                >
+                  <Trash2 aria-hidden="true" />
+                  {tAdmin("actions.delete")}
+                </Button>
+              ) : null}
+            </div>
           ) : null}
         </form>
       ) : null}

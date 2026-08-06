@@ -5,7 +5,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ModuleHeader } from "@/components/admin/module/module-header";
 import { guardModule } from "@/components/admin/module/module-permission-guard";
 import { AuditTable } from "@/components/admin/modules/audit/audit-table";
-import { auditEntries } from "@/mocks/admin";
+import { createClient } from "@/supabase/server";
+import * as auditService from "@/services/audit.service";
 import type { PageParams } from "@/types";
 
 export const metadata: Metadata = { title: "Audit log" };
@@ -27,6 +28,26 @@ export default async function AdminAuditPage({
 
   const t = await getTranslations("adminSystem.audit");
 
+  // The real log. `audit.read` is what the policy checks, and `guardModule`
+  // above already refused anybody without it.
+  const supabase = await createClient();
+  const { rows } = await auditService.listAuditEntries(supabase, {
+    pageSize: 100,
+  });
+
+  const entries = rows.map((row) => ({
+    id: row.id,
+    action: row.action,
+    entityType: row.resource_type,
+    // The log stores the id, not a name — resolving one would mean a join per
+    // row against a table the entry may outlive. The id is what an operator
+    // pastes into a lookup anyway.
+    entityLabel: row.resource_id ?? "—",
+    actorName: row.actor_email ?? t("systemActor"),
+    actorInitials: (row.actor_email ?? "?").slice(0, 2).toUpperCase(),
+    createdAt: row.created_at,
+  }));
+
   return (
     <>
       <ModuleHeader
@@ -39,7 +60,7 @@ export default async function AdminAuditPage({
         {t("appendOnly")}
       </p>
 
-      <AuditTable entries={auditEntries} />
+      <AuditTable entries={entries} />
     </>
   );
 }

@@ -463,6 +463,28 @@ verified against RLS with a second account.
 
 ---
 
+## Phase 6 — Admin: connecting the panel
+
+**Status:** 🟡 3 of 10 modules connected · **Target version:** v0.6.0
+
+- [x] Server Actions over the services for brands, categories and products
+- [x] **Brands** — read and write, verified live
+- [x] **Categories** — read and write, verified live
+- [x] **Audit** — real `audit_logs`
+- [x] Live CRUD harness (`npm run admin:verify`, 23 checks through RLS)
+- [ ] **Products** — actions exist and are verified; the 639-line form and the
+      288-line table still hold mock state
+- [ ] **Media manager** — Storage proven working; `ModuleMediaManager` does not
+      call it
+- [ ] **Settings** — `settings.service.ts` exists, the 518-line form does not use it
+- [ ] **Inventory** — `inventory.service.ts` exists, the 455-line manager does not
+- [ ] **Content pages** — `content_pages` exists, no service
+- [ ] **Homepage** — **needs a migration first**; homepage sections have no table
+- [ ] **Users** — **needs a service first**; nothing lists customer profiles
+- [ ] Remove the "partly connected" banner once the last module lands
+
+---
+
 ## Phase 6 — Admin: data, auth and orders
 
 **Status:** Interface complete, everything behind it outstanding ·

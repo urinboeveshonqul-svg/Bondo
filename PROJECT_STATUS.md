@@ -1813,6 +1813,73 @@ last module is wired.
 
 ---
 
+## Admin panel — module connection status
+
+**Three of ten modules write to the live database. Seven do not.** This table is
+the truth; anything that says "the admin is connected" without qualifying it is
+wrong.
+
+| Module         | Connected    | CRUD verified                          | Remaining mock code                                                   |
+| -------------- | ------------ | -------------------------------------- | --------------------------------------------------------------------- |
+| **Brands**     | ✅           | ✅ live                                | none                                                                  |
+| **Categories** | ✅           | ✅ live                                | none                                                                  |
+| **Audit**      | ✅ read-only | ✅ live read                           | none                                                                  |
+| Products       | ❌           | ❌                                     | `adminProducts`, `getAdminProduct`, `brands`, `categories` in 3 pages |
+| Media manager  | ❌           | Storage proven by script, UI not wired | `ModuleMediaManager` uploads nothing                                  |
+| Homepage       | ❌           | ❌                                     | `banners`, `homepageSections`                                         |
+| Settings       | ❌           | ❌                                     | `storeSettings`                                                       |
+| Users          | ❌           | ❌                                     | `adminUsers`, `adminRoles`                                            |
+| Inventory      | ❌           | ❌                                     | `inventoryRecords`, `inventoryMovements`                              |
+| Content pages  | ❌           | ❌                                     | `contentPages`, `getContentPage`                                      |
+
+`app/[locale]/admin/layout.tsx` also still reads mocks for the command palette.
+
+### Two modules cannot be connected without new work
+
+- **Homepage sections have no table.** `site_banners` exists; "homepage
+  sections" are declared in `scripts/check-enums.mjs` as interface vocabulary
+  that maps to components rather than rows. Connecting that module means a
+  migration first, which is a schema decision, not a wiring job.
+- **Users has no service.** There is no `customers.service.ts` and no function
+  that lists `profiles` for staff. `adminUsers` is a fixture of _administrators_,
+  which is a different table from the customer list the module is meant to show.
+
+### What was verified live this pass
+
+`npm run admin:verify` — **23/23** against `pgxqnezwrwfgrmamlxhs`, signed in as
+a throwaway administrator through the **anon key**, so every write goes through
+RLS rather than around it. Covers brand, category and product create · read ·
+update · soft delete, translation rows in three locales, publishing, an
+anonymous storefront read that sees a published product and does not see a
+draft, a PNG uploaded to the `products` bucket and fetched back at HTTP 200,
+and a customer refused a brand insert with `42501`.
+
+### Categories, this pass
+
+The manager was rebuilt around the database's shape:
+
+- **Keyed by `id`, not `slug`.** The mock keyed on slug because a fixture's slug
+  never changed; a real one is editable, and keying a list on a field the form
+  can edit is how a row loses its identity mid-edit.
+- **The slug is localized.** It was a single `<Input>` that could only ever have
+  written one language — `category_translations.slug` is per locale (ADR-52), so
+  it is now a `LocalizedField` like the name.
+- **`icon` and `parentSlug` are gone.** Neither had a column. Parent is
+  `parent_id`.
+- **The list is no longer local state.** Reordering, saving and deleting call the
+  actions, which revalidate; the server sends the rows back.
+
+### Audit, this pass
+
+Reads `audit_logs`. The **summary column was removed** rather than reproduced:
+there is no such column and there should not be. An audit row records what
+happened in machine terms — action, resource, actor, timestamp — and prose about
+it would be a second, editorialised copy of the same fact. `ACTION_TONE` became
+a partial lookup with a fallback, because `action` is free text, so an action a
+future migration writes renders neutrally instead of crashing the table.
+
+---
+
 ## Next task
 
 **Push the orders migration, then build the screens over it.**

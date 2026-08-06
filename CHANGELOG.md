@@ -12,6 +12,40 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Changed — categories and the audit log now read and write the real database
+
+**Categories is wired end to end.** The page reads `categories` with real
+product counts and the manager's create, save, delete and reorder call the
+Server Actions. Rebuilding it around the database's shape surfaced three things
+the fixtures had been hiding:
+
+- it was **keyed by slug**, which works only while the slug never changes — a
+  real one is editable, and keying a list on a field the form can edit is how a
+  row loses its identity mid-edit. It is keyed by `id` now.
+- the **slug input could only ever write one language**. `category_translations`
+  has a slug per locale (ADR-52), so it is a `LocalizedField` like the name.
+- **`icon` and `parentSlug` had no columns.** Parent is `parent_id`; there was
+  never an icon.
+
+**The audit log reads `audit_logs`.** Its "summary" column was **removed**
+rather than reproduced — there is no such column and there should not be. An
+audit row records what happened in machine terms, and prose about it would be a
+second, editorialised copy of the same fact. `ACTION_TONE` became a partial
+lookup with a fallback because `action` is free text, so an action written by a
+future migration renders neutrally rather than crashing the table.
+
+**Three of ten admin modules are now connected**: brands, categories, audit.
+Products, media, homepage, settings, users, inventory and content pages still
+read fixtures, and PROJECT_STATUS carries a per-module table saying so.
+
+Two of those cannot be wired without new work rather than more wiring: homepage
+sections have **no table** (they are declared interface vocabulary, so
+connecting them starts with a migration), and users has **no service** — there
+is nothing that lists customer profiles for staff, and the existing fixture is
+of administrators, a different table.
+
+`npm run admin:verify` still passes 23/23 against the hosted project.
+
 ### Changed — the admin writes to the real database
 
 `actions/catalog.actions.ts` adds Zod-validated, permission-guarded Server
