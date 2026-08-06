@@ -298,6 +298,64 @@ export async function setPrimaryImage(
 }
 
 /**
+ * Uploads a category's image and returns its storage **path**.
+ *
+ * Path, not URL, because that is what `categories.image_path` holds — the same
+ * convention every image column in this schema follows. A stored URL bakes in
+ * the project hostname and the bucket's public/private state, both of which can
+ * change; a path resolves against whichever is current at render time.
+ *
+ * Into `site-assets` rather than `products`: a category image is site chrome,
+ * and the `products` bucket's policies are scoped to catalog imagery.
+ *
+ * Unlike `uploadProductImage` there is **no row to insert** — the path is a
+ * column on `categories`, so the caller writes it with the rest of the form.
+ * That means an upload whose save is then abandoned leaves an orphaned object,
+ * which is a few kilobytes rather than a correctness problem, and is the trade
+ * for the operator seeing the image before committing to it.
+ */
+export async function uploadCategoryImage(
+  supabase: Client,
+  categoryId: string,
+  file: File,
+): Promise<string> {
+  assertUploadable(file);
+
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "webp";
+  const unique = crypto.randomUUID().slice(0, 8);
+  const path = `categories/${categoryId}/${Date.now()}-${unique}.${extension}`;
+
+  const { error } = await supabase.storage
+    .from(BUCKETS.siteAssets)
+    .upload(path, file, {
+      contentType: file.type,
+      // The key is unique by construction, so an object already there means
+      // something is wrong and should be loud rather than overwritten.
+      upsert: false,
+      cacheControl: "31536000",
+    });
+
+  if (error) throw toAppError(error, "upload the category image");
+
+  return path;
+}
+
+/**
+ * Removes a category's image object.
+ *
+ * Best-effort by design: the column is cleared by the caller's update, and a
+ * failure to delete the file must not fail that update. An object nothing points
+ * at is storage waste; a category whose image field could not be cleared is a
+ * screen the operator cannot fix.
+ */
+export async function deleteCategoryImage(
+  supabase: Client,
+  path: string,
+): Promise<void> {
+  await supabase.storage.from(BUCKETS.siteAssets).remove([path]);
+}
+
+/**
  * A public URL for an object in a public bucket.
  *
  * Synchronous and free — it is string construction, not a request. Use

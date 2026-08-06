@@ -90,7 +90,11 @@
     "moveDown": "Move down",
     "reorder": "Reorder",
     "add": "Add",
-    "remove": "Remove"
+    "remove": "Remove",
+    "indent": "Nest under previous",
+    "outdent": "Move out one level",
+    "hide": "Hide",
+    "show": "Show"
   },
   "status": {
     "draft": "Draft",

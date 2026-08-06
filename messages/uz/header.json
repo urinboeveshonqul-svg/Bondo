@@ -1,9 +1,12 @@
 {
-  "mainNav": "Asosiy",
   "categories": "Kategoriyalar",
   "categoriesNav": "Kategoriyalar",
   "openMenu": "Menyuni ochish",
   "shopByCategory": "Kategoriya bo'yicha",
+  "viewAllIn": "{category} bo'limidagi barcha mahsulotlar",
+  "popular": "Ommabop",
+  "noSubcategories": "Ichki bo'limlar hali qo'shilmagan",
+  "expandCategory": "ochish",
   "account": "Kabinet",
   "search": {
     "label": "Mahsulotlarni qidirish",

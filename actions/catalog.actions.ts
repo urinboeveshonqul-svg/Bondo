@@ -4,13 +4,16 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { createAction } from "@/actions/safe-action";
+import { CATEGORY_ICON_NAMES } from "@/components/layout/category-icon";
 import { requirePermission } from "@/lib/admin/action-guard";
 import { routes } from "@/lib/routes";
 import { locales } from "@/lib/site-config";
 import { createClient } from "@/supabase/server";
+import { Constants } from "@/types/database";
 import * as brandsService from "@/services/brands.service";
 import * as categoriesService from "@/services/categories.service";
 import * as productsService from "@/services/products.service";
+import * as storageService from "@/services/storage.service";
 
 /**
  * Catalog mutations — the write half of the admin panel.
@@ -149,14 +152,50 @@ export const deleteBrand = createAction(
 // Categories
 // -----------------------------------------------------------------------------
 
+/**
+ * The icon must be one the storefront can actually draw.
+ *
+ * Validated against the component's own map rather than a copy of it, so the
+ * two cannot drift: adding a glyph to `CATEGORY_ICONS` is what makes it
+ * selectable, and nothing else needs editing. The database check constraint is
+ * the second gate — it enforces the *shape* of an identifier, this enforces
+ * membership (ADR-69, extended to categories by ADR-72).
+ *
+ * Nullable, because most categories have no icon and should not be forced one.
+ */
+const categoryIconSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) => value === "" || CATEGORY_ICON_NAMES.includes(value),
+    "adminCatalog.errors.unknownIcon",
+  )
+  .nullish();
+
 const categorySchema = z.object({
   id: z.uuid().optional(),
   parentId: z.uuid().nullish(),
   displayOrder: z.number().int().min(0).max(10_000).default(0),
   isVisible: z.boolean().default(true),
+  isFeatured: z.boolean().default(false),
+  icon: categoryIconSchema,
+  imagePath: z.string().trim().max(1024).nullish(),
   name: localizedText(200, "adminCatalog.errors.nameRequired"),
   slug: slugText,
   description: optionalLocalizedText(2000).optional(),
+  // The SEO panel's fields. Length caps match the column constraints, so a
+  // value this accepts is a value the insert accepts.
+  seoTitle: optionalLocalizedText(120).optional(),
+  seoDescription: optionalLocalizedText(320).optional(),
+  // Not localized: a shopper types "rtx 4090" whatever language the page is in.
+  seoKeywords: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
+  canonicalUrl: optionalLocalizedText(2048).optional(),
+  ogTitle: optionalLocalizedText(120).optional(),
+  ogDescription: optionalLocalizedText(320).optional(),
+  ogImagePath: z.string().trim().max(1024).nullish(),
+  // The generated enum, never a hand-written union (§ 12), so the select cannot
+  // offer a value the insert rejects.
+  twitterCard: z.enum(Constants.public.Enums.twitter_card).nullish(),
 });
 
 export const saveCategory = createAction(
@@ -170,9 +209,22 @@ export const saveCategory = createAction(
       parentId: input.parentId ?? null,
       displayOrder: input.displayOrder,
       isVisible: input.isVisible,
+      isFeatured: input.isFeatured,
+      // An empty picker means "no icon", which is `null` in the column — not
+      // `""`, which the check constraint would reject.
+      icon: input.icon || null,
+      imagePath: input.imagePath || null,
       name: input.name,
       slug: input.slug,
       ...(input.description ? { description: input.description } : {}),
+      ...(input.seoTitle ? { seoTitle: input.seoTitle } : {}),
+      ...(input.seoDescription ? { seoDescription: input.seoDescription } : {}),
+      ...(input.seoKeywords ? { seoKeywords: input.seoKeywords } : {}),
+      ...(input.canonicalUrl ? { canonicalUrl: input.canonicalUrl } : {}),
+      ...(input.ogTitle ? { ogTitle: input.ogTitle } : {}),
+      ...(input.ogDescription ? { ogDescription: input.ogDescription } : {}),
+      ogImagePath: input.ogImagePath || null,
+      twitterCard: input.twitterCard ?? null,
     };
 
     const category = input.id
@@ -200,9 +252,26 @@ export const deleteCategory = createAction(
   },
 );
 
+/**
+ * Persists a drag-and-drop arrangement.
+ *
+ * Takes the **whole sibling group** — a parent and the ordered ids beneath it —
+ * rather than a single moved row, because a drop changes every position after
+ * the insertion point and sending one row would leave the rest stale. `parentId`
+ * is part of the payload so a drag between departments is one call: dropping
+ * "Videokartalar" under "Geymerlar uchun" moves it and renumbers its new
+ * siblings together, or fails together.
+ *
+ * A cycle — dropping a department onto its own subcategory — is refused by the
+ * database trigger, not here. It is the only place that sees the whole tree
+ * atomically (ADR-26), and the client's copy can be one drag out of date.
+ */
 export const reorderCategories = createAction(
   "reorderCategories",
-  z.object({ orderedIds: z.array(z.uuid()).min(1).max(500) }),
+  z.object({
+    parentId: z.uuid().nullish(),
+    orderedIds: z.array(z.uuid()).min(1).max(500),
+  }),
   async (input) => {
     await requirePermission("categories.manage");
 
@@ -211,12 +280,80 @@ export const reorderCategories = createAction(
     // array index, so a caller cannot accidentally send a sparse order.
     await categoriesService.reorderCategories(
       supabase,
-      input.orderedIds.map((id, index) => ({ id, displayOrder: index + 1 })),
+      input.orderedIds.map((id, index) => ({
+        id,
+        displayOrder: index + 1,
+        parentId: input.parentId ?? null,
+      })),
     );
 
     revalidateCatalog();
 
     return { ordered: input.orderedIds.length };
+  },
+);
+
+/**
+ * Uploads a category image and returns the storage path the form should save.
+ *
+ * The `File` crosses the Server Action boundary directly — Next.js serialises it
+ * over the same multipart channel a form submission uses — so this stays the
+ * plain-object call every other action here makes, and `z.instanceof(File)` is
+ * what proves the caller actually sent one.
+ *
+ * It does **not** write `image_path`. The upload returns a path, the form holds
+ * it, and the operator's Save is what commits it — so uploading and then
+ * abandoning the form leaves the category exactly as it was. The cost is a few
+ * kilobytes of orphaned object, which is the right way round: the alternative
+ * writes to a live category before the operator has agreed to it.
+ */
+export const uploadCategoryImage = createAction(
+  "uploadCategoryImage",
+  z.object({
+    categoryId: z.uuid(),
+    file: z.instanceof(File, { message: "adminCatalog.errors.imageRequired" }),
+  }),
+  async (input) => {
+    await requirePermission("categories.manage");
+
+    const supabase = await createClient();
+    const path = await storageService.uploadCategoryImage(
+      supabase,
+      input.categoryId,
+      input.file,
+    );
+
+    return {
+      path,
+      url: storageService.publicUrl(supabase, "site-assets", path),
+    };
+  },
+);
+
+/**
+ * Shows or hides a category from the list, without a round trip through the
+ * editor.
+ *
+ * Its own action rather than a `saveCategory` call, because the list does not
+ * hold the translated copy and sending a save from there would blank every
+ * field the row was not carrying.
+ */
+export const setCategoryVisibility = createAction(
+  "setCategoryVisibility",
+  z.object({ id: z.uuid(), isVisible: z.boolean() }),
+  async (input) => {
+    await requirePermission("categories.manage");
+
+    const supabase = await createClient();
+    await categoriesService.setCategoryVisibility(
+      supabase,
+      input.id,
+      input.isVisible,
+    );
+
+    revalidateCatalog();
+
+    return { isVisible: input.isVisible };
   },
 );
 

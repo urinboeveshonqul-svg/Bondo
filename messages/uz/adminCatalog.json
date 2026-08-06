@@ -136,11 +136,30 @@
       "noParent": "Yuqori daraja",
       "icon": "Belgi",
       "image": "Rasm",
-      "visible": "Navigatsiyada ko'rinadi"
+      "visible": "Navigatsiyada ko'rinadi",
+      "slugHint": "Har bir til uchun alohida manzil. Faqat kichik harflar va chiziqcha.",
+      "parentHint": "Bo'sh qoldirilsa, kategoriya yuqori darajada turadi.",
+      "noIcon": "Belgisiz",
+      "iconHint": "Menyuda nom yonida chiqadi. Ichki bo'limlarga odatda kerak emas.",
+      "uploadImage": "Rasm yuklash",
+      "replaceImage": "Rasmni almashtirish",
+      "removeImage": "Rasmni olib tashlash",
+      "imageHint": "WebP, AVIF, JPEG yoki PNG. 5 MB gacha.",
+      "imageNeedsSave": "Rasm yuklashdan oldin kategoriyani saqlang.",
+      "visibleHint": "O'chirilsa, kategoriya do'konda ko'rinmaydi.",
+      "featured": "Ommabop kategoriya",
+      "featuredHint": "Menyuda alohida ajratib ko'rsatiladi."
     },
     "productCount": "{count, plural, one {# ta mahsulot} other {# ta mahsulot}}",
-    "reorderHint": "Tartib kategoriyalarning menyu va pastki qismda qanday ko'rinishini belgilaydi.",
-    "dragHandle": "{name} tartibini o'zgartirish uchun torting"
+    "reorderHint": "Qatorni torting yoki tugmalar bilan ko'chiring. Tartib menyuda shu ko'rinishda chiqadi.",
+    "dragHandle": "{name} tartibini o'zgartirish uchun torting",
+    "treeHeading": "Katalog tuzilmasi",
+    "newChild": "Ichki kategoriya",
+    "newTitle": "Yangi kategoriya",
+    "selectToEdit": "Chapdan kategoriyani tanlang yoki yangisini qo'shing.",
+    "emptyTree": "Hozircha kategoriya yo'q. Birinchisini yarating.",
+    "untranslated": "Tarjima to'liq emas",
+    "childCount": "{count, plural, one {# ta ichki bo'lim} other {# ta ichki bo'lim}}"
   },
   "brands": {
     "title": "Brendlar",

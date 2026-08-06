@@ -109,6 +109,16 @@ export type ProductListParams = {
   /** Which language the search term is in. Decides the dictionary. */
   locale?: Locale;
   categoryId?: string;
+  /**
+   * Every category in the requested subtree, ancestor included.
+   *
+   * Set instead of `categoryId` when a shopper picks a **department**: products
+   * are filed against a leaf, so `category_id = <Components>` matches nothing
+   * while every graphics card sits one level below it. The caller resolves the
+   * subtree from the tree it already has, rather than this issuing a second
+   * query per listing.
+   */
+  categoryIds?: readonly string[];
   brandId?: string;
   status?: Enums<"product_status">;
   visibility?: Enums<"product_visibility">;
@@ -213,7 +223,13 @@ export async function listProducts(
     });
 
   if (!params.includeDeleted) query = query.is("deleted_at", null);
-  if (params.categoryId) query = query.eq("category_id", params.categoryId);
+  // `categoryIds` wins when both are given: it is the more specific request,
+  // and a caller that sent both meant the subtree.
+  if (params.categoryIds?.length) {
+    query = query.in("category_id", [...params.categoryIds]);
+  } else if (params.categoryId) {
+    query = query.eq("category_id", params.categoryId);
+  }
   if (params.brandId) query = query.eq("brand_id", params.brandId);
   if (params.status) query = query.eq("status", params.status);
   if (params.visibility) query = query.eq("visibility", params.visibility);

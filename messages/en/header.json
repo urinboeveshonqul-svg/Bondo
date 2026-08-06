@@ -1,9 +1,12 @@
 {
-  "mainNav": "Main",
   "categories": "Categories",
   "categoriesNav": "Categories",
   "openMenu": "Open menu",
   "shopByCategory": "Shop by category",
+  "viewAllIn": "See everything in {category}",
+  "popular": "Popular",
+  "noSubcategories": "No subcategories yet",
+  "expandCategory": "expand",
   "account": "Account",
   "search": {
     "label": "Search products",

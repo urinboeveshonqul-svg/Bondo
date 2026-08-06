@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
 import { siteConfig } from "@/lib/site-config";
-import type { Category } from "@/types/catalog";
+import type { CategoryNavItem } from "@/types/catalog";
 
 /**
  * Site header.
@@ -33,9 +33,10 @@ import type { Category } from "@/types/catalog";
 /**
  * Categories are passed in by the layout rather than fetched here: the header
  * is rendered on every page, and a component that fetches its own navigation
- * turns one query into one per render tree.
+ * turns one query into one per render tree. They arrive already nested, so the
+ * mega menu and the mobile accordion render from the same tree.
  */
-export function SiteHeader({ categories }: { categories: Category[] }) {
+export function SiteHeader({ categories }: { categories: CategoryNavItem[] }) {
   const t = useTranslations("header");
   const tCommon = useTranslations("common");
 
@@ -52,15 +53,18 @@ export function SiteHeader({ categories }: { categories: Category[] }) {
             {siteConfig.name}
           </Link>
 
-          <nav
-            aria-label={t("mainNav")}
-            className="hidden items-center gap-1 lg:flex"
-          >
+          {/*
+            The mega menu brings its own <nav aria-label="Categories">, so this
+            wrapper is a plain flex row rather than a second landmark — two
+            nested navigation landmarks make a screen reader's landmark list
+            report a region inside a region for no benefit.
+          */}
+          <div className="hidden items-center gap-1 lg:flex">
             <CategoriesMenu categories={categories} />
             <Button variant="ghost" size="sm" asChild>
               <Link href={routes.catalog.index}>{tCommon("allProducts")}</Link>
             </Button>
-          </nav>
+          </div>
 
           {/* Search takes the free space on desktop; on smaller viewports it
               lives in the mobile panel instead, where there is room for it. */}

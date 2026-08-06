@@ -3,22 +3,27 @@
 import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 import {
   deleteCategory,
   reorderCategories,
   saveCategory,
+  setCategoryVisibility,
 } from "@/actions/catalog.actions";
 import { useRouter } from "@/i18n/navigation";
 
-import {
-  ModuleFormRow,
-  ModuleFormSection,
-} from "@/components/admin/module/module-form";
+import { ModuleForm } from "@/components/admin/module/module-form";
 import { LocalizedField } from "@/components/admin/module/module-localized-field";
-import { SortableList } from "@/components/admin/module/module-sortable-list";
-import { ModuleStatusBadge } from "@/components/admin/module/module-status-badge";
+import { ModuleSeoPanel } from "@/components/admin/module/module-seo-panel";
+import { CategoryIconPicker } from "@/components/admin/modules/categories/category-icon-picker";
+import { CategoryImageField } from "@/components/admin/modules/categories/category-image-field";
+import {
+  CategoryTree,
+  ancestorLabels,
+  type CategoryMove,
+  type CategoryTreeRow,
+} from "@/components/admin/modules/categories/category-tree";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,54 +35,89 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { ModuleCapabilities } from "@/lib/admin/module";
-import type { Locale } from "@/lib/site-config";
+import { locales, type Locale } from "@/lib/site-config";
+import type { SeoFields } from "@/types/admin";
 import type { LocalizedText } from "@/types/catalog";
 
 /**
- * Category management: ordering on the left, an editor on the right.
+ * Category management: the tree on the left, an editor on the right.
  *
- * The tree is a flat ordered list plus a parent reference, which is what
- * `public.categories` stores — it supports unlimited depth and rejects cycles.
- * Rendering it as an ordered list rather than a nested tree keeps drag-to-reorder
- * meaningful; depth is expressed by the parent select rather than by indentation
- * an operator has to drag across.
+ * Everything on this screen persists. Nothing on it is hardcoded — the twelve
+ * departments and their ninety subcategories are rows shipped by a migration
+ * (ADR-72), and every one of them can be renamed, re-parented, re-ordered,
+ * hidden, re-iconed, given an image, translated, given SEO copy or deleted from
+ * here without a deploy.
  *
- * Selecting a row loads it into the editor beside the list rather than opening a
- * dialog. Reordering and editing are the two things done here, usually in the
- * same sitting, and a modal makes them alternate instead of coexist.
- */
-/**
- * A row as the database has it.
+ * ## The list is not local state
  *
- * Keyed by **id**, not slug. The mock version keyed on slug because a fixture's
- * slug was stable; a real one is editable, and keying a list on a field the form
- * can change is how a row loses its own identity mid-edit.
+ * `categories` comes from the server on every render. The actions revalidate, so
+ * what is on screen is what is in the database — a client-side copy of the tree
+ * would be one failed save away from showing an arrangement nobody has.
  *
- * `icon` and the invented `parentSlug` are gone — `categories` has a
- * `parent_id`, and there was never an icon column.
+ * Only the row **currently open in the editor** is local, because a half-typed
+ * name in three languages must not be a row anybody else can see.
+ *
+ * ## Reordering saves immediately; editing saves on submit
+ *
+ * Dragging a category and then having to press Save is how an operator loses an
+ * arrangement they thought they made. The editor is the opposite: a category
+ * whose Russian name is three characters in must not reach the storefront
+ * between keystrokes. Same split as the highlights module, for the same reason.
+ *
+ * ## A row is keyed by `id`
+ *
+ * Not by slug. The slug is editable, per locale (ADR-52), and keying a list on
+ * a field the form can change is how a row loses its identity mid-edit.
  */
 export type AdminCategoryRow = {
   id: string;
   parentId: string | null;
   displayOrder: number;
   isVisible: boolean;
+  isFeatured: boolean;
+  icon: string | null;
+  imagePath: string | null;
+  /** Resolved server-side from `imagePath`; `""` when there is none. */
+  imageUrl: string;
   name: LocalizedText;
   slug: LocalizedText;
   description: LocalizedText;
+  seo: SeoFields;
+  isTranslationComplete: boolean;
   productCount: number;
 };
 
 const EMPTY: LocalizedText = { uz: "", ru: "", en: "" };
 
-/** A blank row for "new category", saved only once the operator submits. */
-const blankCategory = (order: number): AdminCategoryRow => ({
+const emptyText = (): LocalizedText => ({ ...EMPTY });
+
+const blankSeo = (): SeoFields => ({
+  slug: null,
+  metaTitle: emptyText(),
+  metaDescription: emptyText(),
+  keywords: [],
+  canonicalUrl: emptyText(),
+  ogTitle: emptyText(),
+  ogDescription: emptyText(),
+  ogImagePath: null,
+  twitterCard: null,
+});
+
+/** A blank row, saved only once the operator submits. */
+const blankCategory = (parentId: string | null): AdminCategoryRow => ({
   id: "",
-  parentId: null,
-  displayOrder: order,
+  parentId,
+  displayOrder: 0,
   isVisible: true,
-  name: { ...EMPTY },
-  slug: { ...EMPTY },
-  description: { ...EMPTY },
+  isFeatured: false,
+  icon: null,
+  imagePath: null,
+  imageUrl: "",
+  name: emptyText(),
+  slug: emptyText(),
+  description: emptyText(),
+  seo: blankSeo(),
+  isTranslationComplete: false,
   productCount: 0,
 });
 
@@ -97,46 +137,66 @@ export function CategoriesManager({
 
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [draft, setDraft] = useState<AdminCategoryRow | null>(null);
 
-  /**
-   * The **draft** being edited, not a copy of the list.
-   *
-   * The list itself comes from the server on every render — the actions
-   * revalidate, so what is on screen is what is in the database. Only the row
-   * currently open in the editor is local, because a half-typed name must not
-   * be a row anybody else can see.
-   */
-  const [draft, setDraft] = useState<AdminCategoryRow | null>(
-    () => categories[0] ?? null,
-  );
-
-  const rows = categories;
-  const selected = draft;
+  const tree = buildTree(categories, locale);
+  const trail = draft?.id ? ancestorLabels(tree, draft.id) : null;
 
   function patch(changes: Partial<AdminCategoryRow>) {
     setDraft((current) => (current ? { ...current, ...changes } : current));
   }
 
-  function persist(row: AdminCategoryRow) {
+  function run(
+    work: () => Promise<{ ok: true } | { ok: false; error: string }>,
+    success?: string,
+  ) {
     startTransition(async () => {
+      const result = await work();
+
+      if (!result.ok) {
+        // `err()` always carries a message, so there is nothing to fall back to
+        // — a generic "something went wrong" here would replace a sentence the
+        // service wrote specifically for this failure.
+        toast.error(result.error);
+        return;
+      }
+
+      if (success) toast.success(success);
+      router.refresh();
+    });
+  }
+
+  function persist(row: AdminCategoryRow) {
+    run(async () => {
       const result = await saveCategory({
         ...(row.id ? { id: row.id } : {}),
         parentId: row.parentId,
         displayOrder: row.displayOrder,
         isVisible: row.isVisible,
+        isFeatured: row.isFeatured,
+        icon: row.icon,
+        imagePath: row.imagePath,
         name: row.name,
         slug: row.slug,
         description: row.description,
+        seoTitle: row.seo.metaTitle,
+        seoDescription: row.seo.metaDescription,
+        seoKeywords: [...row.seo.keywords],
+        canonicalUrl: row.seo.canonicalUrl,
+        ogTitle: row.seo.ogTitle,
+        ogDescription: row.seo.ogDescription,
+        ogImagePath: row.seo.ogImagePath,
+        twitterCard: row.seo.twitterCard,
       });
 
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
+      // A newly created category has an id now, so the editor stops being a
+      // "new" form — without this the next Save would create a second one.
+      if (result.ok && !row.id) {
+        setDraft({ ...row, id: result.data.id });
       }
 
-      toast.success(tAdmin("actions.save"));
-      router.refresh();
-    });
+      return result;
+    }, tAdmin("actions.save"));
   }
 
   function remove(row: AdminCategoryRow) {
@@ -145,48 +205,53 @@ export function CategoriesManager({
       return;
     }
 
-    startTransition(async () => {
+    run(async () => {
       const result = await deleteCategory({ id: row.id });
-
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-
-      toast.success(tAdmin("actions.delete"));
-      setDraft(null);
-      router.refresh();
-    });
+      if (result.ok) setDraft(null);
+      return result;
+    }, tAdmin("actions.delete"));
   }
 
-  function persistOrder(next: readonly AdminCategoryRow[]) {
-    startTransition(async () => {
-      const result = await reorderCategories({
-        orderedIds: next.map((row) => row.id).filter(Boolean),
-      });
+  /**
+   * Persists a drag or a keyboard move.
+   *
+   * Sends the **whole destination sibling group** in one call, so the moved
+   * category's new parent and every affected position are written together or
+   * not at all. A cycle comes back as a refusal from the database trigger and is
+   * surfaced as an error toast — the tree filters the obvious cases, but it is
+   * the trigger that decides (ADR-26).
+   */
+  function move(next: CategoryMove) {
+    run(() =>
+      reorderCategories({
+        parentId: next.parentId,
+        orderedIds: next.orderedIds,
+      }),
+    );
+  }
 
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
+  function toggleVisibility(row: CategoryTreeRow) {
+    run(() => setCategoryVisibility({ id: row.id, isVisible: !row.isVisible }));
+  }
 
-      router.refresh();
-    });
+  function edit(row: CategoryTreeRow) {
+    const found = categories.find((item) => item.id === row.id);
+    if (found) setDraft(found);
   }
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <section aria-labelledby="category-order" className="space-y-3">
+      <section aria-labelledby="category-tree" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="category-order" className="font-semibold tracking-tight">
-            {t("columns.position")}
+          <h2 id="category-tree" className="font-semibold tracking-tight">
+            {t("treeHeading")}
           </h2>
           {canManage ? (
             <Button
               size="sm"
               variant="outline"
               disabled={pending}
-              onClick={() => setDraft(blankCategory(rows.length + 1))}
+              onClick={() => setDraft(blankCategory(null))}
             >
               <Plus aria-hidden="true" />
               {t("new")}
@@ -196,162 +261,323 @@ export function CategoriesManager({
 
         <p className="text-sm text-muted-foreground">{t("reorderHint")}</p>
 
-        <SortableList
-          // `SortableList` needs an `id` and a `label`; a category is keyed by
-          // slug and labelled in the active language.
-          items={rows.map((row) => ({
-            ...row,
-            id: row.id,
-            label: row.name[locale],
-          }))}
+        <CategoryTree
+          rows={tree}
+          selectedId={draft?.id || null}
           disabled={!canManage || pending}
-          onReorder={persistOrder}
-          renderItem={(row) => (
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setDraft(row)}
-                aria-current={row.id === draft?.id ? "true" : undefined}
-                className="min-w-0 rounded-sm text-start focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              >
-                <span className="block truncate text-sm font-medium">
-                  {row.name[locale]}
-                </span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {t("productCount", { count: row.productCount })}
-                </span>
-              </button>
-
-              <ModuleStatusBadge
-                tone={row.isVisible ? "success" : "muted"}
-                className="ms-auto"
-              >
-                {row.isVisible
-                  ? tAdmin("status.visible")
-                  : tAdmin("status.invisible")}
-              </ModuleStatusBadge>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setDraft(row)}
-                aria-label={`${tAdmin("actions.edit")} — ${row.name[locale]}`}
-              >
-                <Pencil />
-              </Button>
-            </div>
-          )}
+          onSelect={edit}
+          onMove={move}
+          onToggleVisibility={toggleVisibility}
+          onAddChild={(parent) => setDraft(blankCategory(parent.id))}
         />
       </section>
 
-      {selected ? (
-        <form
-          className="space-y-6"
+      {draft ? (
+        <ModuleForm
           onSubmit={(event) => {
             event.preventDefault();
-            persist(selected);
+            persist(draft);
           }}
-        >
-          <ModuleFormSection id="category" title={selected.name[locale]}>
-            <LocalizedField
-              label={t("fields.name")}
-              value={selected.name}
-              disabled={!canManage}
-              onChange={(name) => patch({ name })}
-              required
-            />
+          sections={{
+            general: {
+              title: draft.id
+                ? (trail?.join(" › ") ?? draft.name[locale])
+                : t("newTitle"),
+              children: (
+                <div className="space-y-5">
+                  <LocalizedField
+                    label={t("fields.name")}
+                    value={draft.name}
+                    disabled={!canManage}
+                    onChange={(name) => patch({ name })}
+                    required
+                  />
 
-            {/* The slug is per locale (ADR-52), so it gets the same treatment
-                as the name rather than a single input that could only ever
-                write one language. */}
-            <LocalizedField
-              label={t("fields.slug")}
-              value={selected.slug}
-              disabled={!canManage}
-              onChange={(slug) => patch({ slug })}
-              required
-            />
+                  {/*
+                    The slug is per locale (ADR-52), so it gets the same
+                    treatment as the name rather than a single input that could
+                    only ever write one language.
+                  */}
+                  <LocalizedField
+                    label={t("fields.slug")}
+                    hint={t("fields.slugHint")}
+                    value={draft.slug}
+                    disabled={!canManage}
+                    onChange={(slug) => patch({ slug })}
+                    required
+                  />
 
-            <LocalizedField
-              label={t("fields.description")}
-              value={selected.description}
-              multiline
-              rows={3}
-              disabled={!canManage}
-              onChange={(description) => patch({ description })}
-            />
+                  <LocalizedField
+                    label={t("fields.description")}
+                    value={draft.description}
+                    multiline
+                    rows={3}
+                    disabled={!canManage}
+                    onChange={(description) => patch({ description })}
+                  />
 
-            <ModuleFormRow>
-              <div className="space-y-1.5">
-                <Label htmlFor="category-parent">{t("fields.parent")}</Label>
-                <Select
-                  value={selected.parentId ?? "__none"}
-                  disabled={!canManage}
-                  onValueChange={(value) =>
-                    patch({ parentId: value === "__none" ? null : value })
-                  }
-                >
-                  <SelectTrigger id="category-parent">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">
-                      {t("fields.noParent")}
-                    </SelectItem>
-                    {rows
-                      // A category cannot be its own parent. Deeper cycles are
-                      // rejected by the database trigger; this stops the
-                      // one-step case reaching it at all.
-                      .filter((row) => row.id && row.id !== selected.id)
-                      .map((row) => (
-                        <SelectItem key={row.id} value={row.id}>
-                          {row.name[locale]}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="category-parent">
+                      {t("fields.parent")}
+                    </Label>
+                    <Select
+                      value={draft.parentId ?? "__none"}
+                      disabled={!canManage}
+                      onValueChange={(value) =>
+                        patch({ parentId: value === "__none" ? null : value })
+                      }
+                    >
+                      <SelectTrigger id="category-parent">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">
+                          {t("fields.noParent")}
                         </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </ModuleFormRow>
+                        {parentOptions(categories, draft, locale).map(
+                          (option) => (
+                            <SelectItem key={option.id} value={option.id}>
+                              {option.label}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {t("fields.parentHint")}
+                    </p>
+                  </div>
 
-            <div className="flex items-start justify-between gap-3 rounded-lg border p-3">
-              <Label htmlFor="category-visible" className="font-normal">
-                {selected.isVisible ? (
-                  <Eye className="size-4" aria-hidden="true" />
-                ) : (
-                  <EyeOff className="size-4" aria-hidden="true" />
-                )}
-                {t("fields.visible")}
-              </Label>
-              <Switch
-                id="category-visible"
-                checked={selected.isVisible}
-                disabled={!canManage}
-                onCheckedChange={(isVisible) => patch({ isVisible })}
-              />
-            </div>
-          </ModuleFormSection>
+                  <CategoryIconPicker
+                    value={draft.icon}
+                    disabled={!canManage}
+                    onChange={(icon) => patch({ icon })}
+                  />
+                </div>
+              ),
+            },
 
-          {canManage ? (
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" disabled={pending}>
-                {tAdmin("actions.saveChanges")}
-              </Button>
-              {selected.id && capabilities.delete ? (
+            media: {
+              children: (
+                <CategoryImageField
+                  categoryId={draft.id}
+                  path={draft.imagePath}
+                  url={draft.imageUrl}
+                  disabled={!canManage}
+                  onChange={({ path, url }) =>
+                    patch({ imagePath: path, imageUrl: url })
+                  }
+                />
+              ),
+            },
+
+            seo: {
+              children: (
+                <ModuleSeoPanel
+                  value={draft.seo}
+                  disabled={!canManage}
+                  onChange={(seo) => patch({ seo })}
+                />
+              ),
+            },
+
+            publish: {
+              children: (
+                <div className="space-y-3">
+                  <ToggleRow
+                    id="category-visible"
+                    label={t("fields.visible")}
+                    hint={t("fields.visibleHint")}
+                    checked={draft.isVisible}
+                    disabled={!canManage}
+                    onChange={(isVisible) => patch({ isVisible })}
+                  />
+
+                  <ToggleRow
+                    id="category-featured"
+                    label={t("fields.featured")}
+                    hint={t("fields.featuredHint")}
+                    checked={draft.isFeatured}
+                    disabled={!canManage}
+                    onChange={(isFeatured) => patch({ isFeatured })}
+                  />
+                </div>
+              ),
+            },
+          }}
+          actions={
+            canManage ? (
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={pending}>
+                  {tAdmin("actions.saveChanges")}
+                </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   disabled={pending}
-                  onClick={() => remove(selected)}
+                  onClick={() => setDraft(null)}
                 >
-                  <Trash2 aria-hidden="true" />
-                  {tAdmin("actions.delete")}
+                  {tAdmin("actions.cancel")}
                 </Button>
-              ) : null}
-            </div>
-          ) : null}
-        </form>
-      ) : null}
+                {draft.id && capabilities.delete ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={pending}
+                    onClick={() => remove(draft)}
+                  >
+                    <Trash2 aria-hidden="true" />
+                    {tAdmin("actions.delete")}
+                  </Button>
+                ) : null}
+              </div>
+            ) : null
+          }
+        />
+      ) : (
+        <p className="self-start rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+          {t("selectToEdit")}
+        </p>
+      )}
     </div>
   );
+}
+
+function ToggleRow({
+  id,
+  label,
+  hint,
+  checked,
+  disabled,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  hint: string;
+  checked: boolean;
+  disabled: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-lg border p-3">
+      <div className="space-y-0.5">
+        <Label htmlFor={id} className="font-normal">
+          {label}
+        </Label>
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      </div>
+      <Switch
+        id={id}
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onChange}
+      />
+    </div>
+  );
+}
+
+/**
+ * Folds the flat admin rows into the tree the list renders.
+ *
+ * The server sends the categories flat and ordered — the same shape
+ * `listCategories` returns — and this nests them. Depth is unlimited; an orphan
+ * whose parent is missing is attached at the root rather than dropped, so a row
+ * cannot disappear from the only screen that could fix it.
+ */
+function buildTree(
+  categories: readonly AdminCategoryRow[],
+  locale: Locale,
+): CategoryTreeRow[] {
+  const nodes = new Map<string, CategoryTreeRow>(
+    categories.map((category) => [
+      category.id,
+      {
+        id: category.id,
+        parentId: category.parentId,
+        // Falls back to any language that has a name: a category translated in
+        // Russian only must still be findable on the Uzbek admin, or it becomes
+        // an unlabelled row nobody can select to fix.
+        label:
+          category.name[locale] ||
+          locales.map((other) => category.name[other]).find(Boolean) ||
+          category.slug[locale] ||
+          "—",
+        icon: category.icon,
+        isVisible: category.isVisible,
+        isFeatured: category.isFeatured,
+        productCount: category.productCount,
+        isTranslationComplete: category.isTranslationComplete,
+        children: [],
+      },
+    ]),
+  );
+
+  const roots: CategoryTreeRow[] = [];
+
+  for (const category of categories) {
+    const node = nodes.get(category.id);
+    if (!node) continue;
+
+    const parent = category.parentId ? nodes.get(category.parentId) : undefined;
+
+    if (parent) parent.children.push(node);
+    else {
+      // An orphan is shown at the root, and its `parentId` is corrected to match
+      // so the move buttons compute against where it actually appears.
+      node.parentId = null;
+      roots.push(node);
+    }
+  }
+
+  return roots;
+}
+
+/**
+ * The categories a row may be re-parented to.
+ *
+ * Excludes itself and everything beneath it, because both would be a cycle —
+ * the database trigger refuses them anyway (ADR-26), and offering a choice the
+ * save will reject is worse than not offering it.
+ */
+function parentOptions(
+  categories: readonly AdminCategoryRow[],
+  draft: AdminCategoryRow,
+  locale: Locale,
+): { id: string; label: string }[] {
+  const descendants = new Set<string>();
+
+  if (draft.id) {
+    descendants.add(draft.id);
+
+    // The list is ordered parent-before-child by `path`, so one pass is enough
+    // to close the set over any depth.
+    for (const category of categories) {
+      if (category.parentId && descendants.has(category.parentId)) {
+        descendants.add(category.id);
+      }
+    }
+  }
+
+  const label = (category: AdminCategoryRow) =>
+    category.name[locale] ||
+    locales.map((other) => category.name[other]).find(Boolean) ||
+    "—";
+
+  const byId = new Map(categories.map((category) => [category.id, category]));
+
+  return categories
+    .filter((category) => category.id && !descendants.has(category.id))
+    .map((category) => {
+      // Ancestors in the label, so two subcategories called "Home" are
+      // distinguishable in a flat select.
+      const parts: string[] = [];
+      let current: AdminCategoryRow | undefined = category;
+
+      while (current) {
+        parts.unshift(label(current));
+        current = current.parentId ? byId.get(current.parentId) : undefined;
+      }
+
+      return { id: category.id, label: parts.join(" › ") };
+    });
 }

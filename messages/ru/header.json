@@ -1,9 +1,12 @@
 {
-  "mainNav": "Основная навигация",
   "categories": "Категории",
   "categoriesNav": "Категории",
   "openMenu": "Открыть меню",
   "shopByCategory": "По категориям",
+  "viewAllIn": "Все товары в разделе «{category}»",
+  "popular": "Популярное",
+  "noSubcategories": "Подразделов пока нет",
+  "expandCategory": "раскрыть",
   "account": "Аккаунт",
   "search": {
     "label": "Поиск товаров",

@@ -6,7 +6,7 @@ import { NewsletterForm } from "@/components/layout/newsletter-form";
 import { Link } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
 import { siteConfig, type Locale } from "@/lib/site-config";
-import type { Category } from "@/types/catalog";
+import type { CategoryNavItem } from "@/types/catalog";
 
 /**
  * Site footer.
@@ -82,7 +82,7 @@ function FooterGroupLinks({
   locale,
 }: {
   group: "shop" | "support" | "company";
-  categories: Category[];
+  categories: CategoryNavItem[];
   locale: Locale;
 }) {
   const t = useTranslations("footer");
@@ -92,7 +92,7 @@ function FooterGroupLinks({
     return (
       <ul className="space-y-0.5">
         {categories.map((category) => (
-          <li key={category.slug}>
+          <li key={category.id}>
             <Link
               href={routes.catalog.byCategory(category.slug)}
               className={`${LINK_CLASS} block py-1.5`}
@@ -157,7 +157,7 @@ function FooterDisclosure({
 }
 
 /** Categories come from the layout — see the note on `SiteHeader`. */
-export function SiteFooter({ categories }: { categories: Category[] }) {
+export function SiteFooter({ categories }: { categories: CategoryNavItem[] }) {
   const t = useTranslations("footer");
   const locale = useLocale() as Locale;
 

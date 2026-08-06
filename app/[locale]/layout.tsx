@@ -19,7 +19,7 @@ import {
   siteConfig,
   type Locale,
 } from "@/lib/site-config";
-import { listNavigationCategories } from "@/services/catalog.reads";
+import { listCategoryNavigation } from "@/services/catalog.reads";
 import "@/styles/globals.css";
 
 /**
@@ -138,10 +138,11 @@ export default async function LocaleLayout({
 
   const t = await getTranslations("common");
 
-  // Fetched once, here, and handed to both the header and the footer. Each
-  // fetching for itself would be two identical queries on every page.
+  // The whole category tree, nested, fetched once here and handed to the
+  // header's mega menu, the mobile accordion and the footer. Each fetching for
+  // itself would be three identical trees on every page.
   //
-  // `listNavigationCategories` and not `listCategories`, and the difference is
+  // `listCategoryNavigation` and not `listCategories`, and the difference is
   // load-bearing: **a layout may not throw.** `app/[locale]/error.tsx` renders
   // inside this layout, so it cannot catch an error thrown by it — React
   // escalates to `app/global-error.tsx` and replaces the whole document. When
@@ -149,7 +150,7 @@ export default async function LocaleLayout({
   // every URL on the site, the 404 page included (**K-18**). The menu now
   // degrades to empty and the failure is logged; pages still fail loudly on
   // their own content.
-  const categories = await listNavigationCategories(locale as Locale);
+  const categories = await listCategoryNavigation(locale as Locale);
 
   // The font variables belong on <html>, not <body>: globals.css applies
   // `font-sans` to the html element, so the custom property has to be defined

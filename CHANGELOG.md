@@ -12,6 +12,73 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — the category system, redesigned as a real retail hierarchy
+
+**A twelve-department tree, 102 categories, none of them hardcoded.**
+`20260815001000_category_taxonomy.sql` replaces the flat twenty of ADR-68 with
+the hierarchy the business sells from: 12 departments and 90 subcategories, in
+Uzbek, Russian and English, with a slug and SEO copy per locale (**ADR-72**).
+
+Written three times from the business meaning rather than translated once —
+`Videokartalar` / `Видеокарты` / `Graphics cards`, `Quvvat bloklari` /
+`Блоки питания` / `Power supplies`. SSD, HDD, NAS, USB, HDMI, DisplayPort, VGA,
+LAN, Wi-Fi, Bluetooth, RGB, MacBook, Windows and Microsoft Office are spelled the
+same in all three, because a shopper searching for one will not find a
+transliteration of it.
+
+The old twenty are **removed, not re-parented**: several change meaning in the
+new tree, and a database holding half of each design is one nobody can describe.
+The removal is guarded three ways — untouched Uzbek slug, no products filed
+against it, no children — so an operator who renamed or used one keeps it.
+
+**Two levels is the data, not the limit.** `parent_id`, the trigger-maintained
+`path` and the cycle rejection have supported unlimited depth since Phase 2. The
+tree builder, both storefront menus and the admin tree are all recursive; the
+schema assertions prove a third level nests at depth 2 and that a cycle is still
+refused at any depth.
+
+**Two new columns.** `categories.icon` is a lucide name validated for shape by a
+check constraint and for membership by the Server Action, against the same map
+the storefront draws from (ADR-69, extended by **ADR-72**). `categories.is_featured`
+promotes a subcategory into the mega menu's "Popular" row.
+
+**A desktop mega menu.** One trigger, a two-pane panel: departments down the
+left, the hovered one's subcategories on the right, with its icon, image,
+description and featured chips. Every panel is in the DOM as `hidden` rather
+than mounted on demand, so the server HTML carries **114 category links** before
+any JavaScript runs.
+
+**A mobile accordion** of unlimited depth, built on `<details>` so it opens on
+the first tap instead of after hydration. 12 top-level rows, all closed by
+default, every row 44px.
+
+**A full admin module.** Create, create-beneath, change parent, drag & drop
+ordering _and_ re-parenting, hide, show, feature, icon picker, image upload,
+three-language name/slug/description, the shared SEO panel, and delete —
+refused, with a sentence, while the category still has children. Every movement
+has a keyboard equivalent (Up · Down · Indent · Outdent) per WCAG 2.2 SC 2.5.7.
+
+**The category image uploader is the first admin control that reaches Storage.**
+Uploading returns a path and does not save; the operator's Save commits it, so
+an abandoned form leaves the category untouched.
+
+**Depth costs nothing.** The whole navigation is **two** requests per render —
+one for every category with all its translations embedded, one for product
+counts — nested in memory and memoised per request. No query per level, no query
+per category, no N+1.
+
+### Fixed — two defects the flat taxonomy had been hiding
+
+- **Categories were ordered by random UUIDs.** `listCategories` sorted by
+  `(path, display_order)` and `path` is a `uuid[]`. Invisible while the list was
+  flat and unarranged; the moment the departments had a business order the header
+  rendered them shuffled. Now `(depth, display_order)`. Caught by reading the
+  rendered menu.
+- **A department listing returned no products** (**ADR-74**). Products are filed
+  against a leaf, so filtering by a department's own id matched nothing and all
+  twelve top-level links led to an empty shop. `listProducts` now resolves the
+  subtree from `path` and filters with `in`.
+
 ### Changed — categories and the audit log now read and write the real database
 
 **Categories is wired end to end.** The page reads `categories` with real

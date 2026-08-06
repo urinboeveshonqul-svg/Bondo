@@ -184,6 +184,35 @@ export type Category = {
 };
 
 /**
+ * A category as the site navigation renders it.
+ *
+ * Recursive on purpose: `children` is the same type, so the mega menu and the
+ * mobile accordion both handle **unlimited nesting** without either of them
+ * knowing how deep the taxonomy currently goes. The shipped tree is two levels;
+ * an operator adding a third needs no code change on either side.
+ *
+ * `slug` is already resolved to the reading locale — the slug is per-language
+ * (ADR-52), so a component rendering a link must not have to pick one. `name`
+ * stays localized because the navigation is rendered once and read by a Client
+ * Component that knows the locale.
+ *
+ * `icon` is a lucide *name*, not a URL. `image` is a public Storage URL or `""`,
+ * which is what an `<img>` needs and what "no image" looks like without a
+ * placeholder standing in for a decision nobody made.
+ */
+export type CategoryNavItem = {
+  id: string;
+  slug: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  icon: string | null;
+  image: string;
+  isFeatured: boolean;
+  productCount: number;
+  children: CategoryNavItem[];
+};
+
+/**
  * Review text is localized here because these three are marketing copy standing
  * in for real reviews (ADR-36). **Real reviews are never translated** — they are
  * written by one customer in one language, and a translated review is no longer

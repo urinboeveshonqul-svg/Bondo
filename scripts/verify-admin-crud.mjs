@@ -50,7 +50,13 @@ const EMAIL = `crud-${stamp}@bondo.test`;
 const PASSWORD = `Crud-${stamp}-Aa1!`;
 
 let userId = null;
-const made = { brand: null, category: null, product: null, upload: null };
+const made = {
+  brand: null,
+  category: null,
+  childCategory: null,
+  product: null,
+  upload: null,
+};
 
 try {
   // ---------------------------------------------------------------------------
@@ -206,6 +212,186 @@ try {
     "CATEGORY update translation",
     !catUpd.error && catUpd.data?.name.endsWith("edited"),
     catUpd.error?.message ?? catUpd.data?.name,
+  );
+
+  // ---------------------------------------------------------------------------
+  // CATEGORY TREE — nesting, re-parenting, ordering, icon, featured, SEO
+  // ---------------------------------------------------------------------------
+  // Everything the admin's category screen offers, exercised through the same
+  // RLS-enforced session. These are the writes `saveCategory`,
+  // `reorderCategories` and `setCategoryVisibility` issue.
+  const childIns = await asAdmin
+    .from("categories")
+    .insert({
+      parent_id: made.category,
+      display_order: 1,
+      is_visible: true,
+      icon: "Cpu",
+      is_featured: true,
+    })
+    .select("id, depth, path, icon, is_featured")
+    .single();
+  check(
+    "CATEGORY create a subcategory",
+    !childIns.error,
+    childIns.error?.message,
+  );
+  made.childCategory = childIns.data?.id ?? null;
+
+  check(
+    "the path trigger nested it without being asked",
+    childIns.data?.depth === 1 && childIns.data?.path?.length === 2,
+    `depth ${childIns.data?.depth}, path length ${childIns.data?.path?.length}`,
+  );
+
+  check(
+    "the icon and featured columns accept an operator's choice",
+    childIns.data?.icon === "Cpu" && childIns.data?.is_featured === true,
+    `icon=${childIns.data?.icon} featured=${childIns.data?.is_featured}`,
+  );
+
+  const badIcon = await asAdmin
+    .from("categories")
+    .update({ icon: "../evil.svg" })
+    .eq("id", made.childCategory);
+  check(
+    "an icon that is not an identifier is refused by the check constraint",
+    !!badIcon.error,
+    badIcon.error?.code,
+  );
+
+  // The child's translations, including the SEO and Open Graph columns the
+  // shared panel writes.
+  const childTr = await asAdmin.from("category_translations").insert(
+    ["uz", "ru", "en"].map((locale) => ({
+      category_id: made.childCategory,
+      locale,
+      name: `CRUD child ${stamp} ${locale}`,
+      slug: `crud-child-${locale}-${stamp}`,
+      description: `CRUD description ${locale}`,
+      seo_title: `CRUD seo ${locale}`,
+      seo_description: `CRUD seo description ${locale}`,
+      seo_keywords: ["rtx 4090", "gpu"],
+      og_title: `CRUD og ${locale}`,
+      og_description: `CRUD og description ${locale}`,
+      twitter_card: "summary_large_image",
+    })),
+  );
+  check(
+    "CATEGORY subcategory translations with SEO and Open Graph",
+    !childTr.error,
+    childTr.error?.message,
+  );
+
+  const seoRead = await asAdmin
+    .from("category_translations")
+    .select("locale, slug, seo_title, seo_keywords, og_title, twitter_card")
+    .eq("category_id", made.childCategory);
+  check(
+    "the SEO columns read back per locale",
+    seoRead.data?.length === 3 &&
+      seoRead.data.every(
+        (r) => r.og_title && r.twitter_card === "summary_large_image",
+      ) &&
+      new Set(seoRead.data.map((r) => r.slug)).size === 3,
+    seoRead.error?.message ?? `${seoRead.data?.length} locales, distinct slugs`,
+  );
+
+  // Re-parenting to the top level and back — the move a drag performs.
+  const detach = await asAdmin
+    .from("categories")
+    .update({ parent_id: null, display_order: 5 })
+    .eq("id", made.childCategory)
+    .select("depth, path")
+    .single();
+  check(
+    "re-parenting to the top level updates depth and path",
+    detach.data?.depth === 0 && detach.data?.path?.length === 1,
+    detach.error?.message ?? `depth ${detach.data?.depth}`,
+  );
+
+  const reattach = await asAdmin
+    .from("categories")
+    .update({ parent_id: made.category, display_order: 1 })
+    .eq("id", made.childCategory)
+    .select("depth")
+    .single();
+  check(
+    "re-parenting back nests it again",
+    reattach.data?.depth === 1,
+    reattach.error?.message ?? `depth ${reattach.data?.depth}`,
+  );
+
+  // A cycle: making the parent a child of its own child.
+  const cycle = await asAdmin
+    .from("categories")
+    .update({ parent_id: made.childCategory })
+    .eq("id", made.category);
+  check(
+    "a cycle is refused by the trigger, not by the interface",
+    !!cycle.error,
+    cycle.error?.code ?? "accepted — WRONG",
+  );
+
+  // Visibility, the one-click toggle in the list.
+  const hide = await asAdmin
+    .from("categories")
+    .update({ is_visible: false })
+    .eq("id", made.childCategory)
+    .select("is_visible")
+    .single();
+  check(
+    "a category can be hidden",
+    hide.data?.is_visible === false,
+    hide.error?.message,
+  );
+
+  const anonSeesHidden = await createClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { auth: { persistSession: false } },
+  )
+    .from("categories")
+    .select("id")
+    .eq("id", made.childCategory)
+    .eq("is_visible", true);
+  check(
+    "a hidden category is absent from the storefront read",
+    anonSeesHidden.data?.length === 0,
+    `${anonSeesHidden.data?.length ?? "?"} rows`,
+  );
+
+  await asAdmin
+    .from("categories")
+    .update({ is_visible: true })
+    .eq("id", made.childCategory);
+
+  // The shipped taxonomy, seen through the anonymous client — the rows a real
+  // visitor's mega menu is built from.
+  const anonTree = await createClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { auth: { persistSession: false } },
+  )
+    .from("categories")
+    .select("id, parent_id, icon, translations:category_translations(locale)")
+    .is("deleted_at", null)
+    .eq("is_visible", true);
+
+  // Excluding this run's own throwaway category, which is a top-level row with
+  // no icon and would otherwise make the count 13 and the icon check fail.
+  const departments = (anonTree.data ?? []).filter(
+    (r) => !r.parent_id && r.id !== made.category,
+  );
+  check(
+    "the shipped taxonomy is live: 12 departments",
+    departments.length === 12,
+    `${departments.length} departments, ${(anonTree.data ?? []).filter((r) => r.id !== made.category && r.id !== made.childCategory).length} categories total`,
+  );
+  check(
+    "every department carries an icon the storefront can draw",
+    departments.every((r) => r.icon),
+    departments.map((r) => r.icon).join(" "),
   );
 
   // ---------------------------------------------------------------------------
@@ -437,6 +623,15 @@ try {
       .eq("product_id", made.product);
     await admin.from("inventory").delete().eq("product_id", made.product);
     await admin.from("products").delete().eq("id", made.product);
+  }
+  // The child first: `categories.parent_id` is `on delete restrict`, so
+  // removing the parent while it has one is refused.
+  if (made.childCategory) {
+    await admin
+      .from("category_translations")
+      .delete()
+      .eq("category_id", made.childCategory);
+    await admin.from("categories").delete().eq("id", made.childCategory);
   }
   if (made.category) {
     await admin

@@ -269,8 +269,10 @@ export type Database = {
           deleted_at: string | null
           depth: number
           display_order: number
+          icon: string | null
           id: string
           image_path: string | null
+          is_featured: boolean
           is_visible: boolean
           parent_id: string | null
           path: string[]
@@ -283,8 +285,10 @@ export type Database = {
           deleted_at?: string | null
           depth?: number
           display_order?: number
+          icon?: string | null
           id?: string
           image_path?: string | null
+          is_featured?: boolean
           is_visible?: boolean
           parent_id?: string | null
           path?: string[]
@@ -297,8 +301,10 @@ export type Database = {
           deleted_at?: string | null
           depth?: number
           display_order?: number
+          icon?: string | null
           id?: string
           image_path?: string | null
+          is_featured?: boolean
           is_visible?: boolean
           parent_id?: string | null
           path?: string[]

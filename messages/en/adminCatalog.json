@@ -136,11 +136,30 @@
       "noParent": "Top level",
       "icon": "Icon",
       "image": "Image",
-      "visible": "Visible in navigation"
+      "visible": "Visible in navigation",
+      "slugHint": "One address per language. Lowercase letters and hyphens only.",
+      "parentHint": "Leave this empty to keep the category at the top level.",
+      "noIcon": "No icon",
+      "iconHint": "Shown beside the name in the menu. Subcategories rarely need one.",
+      "uploadImage": "Upload an image",
+      "replaceImage": "Replace the image",
+      "removeImage": "Remove the image",
+      "imageHint": "WebP, AVIF, JPEG or PNG. Up to 5 MB.",
+      "imageNeedsSave": "Save the category before uploading an image.",
+      "visibleHint": "Turn this off and the category disappears from the shop.",
+      "featured": "Popular category",
+      "featuredHint": "Called out separately in the menu."
     },
     "productCount": "{count, plural, one {# product} other {# products}}",
-    "reorderHint": "Order decides how categories appear in the menu and the footer.",
-    "dragHandle": "Drag to reorder {name}"
+    "reorderHint": "Drag a row or use the buttons. This order is the order shoppers see.",
+    "dragHandle": "Drag to reorder {name}",
+    "treeHeading": "Catalog structure",
+    "newChild": "Add subcategory",
+    "newTitle": "New category",
+    "selectToEdit": "Pick a category on the left, or start a new one.",
+    "emptyTree": "No categories yet. Create the first one.",
+    "untranslated": "Missing a translation",
+    "childCount": "{count, plural, one {# subcategory} other {# subcategories}}"
   },
   "brands": {
     "title": "Brands",

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { unstable_rethrow } from "next/navigation";
 
 import { createClient } from "@/supabase/server";
@@ -9,6 +10,7 @@ import type { Locale } from "@/lib/site-config";
 import type {
   Brand,
   Category,
+  CategoryNavItem,
   Product,
   ProductSummary,
   Review,
@@ -18,6 +20,7 @@ import * as brandsService from "@/services/brands.service";
 import * as categoriesService from "@/services/categories.service";
 import * as productsService from "@/services/products.service";
 import * as reviewsService from "@/services/reviews.service";
+import { BUCKETS, publicUrl } from "@/services/storage.service";
 import * as highlightsService from "@/services/service-highlights.service";
 import type { ServiceHighlight } from "@/services/service-highlights.service";
 
@@ -246,16 +249,35 @@ export async function listProducts(
         categories.map((row) => [row.id, pick(row.slug, locale)]),
       );
 
-      const categoryId = options.categorySlug
+      const selected = options.categorySlug
         ? categories.find(
             (row) => pick(row.slug, locale) === options.categorySlug,
-          )?.id
+          )
+        : undefined;
+
+      /**
+       * The whole subtree, not just the category that was clicked.
+       *
+       * Products are filed against a leaf — a graphics card is in "Graphics
+       * cards", never in "Components" — so filtering a **department** by its own
+       * id would return nothing and the twelve top-level links would all look
+       * like empty shops. `categories.path` is the trigger-maintained
+       * root-to-self chain (ADR-26), so "is this category at or below the
+       * selected one" is a containment test on an array that has already been
+       * fetched, rather than a recursive query.
+       *
+       * Correct at any depth, because `path` is.
+       */
+      const categoryIds = selected
+        ? categories
+            .filter((row) => row.path.includes(selected.id))
+            .map((row) => row.id)
         : undefined;
 
       const { rows } = await productsService.listProducts(supabase, {
         status: "active",
         visibility: "public",
-        categoryId,
+        categoryIds,
         search: options.query,
         locale,
         pageSize: 60,
@@ -485,20 +507,79 @@ export async function listServiceHighlights(): Promise<ServiceHighlight[]> {
   }
 }
 
-export async function listNavigationCategories(
+/**
+ * The navigation tree: every visible category, nested, in **one** query.
+ *
+ * This is what the mega menu, the mobile accordion and the footer all render,
+ * and the shape of it is the performance decision:
+ *
+ *   * `listCategories` fetches every category **and** every translation row in a
+ *     single PostgREST request through an embedded select. A menu that fetched
+ *     a department's children when it opened would be twelve extra round trips;
+ *     one that fetched translations per row would be three hundred.
+ *   * `toCategoryTree` nests the result in memory. No recursive CTE, no query
+ *     per level, and no cap on depth.
+ *   * `countProductsByCategory` is the only other request, and
+ *     `rollUpProductCounts` credits each department with its whole subtree
+ *     rather than counting again per node.
+ *
+ * So the whole navigation costs **two** requests per render, regardless of how
+ * many categories or how deep the tree goes.
+ *
+ * `cache()` deduplicates within a request. The layout already fetches once and
+ * hands the result to the header and the footer, but a page that also wants the
+ * tree — a category landing page, a sitemap — gets it for free rather than
+ * paying for it a second time. It is per-request memoisation, not a cross-request
+ * cache: the categories a caller may see depend on their RLS session, and a
+ * cache that ignored that would serve one visitor's menu to another (ADR-12).
+ */
+const readNavigationTree = cache(
+  async (locale: Locale): Promise<CategoryNavItem[]> => {
+    const supabase = await createClient();
+
+    const [rows, directCounts] = await Promise.all([
+      categoriesService.listCategories(supabase, { visibleOnly: true }),
+      categoriesService.countProductsByCategory(supabase),
+    ]);
+
+    const counts = categoriesService.rollUpProductCounts(rows, directCounts);
+
+    const toNavItem = (
+      node: categoriesService.CategoryNode,
+    ): CategoryNavItem => ({
+      id: node.id,
+      // Resolved here rather than in the component: the slug is per locale
+      // (ADR-52) and a Client Component should not be choosing which one is the
+      // URL.
+      slug: pick(node.slug, locale),
+      name: node.name,
+      description: node.description,
+      icon: node.icon,
+      image: node.imagePath
+        ? publicUrl(supabase, BUCKETS.siteAssets, node.imagePath)
+        : "",
+      isFeatured: node.isFeatured,
+      productCount: counts.get(node.id) ?? 0,
+      children: node.children.map(toNavItem),
+    });
+
+    return categoriesService.toCategoryTree(rows).map(toNavItem);
+  },
+);
+
+export async function listCategoryNavigation(
   locale: Locale,
-): Promise<Category[]> {
+): Promise<CategoryNavItem[]> {
   try {
-    return await listCategories(locale);
+    return await readNavigationTree(locale);
   } catch (error) {
-    // **Before anything else.** Next.js signals control flow by throwing:
-    // `notFound()`, `redirect()`, and — the one that bit here —
-    // `DynamicServerError`, raised when `cookies()` is reached during static
-    // prerendering so the route can bail out to dynamic rendering. Catching it
-    // told the build "no categories" instead of "render this on demand", and
-    // the empty menu was then baked into the prerendered HTML permanently.
-    // Same failure as ADR-13, one layer down. Caught by rebuilding and reading
-    // the log, not by reasoning.
+    // **Before anything else.** Next.js signals control flow by throwing —
+    // `notFound()`, `redirect()`, and `DynamicServerError`, raised when
+    // `cookies()` is reached during static prerendering so the route can bail
+    // out to dynamic rendering. Catching that one told the build "no
+    // categories" instead of "render this on demand", and the empty menu was
+    // baked into the prerendered HTML permanently. Same failure as ADR-13, one
+    // layer down.
     unstable_rethrow(error);
 
     logger.error(

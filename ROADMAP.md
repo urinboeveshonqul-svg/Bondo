@@ -360,10 +360,16 @@ nothing uses yet.
 
 ### Done
 
-- [x] **Default category taxonomy in the database** — twenty categories, uz/ru/en,
-      per-locale slugs, shipped by a migration so a fresh deployment has them
-      (**ADR-68**). Nestable, reorderable and editable from the admin without a
-      code change
+- [x] **Category taxonomy in the database** — first twenty flat categories
+      (**ADR-68**), then the real retail hierarchy: **12 departments and 90
+      subcategories** in uz/ru/en with a slug and SEO copy per locale
+      (**ADR-72**). Shipped by a migration so a fresh deployment has them.
+      Nothing about a category is hardcoded anywhere
+- [x] **A desktop mega menu and a mobile accordion**, both recursive, both fed
+      by one nested read — two requests for the whole navigation, no N+1
+- [x] **The category admin module**, complete: create, nest, re-parent, drag &
+      drop, hide, feature, icon, image upload, three languages, SEO, delete.
+      Every drag has a keyboard equivalent (WCAG 2.2 SC 2.5.7)
 - [x] **Fake customer reviews removed** — the home page reads `product_reviews`
       and renders nothing until a delivered buyer writes one
 - [x] **Fake product ratings zeroed**
@@ -469,7 +475,9 @@ verified against RLS with a second account.
 
 - [x] Server Actions over the services for brands, categories and products
 - [x] **Brands** — read and write, verified live
-- [x] **Categories** — read and write, verified live
+- [x] **Categories** — read and write, verified live. Now the full tree module:
+      unlimited nesting, drag & drop with a keyboard equivalent, icons, image
+      upload to Storage, three languages, SEO. 36/36 live CRUD checks
 - [x] **Audit** — real `audit_logs`
 - [x] Live CRUD harness (`npm run admin:verify`, 23 checks through RLS)
 - [ ] **Products** — actions exist and are verified; the 639-line form and the

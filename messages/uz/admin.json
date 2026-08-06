@@ -90,7 +90,11 @@
     "moveDown": "Pastga",
     "reorder": "Tartibni o'zgartirish",
     "add": "Qo'shish",
-    "remove": "Olib tashlash"
+    "remove": "Olib tashlash",
+    "indent": "Ichkariga",
+    "outdent": "Tashqariga",
+    "hide": "Yashirish",
+    "show": "Ko'rsatish"
   },
   "status": {
     "draft": "Qoralama",

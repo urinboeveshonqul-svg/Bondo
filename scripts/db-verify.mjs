@@ -87,7 +87,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 20,
+  migrationCount === 21,
   `${migrationCount} files`,
 );
 
@@ -1171,8 +1171,8 @@ try {
 // -----------------------------------------------------------------------------
 // The default category taxonomy
 // -----------------------------------------------------------------------------
-// Reference data shipped by a migration, not fixture data (ADR-68), so it must
-// be present in a database that has never seen `seed.sql`.
+// Reference data shipped by a migration, not fixture data (ADR-68, reshaped by
+// ADR-72), so it must be present in a database that has never seen `seed.sql`.
 try {
   const defaults = (
     await db.query(
@@ -1184,9 +1184,9 @@ try {
   ).rows;
 
   check(
-    "the 20 default categories were seeded by the migration",
-    defaults.length === 20,
-    `${defaults.length} found`,
+    "the default taxonomy was seeded by the migration",
+    defaults.length === 102,
+    `${defaults.length} categories found`,
   );
 
   const trilingual = (
@@ -1205,8 +1205,197 @@ try {
 
   check(
     "every default category exists in all three languages",
-    trilingual.length === 20,
-    `${trilingual.length}/20 complete`,
+    trilingual.length === 102,
+    `${trilingual.length}/102 complete`,
+  );
+
+  // -------------------------------------------------------------------------
+  // The shape of the tree, which is what the redesign actually delivered
+  // -------------------------------------------------------------------------
+  // `demo-` rows come from `supabase/seed.sql`, which this harness applies and
+  // `db push` never does (ADR-25). Excluding them is what makes these counts a
+  // statement about the shipped taxonomy rather than about the fixture.
+  const NOT_DEMO = `not exists (
+    select 1 from public.category_translations ct
+    where ct.category_id = c.id and ct.slug like 'demo-%'
+  )`;
+
+  const departments = (
+    await db.query(
+      `select count(*)::int as n from public.categories c
+       where c.parent_id is null and c.deleted_at is null and ${NOT_DEMO}`,
+    )
+  ).rows[0];
+
+  check(
+    "twelve departments sit at the top level",
+    departments.n === 12,
+    `${departments.n} found`,
+  );
+
+  const children = (
+    await db.query(
+      `select count(*)::int as n from public.categories c
+       where c.parent_id is not null and c.deleted_at is null and ${NOT_DEMO}`,
+    )
+  ).rows[0];
+
+  check(
+    "ninety subcategories hang off them",
+    children.n === 90,
+    `${children.n} found`,
+  );
+
+  // Every department carries an icon; the trigger has given every child a real
+  // ancestor path. Both are what the mega menu renders from.
+  const iconed = (
+    await db.query(
+      `select count(*)::int as n from public.categories
+       where parent_id is null and deleted_at is null and icon is not null`,
+    )
+  ).rows[0];
+
+  check(
+    "every department carries an icon name",
+    iconed.n === 12,
+    `${iconed.n}/12`,
+  );
+
+  const paths = (
+    await db.query(
+      `select count(*)::int as n from public.categories c
+       where c.parent_id is not null and array_length(c.path, 1) = 2
+         and ${NOT_DEMO}`,
+    )
+  ).rows[0];
+
+  check(
+    "the path trigger materialised every child's ancestry",
+    paths.n === 90,
+    `${paths.n}/90 two-element paths`,
+  );
+
+  // The nesting mechanism is unlimited, not two-deep: a third level inserts,
+  // gets depth 2, and is rejected only when it would form a cycle.
+  const components = (
+    await db.query(
+      `select category_id as id from public.category_translations
+       where locale = 'uz' and slug = 'butlovchi-qismlar'`,
+    )
+  ).rows[0];
+
+  const gpus = (
+    await db.query(
+      `select category_id as id from public.category_translations
+       where locale = 'uz' and slug = 'videokartalar'`,
+    )
+  ).rows[0];
+
+  const third = (
+    await db.query(
+      `insert into public.categories (parent_id, display_order)
+       values ($1, 99) returning id, depth`,
+      [gpus.id],
+    )
+  ).rows[0];
+
+  check(
+    "a third level nests and is given depth 2",
+    third.depth === 2,
+    `depth ${third.depth}`,
+  );
+
+  let cycleRejected = false;
+  try {
+    await db.query(
+      `update public.categories set parent_id = $1 where id = $2`,
+      [third.id, components.id],
+    );
+  } catch {
+    cycleRejected = true;
+  }
+
+  check("a cycle is still refused at any depth", cycleRejected);
+
+  await db.query(`delete from public.categories where id = $1`, [third.id]);
+
+  // Subcategories are ordered within their sibling group rather than globally,
+  // so moving a department does not renumber the whole shop.
+  const siblingOrder = (
+    await db.query(
+      `select min(display_order)::int as lo, max(display_order)::int as hi
+       from public.categories
+       where parent_id = $1 and deleted_at is null`,
+      [components.id],
+    )
+  ).rows[0];
+
+  check(
+    "siblings are numbered within their own group",
+    siblingOrder.lo === 1 && siblingOrder.hi === 15,
+    `${siblingOrder.lo}..${siblingOrder.hi} under Components`,
+  );
+
+  // An icon name is validated for shape at the database (ADR-69/ADR-72); the
+  // Server Action is what enforces membership of the drawable set.
+  let iconRejected = false;
+  try {
+    await db.query(
+      `insert into public.categories (display_order, icon) values (900, '../hack.svg')`,
+    );
+  } catch {
+    iconRejected = true;
+  }
+
+  check("an icon name that is not an identifier is refused", iconRejected);
+
+  // A department listing has to include the products filed under its
+  // subcategories, or all twelve top-level links look like empty shops. This is
+  // the containment `catalog.reads.listProducts` performs against `path`.
+  const subtree = (
+    await db.query(
+      `select count(*)::int as n from public.categories c
+       where c.path @> array[$1]::uuid[]`,
+      [components.id],
+    )
+  ).rows[0];
+
+  check(
+    "a department resolves to its whole subtree",
+    subtree.n === 16,
+    `${subtree.n} categories at or below Components (1 + 15)`,
+  );
+
+  const gpuInSubtree = (
+    await db.query(
+      `select exists (
+         select 1 from public.categories c
+         where c.id = $1 and c.path @> array[$2]::uuid[]
+       ) as ok`,
+      [gpus.id, components.id],
+    )
+  ).rows[0];
+
+  check(
+    "a product filed under Graphics cards is reachable from Components",
+    gpuInSubtree.ok === true,
+  );
+
+  // The ADR-68 flat defaults are gone, not sitting beside the new tree.
+  const retired = (
+    await db.query(
+      `select count(*)::int as n from public.category_translations
+       where locale = 'uz'
+         and slug in ('quvvat-manbalari', 'sovutish-tizimlari',
+                      'router-va-tarmoq-uskunalari', 'server-uskunalari',
+                      'printerlar')`,
+    )
+  ).rows[0];
+
+  check(
+    "the flat ADR-68 defaults were retired, not duplicated",
+    retired.n === 0,
+    `${retired.n} legacy slugs remain`,
   );
 
   // The names the business gave, spot-checked at both ends of the list.
