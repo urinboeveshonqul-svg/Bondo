@@ -16,8 +16,12 @@ import type {
   Review,
 } from "@/types/catalog";
 
+import type { StoreContact } from "@/components/content/store-contact";
 import * as brandsService from "@/services/brands.service";
 import * as categoriesService from "@/services/categories.service";
+import * as contentPagesService from "@/services/content-pages.service";
+import type { ContentPage } from "@/services/content-pages.service";
+import * as settingsService from "@/services/settings.service";
 import * as productsService from "@/services/products.service";
 import * as reviewsService from "@/services/reviews.service";
 import { BUCKETS, publicUrl } from "@/services/storage.service";
@@ -589,6 +593,63 @@ const readNavigationTree = cache(
     return categoriesService.toCategoryTree(rows).map(toNavItem);
   },
 );
+
+/**
+ * A business-information page — delivery, warranty, returns, contact, about.
+ *
+ * Page content, so it fails loudly: the caller wraps this in `readCatalog` and
+ * renders the unavailable state rather than an empty page. There is no fixture
+ * fallback, and there must not be — inventing a delivery policy in development
+ * is exactly the failure this whole feature was written to avoid.
+ */
+export async function getInfoPage(key: string): Promise<ContentPage> {
+  const supabase = await createClient();
+
+  return contentPagesService.getContentPage(supabase, key);
+}
+
+/**
+ * The shop's own contact details.
+ *
+ * Reads the public settings subset and picks the five contact keys out of it,
+ * coercing anything that is not a non-empty string to `null`. That coercion is
+ * load-bearing: `settings.value` is `jsonb`, so a key can legitimately hold
+ * `null`, and a caller that trusted the type would render the word "null" as a
+ * phone number.
+ *
+ * Degrades to all-null rather than throwing. A contact page that cannot reach
+ * the settings table should still render its copy and say the details are not
+ * available, because the copy is the part that tells the reader what to do.
+ */
+export async function getStoreContact(): Promise<StoreContact> {
+  const text = (value: unknown): string | null =>
+    typeof value === "string" && value.trim() ? value.trim() : null;
+
+  try {
+    const supabase = await createClient();
+    const settings = await settingsService.getPublicSettings(supabase);
+
+    return {
+      phone: text(settings["store.phone"]),
+      telegram: text(settings["store.telegram"]),
+      email: text(settings["store.support_email"]),
+      address: text(settings["store.address"]),
+      hours: text(settings["store.hours"]),
+    };
+  } catch (error) {
+    unstable_rethrow(error);
+
+    logger.error("[catalog] store contact settings unavailable", error);
+
+    return {
+      phone: null,
+      telegram: null,
+      email: null,
+      address: null,
+      hours: null,
+    };
+  }
+}
 
 export async function listCategoryNavigation(
   locale: Locale,

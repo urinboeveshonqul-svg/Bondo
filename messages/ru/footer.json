@@ -2,8 +2,16 @@
   "tagline": "Ноутбуки, компьютеры, комплектующие и аксессуары.",
   "warranty": "Гарантия 1 год на компьютеры нашей сборки.",
   "shop": "Покупателям",
-  "account": "Личный кабинет",
-  "accountItems": {
+  "support": "Помощь",
+  "company": "Компания",
+  "supportItems": {
+    "delivery": "Доставка",
+    "warranty": "Гарантия",
+    "returns": "Возврат",
+    "contact": "Контакты"
+  },
+  "companyItems": {
+    "about": "О Bondo",
     "account": "Мой кабинет",
     "orders": "Мои заказы"
   },

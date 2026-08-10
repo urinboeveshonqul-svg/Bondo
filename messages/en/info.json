@@ -1,0 +1,16 @@
+{
+  "help": {
+    "title": "Need a hand?",
+    "body": "Message us about an order, a delivery or a warranty question.",
+    "cta": "Contact us"
+  },
+  "contact": {
+    "title": "Get in touch",
+    "phone": "Phone",
+    "telegram": "Telegram",
+    "email": "Email",
+    "address": "Address",
+    "hours": "Opening hours",
+    "unconfigured": "We have not published contact details yet."
+  }
+}

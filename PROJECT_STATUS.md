@@ -4,7 +4,7 @@
 > It is updated at the end of every completed task. If this file and the code
 > disagree, the code is right and this file is a bug — fix it immediately.
 
-**Last updated:** 2026-08-07
+**Last updated:** 2026-08-08
 **Version:** v0.4.0 (unreleased) — v0.1.0 is the last tag
 **Phase:** 4A Authentication & authorization ✅ **Complete.** K-1 and K-2 both
 closed; the panel is behind a real role check and the storefront has accounts.
@@ -327,7 +327,7 @@ prerendered routes, 404, and both error boundaries.
 | First Load JS — admin, heaviest        | 195 kB (brands: table + dialog editor)                                                                             |
 | Shared JS                              | 103 kB                                                                                                             |
 | Middleware bundle                      | **105 kB**                                                                                                         |
-| Static prerendered routes              | **42**                                                                                                             |
+| Static prerendered routes              | **94**                                                                                                             |
 | i18n runtime audit                     | 51/51 checks pass                                                                                                  |
 | Admin runtime audit                    | 13 routes × 3 locales all 200; 0 untranslated keys; exactly 1 `h1` each; every link locale-prefixed; `noindex` set |
 | Permission gating                      | verified as `inventory_manager`: 7 denied modules absent from nav **and** 404 on a typed URL                       |
@@ -694,7 +694,7 @@ default and both are approved in the `allowScripts` field of `package.json`.
 | ------------------- | ------------------------------------------------------------------------------ |
 | Hosted project      | 🟢 `pgxqnezwrwfgrmamlxhs` ("Bondo"), `ap-southeast-1`                          |
 | Platform versions   | Postgres 17.6.1.155, PostgREST 14.15, GoTrue 2.195.0, Storage 1.67.26          |
-| Migrations applied  | 🟢 **all 22**, local and remote in lockstep                                    |
+| Migrations applied  | 🟢 **all 23**, local and remote in lockstep                                    |
 | Schema drift        | 🟢 none — `db:types:remote` structurally identical to the committed file       |
 | Tables              | 36, all with RLS enabled and explicit policies                                 |
 | RLS policies        | 64 on `public`, 10 on `storage.objects`                                        |
@@ -1132,6 +1132,8 @@ reversal here.**
 
 | ID     | Decision                                                                                                                                                                                                                                                                                                                      | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ADR-77 | **A page whose copy nobody has approved is not created.** Privacy, terms, "build service" and "business accounts" have no `content_pages` row and no footer link; the returns page exists and states that the policy is not finalised.                                                                                        | Every one of them was requested. The difference is that delivery, warranty and about have _facts_ behind them — carriers, a 24-hour window, a one-year term — while a privacy policy and a returns window are legal commitments, and writing plausible ones would bind the business to terms nobody agreed. A missing page is visibly missing and costs a link; an invented policy is invisible until somebody relies on it. Returns is the interesting case and is the pattern for the rest: the page exists because customers need somewhere to land, and it says what is true — talk to us — rather than inventing a window. Each becomes a link with one row in `content_pages` and one line in `SUPPORT_LINKS`.                                                                                                                                                                                                                                                                                                                                                               |
+| ADR-76 | **Content page bodies are plain text in a three-rule syntax** — `## ` heading, `- ` list item, blank line between paragraphs — parsed by `components/content/content-body.tsx`. Not HTML, not Markdown, not JSON.                                                                                                             | HTML in the column is the flexible answer and means rendering database markup through `dangerouslySetInnerHTML`; the write path is permission-gated and RLS-protected, so it is not an open door, but "an editor account can inject script into every visitor's page" is a poor trade for formatting a warranty page. Markdown needs a parser _and_ a sanitiser — two server-bundle dependencies to support three block types out of forty. A JSON block structure would be more expressive and would turn the admin editor into a form nobody can type prose into. Plain text is what an operator can read and edit in a textarea, and anything the parser does not recognise renders as a paragraph — so unexpected input becomes visible text rather than markup or silence.                                                                                                                                                                                                                                                                                                    |
 | ADR-75 | **The landing page and the listing filter are built from the navigation _tree_, capped, and skip anything empty.** Home shows at most 6 department rails and only those with products; the listing offers the 12 departments plus one level of narrower filters, never the whole taxonomy.                                    | Both rendered one element per category, which was survivable at twenty and became absurd at 102: the home page emitted **102 sections and a 54,246px document**, and the listing put a **424px** strip of 102 filter chips above results that were often empty. Both also cost a query per element — the home page fired a product query per rail. Deriving from the tree fixes the count and the query volume together, because the top level is twelve things and `productCount` is already the rolled-up subtree total, so an empty department is skipped without asking the database anything. The caps are layout decisions and are stated as such: **which** departments appear is `display_order`, which an operator sets in `/admin/categories`, so nothing here names a category (§ 12).                                                                                                                                                                                                                                                                                  |
 | ADR-74 | **Filtering by a department means filtering by its whole subtree.** `catalog.reads.listProducts` resolves the selected category to every id whose `path` contains it and passes `categoryIds`; `products.service` filters with `in`.                                                                                          | Products are filed against a leaf — a graphics card is in Graphics cards, never in Components — so `category_id = <Components>` matches nothing, and all twelve department links would render an empty shop. `path` is the trigger-maintained root-to-self chain (ADR-26), so the subtree is a containment test on an array the caller has already fetched for the menu: no recursive query, no second round trip, and correct at any depth. Resolved in the read facade rather than the service because the service must stay callable with an explicit id — an import script filing into one leaf should not silently match a subtree.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ADR-73 | **The mega menu is one trigger over a two-pane panel, not twelve header triggers.** Departments run down the left; the hovered one's subcategories fill the right.                                                                                                                                                            | The brief asks for a hover on each top-level category, and that is what was built first. It was then **measured**: twelve department labels put `document.scrollWidth` at 2423px inside a 1280px viewport — the whole desktop page scrolled sideways before any content rendered. The two ways out were shortening the department names, which means naming them for the layout instead of for the shopper, or moving the hover inside the panel. The second keeps every name and every behaviour the brief describes, and is what large computer retailers do for the same reason. Every panel stays in the DOM as `hidden` rather than being mounted on demand, so the server HTML carries all 102 category links.                                                                                                                                                                                                                                                                                                                                                               |
@@ -2074,6 +2076,95 @@ dev server. The write itself is immediate — the database was read back to conf
 it — and the delay is `router.refresh()` re-rendering a 102-row tree under
 Turbopack with a full layout revalidation. It has **not** been re-measured against
 a production build. Recorded as **D-32**.
+
+---
+
+## Business-information pages
+
+🟢 **Live in three languages, from the database.** Delivery, warranty, returns,
+contact and about — the pages the footer has been unable to link since Phase 3A,
+because `content_pages` existed and held no rows.
+
+| Page     | Path        | Content source                          |
+| -------- | ----------- | --------------------------------------- |
+| Delivery | `/delivery` | `content_pages` row, uz/ru/en           |
+| Warranty | `/warranty` | `content_pages` row, uz/ru/en           |
+| Returns  | `/returns`  | `content_pages` row, uz/ru/en           |
+| Contact  | `/contact`  | row **plus** `settings` for the details |
+| About    | `/about`    | `content_pages` row, uz/ru/en           |
+
+**No copy is hardcoded in a component.** The body of every page is a
+`content_page_translations` row shipped by
+`20260817001000_business_information_pages.sql`, editable from the admin without
+a deploy. What lives in `messages/info.json` is chrome — "Need a hand?", the
+field labels on the contact card — which is ADR-39 applied exactly as written.
+
+### What the business gave, and what it did not
+
+Everything published is the business's own information: the carriers (BTS, EMU,
+UzPost and whatever else serves the address), the 24-hour preparation window, the
+three-day delivery estimate, that delivery is charged separately and quoted on
+the confirmation call (ADR-63), that PCs are assembled in house, and the
+**one-year** warranty.
+
+Nothing else was written. Specifically:
+
+- **The returns page states that the policy is not finalised** and asks the
+  customer to get in touch. No window, no refund terms.
+- **The warranty page gives the term and says the detailed conditions are not
+  published yet.** No exclusions were invented.
+- **Privacy and terms do not exist** — no row, no route, no footer link
+  (**ADR-77**).
+- **The contact card renders only configured settings.** All five —
+  `store.phone`, `store.telegram`, `store.support_email`, `store.address`,
+  `store.hours` — are **null**, so the card says so in the visitor's language and
+  shows no number, no address and no hours. Verified both ways: with a value set
+  it rendered exactly that one field as a `tel:` link and left the other four
+  absent; the value was then reverted to null, because it was a test value and
+  not the shop's.
+
+### Three languages, written three times
+
+Uzbek first, then Russian and English from the same facts rather than from the
+Uzbek. The section counts differ (delivery is 7 sections in Uzbek and 6 in
+English), the headings differ, and the carrier list is a bulleted list in Uzbek
+and a sentence in Russian — which is what independent writing produces and
+translation does not.
+
+### A latent bug this surfaced
+
+**`checkout` and `adminHighlights` had never been loaded.** `i18n/messages.ts`
+enumerates the namespaces it imports and `scripts/check-translations.mjs` walked
+the `messages/` directory — two lists, and they had drifted. Both namespaces had
+all three locale files, so every translation check passed, while
+`useTranslations("checkout")` threw `MISSING_MESSAGE` and **`/checkout` answered
+500**. It went unnoticed because the route is behind a redirect and nothing had
+opened it in a browser since it was written.
+
+Found because `info` failed the same way and the same minute. All three are now
+in the loader, and the checker asserts the two lists agree in both directions —
+verified by removing `checkout` from the list and watching the check fail.
+
+### Verified
+
+| Check                                    | Result                                                            |
+| ---------------------------------------- | ----------------------------------------------------------------- |
+| `npm run verify`                         | passes — 175 schema assertions + build, **94 static routes** (79) |
+| 15 URLs (5 pages × 3 locales)            | **all 200**, production build                                     |
+| Untranslated keys in the production HTML | **0** across all 15                                               |
+| Raw `##` or `- ` markup leaking          | **0** — the parser renders headings and lists as elements         |
+| Three-year warranty claims               | **0**                                                             |
+| Invented return windows (7/14/30 days)   | **0**                                                             |
+| `tel:` / `mailto:` links                 | **0** — nothing is configured, so nothing is linked               |
+| Lifetime / free-repair claims            | **0**                                                             |
+| Footer links, all locales                | 18 × 200, 6 × 307 (the account links, correctly gated)            |
+| Language switch on a content page        | `/uz/returns` → `/ru/returns`, heading follows                    |
+| Mobile 375px                             | 0 overflow; aside drops below the copy; `h1` 24px                 |
+| Desktop 1280px                           | content column 1120px, footer 314px, 0 overflow                   |
+
+**Not verified:** 390 / 768 / 1024 / 1440 / 1920 on the new pages specifically.
+The layout is a single `max-w-[1120px]` container with one `lg:` breakpoint, and
+375 and 1280 were both measured — but the intermediate widths were not opened.
 
 ---
 

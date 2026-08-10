@@ -12,6 +12,67 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — the five business-information pages
+
+Delivery, warranty, returns, contact and about, at `/delivery`, `/warranty`,
+`/returns`, `/contact` and `/about` in all three languages. These are the pages
+the footer has been unable to link since Phase 3A, because `content_pages`
+existed and held no rows.
+
+**The copy is database rows, not JSX.** Every page body is a
+`content_page_translations` row shipped by
+`20260817001000_business_information_pages.sql` and editable from the admin
+without a deploy. `messages/info.json` holds only chrome — "Need a hand?", the
+contact card's field labels (ADR-39).
+
+Bodies are plain text in a three-rule syntax — `## ` heading, `- ` list item,
+blank line between paragraphs (**ADR-76**). Not HTML, which would mean rendering
+database markup through `dangerouslySetInnerHTML`; not Markdown, which would mean
+a parser and a sanitiser for three block types.
+
+**Only the business's own information is published:** the carriers, the 24-hour
+preparation window, the three-day delivery estimate, that delivery is charged
+separately and quoted on the confirmation call, that PCs are assembled in house,
+and the one-year warranty.
+
+**Nothing else was written** (**ADR-77**):
+
+- Returns states that the policy is not finalised and asks the customer to get
+  in touch — no window, no refund terms.
+- Warranty gives the term and says the detailed conditions are not published.
+- Privacy and terms have no row, no route and no footer link.
+- The contact card renders only configured settings. All five are currently
+  null, so it says so and shows no number, address or hours.
+
+Four new settings keys — `store.phone`, `store.telegram`, `store.address`,
+`store.hours` — declared public and **null**, following `store.support_email`. A
+null row is the field existing and being unconfigured, which is what lets the
+page say "not set up yet" instead of a developer guessing a phone number.
+
+Written Uzbek-first and then adapted independently: the section counts, headings
+and sentence shapes differ between the three, and the carrier list is bullets in
+Uzbek and a sentence in Russian.
+
+### Fixed — `/checkout` had been answering 500, and nothing noticed
+
+`i18n/messages.ts` enumerates the namespaces it imports; `check-translations.mjs`
+walked the `messages/` directory. Two lists, and they had drifted: `checkout` and
+`adminHighlights` both had all three locale files, so every translation check
+passed, while the loader never imported them and
+`useTranslations("checkout")` threw `MISSING_MESSAGE`. The checkout page was
+returning **500**. It survived because the route is behind a redirect and nothing
+had opened it in a browser since it was written.
+
+Both are now loaded, and the checker asserts the two lists agree in **both**
+directions — verified by removing an entry and watching it fail.
+
+### Changed — the footer links the pages it has been describing
+
+Four columns: brand, departments, **Yordam** (delivery, warranty, returns,
+contact) and **Kompaniya** (about, account, orders). Every entry resolves — 18
+return 200 and the six account links correctly 307 to sign-in. Still 314px at
+1280px, still no client JavaScript.
+
 ### Fixed — the page was 54,246px tall, and the footer was 2% of it
 
 The brief was "the footer is too tall". Measuring first said otherwise: at

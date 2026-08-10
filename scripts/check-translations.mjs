@@ -105,6 +105,68 @@ const allNamespaces = [
 
 const problems = [];
 
+/**
+ * The loader's namespace list must match the files on disk.
+ *
+ * `i18n/messages.ts` enumerates the namespaces it imports, and this script walks
+ * the directory — two lists, and they drifted. `checkout` and `adminHighlights`
+ * were both added with all three locale files present, so every check here
+ * passed, while the loader never imported them: `useTranslations("checkout")`
+ * threw `MISSING_MESSAGE` and the checkout page answered **500**. It went
+ * unnoticed because the page is behind a redirect and nothing had opened it in a
+ * browser since.
+ *
+ * Parsed out of the source rather than imported, because this is a `.mjs` script
+ * and that file is TypeScript. The shape is a flat `as const` array of string
+ * literals; anything else fails loudly here rather than silently passing.
+ */
+const loaderSource = await readFile(
+  fileURLToPath(new URL("../i18n/messages.ts", import.meta.url)),
+  "utf8",
+);
+
+const declared = loaderSource.match(
+  /export const namespaces = \[([\s\S]*?)\] as const;/,
+);
+
+if (!declared) {
+  problems.push(
+    "Could not read `namespaces` from i18n/messages.ts — the declaration shape changed, " +
+      "so this check is no longer verifying anything. Fix the pattern in this script.",
+  );
+} else {
+  // Comments inside the array carry quoted prose — "Bulk actions", "Need a
+  // hand?" — and a bare quoted-string match reads those as namespaces. Strip
+  // the comment lines, then take only entries that are a whole line.
+  const entries = declared[1]
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("//"));
+
+  const loaded = new Set(
+    entries
+      .map((line) => /^"([^"]+)",?$/.exec(line)?.[1])
+      .filter((name) => typeof name === "string"),
+  );
+
+  for (const namespace of allNamespaces) {
+    if (!loaded.has(namespace)) {
+      problems.push(
+        `messages/*/${namespace}.json exists but i18n/messages.ts does not load it — ` +
+          `every component calling useTranslations("${namespace}") will throw MISSING_MESSAGE.`,
+      );
+    }
+  }
+
+  for (const namespace of loaded) {
+    if (!allNamespaces.includes(namespace)) {
+      problems.push(
+        `i18n/messages.ts loads "${namespace}", but messages/*/${namespace}.json does not exist.`,
+      );
+    }
+  }
+}
+
 for (const namespace of allNamespaces) {
   const present = locales.filter((locale) => byLocale[locale][namespace]);
   const missing = locales.filter((locale) => !byLocale[locale][namespace]);

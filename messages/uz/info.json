@@ -1,0 +1,16 @@
+{
+  "help": {
+    "title": "Savolingiz bormi?",
+    "body": "Buyurtma, yetkazib berish yoki kafolat bo'yicha yozing — javob beramiz.",
+    "cta": "Bog'lanish"
+  },
+  "contact": {
+    "title": "Aloqa ma'lumotlari",
+    "phone": "Telefon",
+    "telegram": "Telegram",
+    "email": "Elektron pochta",
+    "address": "Manzil",
+    "hours": "Ish vaqti",
+    "unconfigured": "Aloqa ma'lumotlari hali kiritilmagan."
+  }
+}

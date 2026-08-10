@@ -2,8 +2,16 @@
   "tagline": "Noutbuk, kompyuter, kompyuter qismlari va aksessuarlar sotamiz.",
   "warranty": "Yig'ilgan kompyuterlarga 1 yil kafolat.",
   "shop": "Xarid",
-  "account": "Hisob",
-  "accountItems": {
+  "support": "Yordam",
+  "company": "Kompaniya",
+  "supportItems": {
+    "delivery": "Yetkazib berish",
+    "warranty": "Kafolat",
+    "returns": "Qaytarish",
+    "contact": "Aloqa"
+  },
+  "companyItems": {
+    "about": "Bondo haqida",
     "account": "Mening hisobim",
     "orders": "Buyurtmalarim"
   },

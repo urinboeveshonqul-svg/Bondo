@@ -93,7 +93,31 @@ const LINK_CLASS =
 /** Small, but clearly a heading. Not a shouty one — this is a footer. */
 const HEADING_CLASS = "text-xs font-semibold tracking-wide uppercase";
 
-type FooterGroup = "shop" | "account";
+type FooterGroup = "shop" | "support" | "company";
+
+/**
+ * The support and company columns, as routes rather than labels.
+ *
+ * Every entry is a page that exists and is published — the five business-
+ * information pages plus the order history. The order is the display order.
+ *
+ * **Privacy and terms are absent, and so are "build service" and "business
+ * accounts".** No approved copy exists for any of them, and a footer link to a
+ * page nobody has written is either a 404 or invented policy (**ADR-77**).
+ * Adding one back is one line here plus its row in `content_pages`.
+ */
+const SUPPORT_LINKS = [
+  { key: "delivery", href: routes.info.delivery },
+  { key: "warranty", href: routes.info.warranty },
+  { key: "returns", href: routes.info.returns },
+  { key: "contact", href: routes.info.contact },
+] as const;
+
+const COMPANY_LINKS = [
+  { key: "about", href: routes.info.about },
+  { key: "account", href: routes.account.index },
+  { key: "orders", href: routes.account.orders },
+] as const;
 
 /**
  * One group's links, without its heading.
@@ -116,9 +140,9 @@ function FooterLinks({
   if (group === "shop") {
     return (
       // Eight departments stacked in one column were 256px, and that column
-      // alone decided the footer's height. Two columns from `lg` make it four
-      // rows without dropping a link or shrinking a touch target.
-      <ul className="lg:grid lg:grid-cols-2 lg:gap-x-6">
+      // alone decided the footer's height. Two sub-columns from `sm` make it
+      // four rows without dropping a link or shrinking a touch target.
+      <ul className="sm:grid sm:grid-cols-2 sm:gap-x-6">
         {departments.map((department) => (
           <li key={department.id}>
             <Link
@@ -138,18 +162,18 @@ function FooterLinks({
     );
   }
 
+  const links = group === "support" ? SUPPORT_LINKS : COMPANY_LINKS;
+  const prefix = group === "support" ? "supportItems" : "companyItems";
+
   return (
     <ul>
-      <li>
-        <Link href={routes.account.index} className={LINK_CLASS}>
-          {t("accountItems.account")}
-        </Link>
-      </li>
-      <li>
-        <Link href={routes.account.orders} className={LINK_CLASS}>
-          {t("accountItems.orders")}
-        </Link>
-      </li>
+      {links.map((link) => (
+        <li key={link.key}>
+          <Link href={link.href} className={LINK_CLASS}>
+            {t(`${prefix}.${link.key}`)}
+          </Link>
+        </li>
+      ))}
     </ul>
   );
 }
@@ -196,7 +220,8 @@ export function SiteFooter({ categories }: { categories: CategoryNavItem[] }) {
 
   const groups = [
     { id: "shop", heading: t("shop") },
-    { id: "account", heading: t("account") },
+    { id: "support", heading: t("support") },
+    { id: "company", heading: t("company") },
   ] as const;
 
   return (
@@ -212,19 +237,19 @@ export function SiteFooter({ categories }: { categories: CategoryNavItem[] }) {
       */}
       <Container className="py-10 lg:py-12">
         {/*
-          Three equal columns from `sm`, then twelve from `lg` so the blocks can
-          be 4 / 5 / 3 rather than thirds: the brand needs a readable measure,
-          the department list needs room for two sub-columns, and the account
-          list needs neither.
+          Two columns from `sm`, four from `lg`. Twelve tracks rather than four
+          so the brand can take three of them and still read as a paragraph
+          rather than a column of two-word lines.
 
-          Three-across at `sm` rather than two, because a 2×2 grid put the
-          eight-row department list in its own row and made the tablet footer
-          **taller than the desktop one** — 546px at 768px wide, against 314px at
-          1280px. Measured at every breakpoint in the brief, not assumed.
+          The department list is what decides this footer's height, so it goes
+          two-across from `sm` too — eight rows stacked made the tablet footer
+          **taller than the desktop one** (546px at 768px against 314px at
+          1280px) before that was fixed. Measured at every breakpoint, not
+          assumed.
         */}
-        <div className="grid gap-8 sm:grid-cols-3 lg:grid-cols-12 lg:gap-10">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-12 lg:gap-10">
           {/* Column 1 — the brand. */}
-          <div className="space-y-2.5 lg:col-span-4">
+          <div className="space-y-2.5 sm:col-span-2 lg:col-span-4">
             <p className="text-base font-semibold tracking-tight">
               {siteConfig.name}
             </p>
@@ -254,15 +279,15 @@ export function SiteFooter({ categories }: { categories: CategoryNavItem[] }) {
             ))}
           </div>
 
-          {/* Desktop columns 2 and 3. */}
+          {/* Desktop columns 2, 3 and 4. */}
           {groups.map((group) => (
             <nav
               key={group.id}
               aria-labelledby={`footer-${group.id}`}
               className={
                 group.id === "shop"
-                  ? "hidden sm:block lg:col-span-5"
-                  : "hidden sm:block lg:col-span-3"
+                  ? "hidden sm:block lg:col-span-4"
+                  : "hidden sm:block lg:col-span-2"
               }
             >
               {/*

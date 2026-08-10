@@ -35,6 +35,28 @@ export const routes = {
     search: "/search",
   },
 
+  /**
+   * Business-information pages.
+   *
+   * The path is the same in every language — `/uz/delivery`, `/ru/delivery`,
+   * `/en/delivery` — and the key in the table matches the last segment. These
+   * do **not** use the per-locale slug that categories and products do
+   * (ADR-52): a policy page has one address the business quotes, and three
+   * addresses per page would be three URLs to keep alive for no reader's
+   * benefit.
+   *
+   * Every one of these has a published row in `content_pages`. Privacy and
+   * terms are absent on purpose — no approved copy exists, and a route to
+   * invented legal text is worse than a missing link (**ADR-77**).
+   */
+  info: {
+    delivery: "/delivery",
+    warranty: "/warranty",
+    returns: "/returns",
+    contact: "/contact",
+    about: "/about",
+  },
+
   cart: "/cart",
   checkout: "/checkout",
   /**

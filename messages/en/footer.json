@@ -2,8 +2,16 @@
   "tagline": "Laptops, desktops, PC parts and accessories.",
   "warranty": "Every PC we build comes with a one-year warranty.",
   "shop": "Shop",
-  "account": "Your account",
-  "accountItems": {
+  "support": "Help",
+  "company": "Company",
+  "supportItems": {
+    "delivery": "Delivery",
+    "warranty": "Warranty",
+    "returns": "Returns",
+    "contact": "Contact us"
+  },
+  "companyItems": {
+    "about": "About Bondo",
     "account": "Account",
     "orders": "Your orders"
   },

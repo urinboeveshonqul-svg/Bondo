@@ -23,6 +23,11 @@ export const namespaces = [
   "errors",
   "auth",
   "account",
+  "checkout",
+  // The five business-information pages: their chrome, not their copy. The copy
+  // lives on `content_pages` rows (ADR-39 — a delivery policy is written by the
+  // business and changes without a deploy; "Need a hand?" is interface).
+  "info",
   // Admin. Split from the storefront namespaces because they are a different
   // audience with a different vocabulary — and because a shopper's bundle has
   // no reason to carry the word "Bulk actions" in three languages.
@@ -32,6 +37,7 @@ export const namespaces = [
   "adminInventory",
   "adminContent",
   "adminSystem",
+  "adminHighlights",
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
