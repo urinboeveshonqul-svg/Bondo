@@ -205,6 +205,14 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
+    // Lets `app/global-not-found.tsx` render its own `<html>` and `<body>`.
+    //
+    // Next applies neither `app/layout.tsx` nor `app/[locale]/layout.tsx` to a
+    // `not-found.tsx`, so until this existed every 404 on the site rendered the
+    // right localized copy inside the framework's bare fallback document —
+    // `<html id="__next_error__">`, no `lang`, no font (**K-20**, ADR-82).
+    globalNotFound: true,
+
     // Both are barrel packages: `lucide-react` re-exports ~1,500 icons and
     // `radix-ui` re-exports every primitive. Without this, importing one icon
     // or one `Slot` makes the bundler walk the whole module graph. This rewrites

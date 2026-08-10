@@ -12,6 +12,48 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Fixed — every 404 rendered the framework's bare document
+
+A 404 answered the right **status** and then showed
+`<html id="__next_error__">`: no `lang`, no stylesheet, no font, no site
+chrome. The localized copy in `app/[locale]/not-found.tsx` was rendering
+correctly the whole time — into a document that looked like a crashed site
+(**K-20**, **ADR-82**).
+
+The cause is that Next.js renders a 404 against the **root** layout and nothing
+below it, and `app/layout.tsx` was a passthrough by design (ADR-42), so there
+was no `<html>` for it to render into and the framework substituted its own.
+
+Three changes, and each was necessary — the first two were measured on
+production builds and neither worked alone:
+
+1. **`app/layout.tsx` renders the document.** `<html>`, `<body>`, the fonts
+   and `globals.css` moved up from `app/[locale]/layout.tsx`. The locale comes
+   from `getLocale()` rather than a route param, because this file sits above
+   `[locale]`; `cookies()` and `headers()` throw where a 404 renders, while
+   next-intl's resolver falls back to the default locale instead.
+2. **`app/global-not-found.tsx`**, enabled by `experimental.globalNotFound`.
+   A URL matching no route gets no layout at all — not even the root one — so
+   that case has to draw its own document.
+3. **`app/[locale]/[...rest]/page.tsx` deleted.** The catch-all turned every
+   unmatched URL into a _matched_ one, which sent it back to the built-in
+   boundary and stopped `global-not-found` from ever being reached.
+
+The storefront header and footer deliberately stay in the locale layout: they
+need the category tree, and a 404 that depends on a database read is a 404 that
+can fail (**K-18**).
+
+Verified on a production build and in a browser, in all three languages:
+`/uz/nothing-here`, `/ru/nothing-here`, `/en/x/y/z` and
+`/{locale}/products/<unknown>` each answer 404 with the correct `lang`, the
+translated copy, the stylesheet and the font. `/uz/cart`, a dead link with no
+route behind it, now lands on the same page instead of the bare shell.
+
+One case is left and is recorded as **K-25**: a `notFound()` from a route that
+matched still streams the framework shell first and reconciles to the real
+document on hydration, so a client with no JavaScript sees unstyled copy. Next
+applies no layout to that boundary and offers no configuration for it.
+
 ### Fixed — an unknown product URL answered 200 instead of 404
 
 `/uz/products/does-not-exist` returned **200** with "we could not load the

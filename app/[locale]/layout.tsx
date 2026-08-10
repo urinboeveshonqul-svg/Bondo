@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -20,29 +19,6 @@ import {
   type Locale,
 } from "@/lib/site-config";
 import { listCategoryNavigation } from "@/services/catalog.reads";
-import "@/styles/globals.css";
-
-/**
- * `next/font` self-hosts the font files at build time: no runtime request to
- * Google, no third-party origin in the critical path, and no layout shift.
- *
- * `latin` and `cyrillic` are both loaded, because Russian is a supported locale
- * and a missing Cyrillic subset does not fail — it silently falls back to a
- * system font, so the Russian site would render in a different typeface from the
- * other two and nothing would report it. Uzbek is written in Latin script here
- * and needs no third subset.
- */
-const fontSans = Geist({
-  variable: "--font-sans",
-  subsets: ["latin", "cyrillic"],
-  display: "swap",
-});
-
-const fontMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin", "cyrillic"],
-  display: "swap",
-});
 
 /**
  * Prerenders all three locales. Without this every localized page opts into
@@ -111,11 +87,16 @@ export const viewport: Viewport = {
 };
 
 /**
- * The application's root layout.
+ * The storefront shell: providers, header, footer.
  *
- * It lives under `[locale]` rather than at `app/` because it is the first
- * element that depends on the language: `<html lang>` has to be right before
- * anything renders, and a layout above this one could not know the locale.
+ * The document itself — `<html>`, `<body>`, the fonts, the stylesheet — is in
+ * `app/layout.tsx`. It used to be here, because this is the first element that
+ * knows the locale, and that cost us the 404 page: Next renders `not-found.tsx`
+ * against the root layout only, so a passthrough root left every 404 in the
+ * framework's bare shell (**K-20**, ADR-82).
+ *
+ * What stays here is everything a 404 must be able to render *without* — the
+ * category query above all, which a lost visitor should never depend on.
  */
 export default async function LocaleLayout({
   children,
@@ -152,54 +133,37 @@ export default async function LocaleLayout({
   // their own content.
   const categories = await listCategoryNavigation(locale as Locale);
 
-  // The font variables belong on <html>, not <body>: globals.css applies
-  // `font-sans` to the html element, so the custom property has to be defined
-  // there or it resolves to nothing and the browser falls back to a serif.
-  //
-  // `suppressHydrationWarning` is scoped to <html> and is required by
-  // next-themes: it writes the theme class from a pre-paint inline script, so
-  // the server-rendered attribute legitimately differs on the first client
-  // pass. It suppresses nothing below this element.
   return (
-    <html
-      lang={localeConfig[locale].tag}
-      dir="ltr"
-      className={`${fontSans.variable} ${fontMono.variable}`}
-      suppressHydrationWarning
-    >
-      <body className="flex min-h-svh flex-col antialiased">
+    /*
+      Sends the active locale, the messages and the pinned time zone to Client
+      Components. Only the messages for components actually rendered on the
+      client are serialised into the payload, so the Uzbek and English copy is
+      not shipped to a Russian visitor.
+    */
+    <NextIntlClientProvider>
+      <ThemeProvider>
         {/*
-          Sends the active locale, the messages and the pinned time zone to
-          Client Components. Only the messages for components actually rendered
-          on the client are serialised into the payload, so the Uzbek and English
-          copy is not shipped to a Russian visitor.
+          Inside ThemeProvider rather than around it: the basket is storefront
+          state and the theme wraps the whole document. Its own state is
+          localStorage-backed and read after mount, so mounting it here costs
+          one small context and no server work (ADR-64).
         */}
-        <NextIntlClientProvider>
-          <ThemeProvider>
-            {/*
-              Inside ThemeProvider rather than around it: the basket is storefront
-              state and the theme wraps the whole document. Its own state is
-              localStorage-backed and read after mount, so mounting it here costs
-              one small context and no server work (ADR-64).
-            */}
-            <CartProvider>
-              <a
-                href="#main"
-                className="sr-only rounded-md bg-background px-4 py-2 focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:ring-2 focus:ring-ring"
-              >
-                {t("skipToContent")}
-              </a>
+        <CartProvider>
+          <a
+            href="#main"
+            className="sr-only rounded-md bg-background px-4 py-2 focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:ring-2 focus:ring-ring"
+          >
+            {t("skipToContent")}
+          </a>
 
-              <SiteHeader categories={categories} />
-              <main id="main" className="flex-1">
-                {children}
-              </main>
-              <SiteFooter categories={categories} />
-              <Toaster />
-            </CartProvider>
-          </ThemeProvider>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+          <SiteHeader categories={categories} />
+          <main id="main" className="flex-1">
+            {children}
+          </main>
+          <SiteFooter categories={categories} />
+          <Toaster />
+        </CartProvider>
+      </ThemeProvider>
+    </NextIntlClientProvider>
   );
 }
