@@ -143,22 +143,41 @@ function toSummary(
 // Reads
 // -----------------------------------------------------------------------------
 
+/**
+ * The raw category rows, fetched **once per request**.
+ *
+ * Nearly every read below needs the category list — to resolve a slug to an id,
+ * to map a product's `category_id` back to a URL, or to build the menu — and
+ * each was fetching it again. On a page with several product rails that is one
+ * full category query per rail, which is the N+1 this facade exists to avoid.
+ *
+ * `cache()` is per-request memoisation, not a cross-request cache: which
+ * categories a caller may see depends on their RLS session (ADR-12).
+ */
+const readCategoryRows = cache(async () => {
+  const supabase = await createClient();
+
+  return categoriesService.listCategories(supabase);
+});
+
 export async function listCategories(locale: Locale): Promise<Category[]> {
   return withFixtureFallback(
     "listCategories",
     async () => {
       const supabase = await createClient();
-      const rows = await categoriesService.listCategories(supabase, {
-        visibleOnly: true,
-      });
-      const counts = await categoriesService.countProductsByCategory(supabase);
+      const [all, counts] = await Promise.all([
+        readCategoryRows(),
+        categoriesService.countProductsByCategory(supabase),
+      ]);
 
-      return rows.map((row) => ({
-        slug: pick(row.slug, locale),
-        name: row.name,
-        description: row.description,
-        productCount: counts.get(row.id) ?? 0,
-      }));
+      return all
+        .filter((row) => row.isVisible)
+        .map((row) => ({
+          slug: pick(row.slug, locale),
+          name: row.name,
+          description: row.description,
+          productCount: counts.get(row.id) ?? 0,
+        }));
     },
     async () => (await import("@/mocks/catalog")).categories,
   );
@@ -187,8 +206,7 @@ export async function listBrands(): Promise<Brand[]> {
 
 /** Resolves a category id to its localized slug, for the summary mapping. */
 async function categorySlugs(locale: Locale): Promise<Map<string, string>> {
-  const supabase = await createClient();
-  const rows = await categoriesService.listCategories(supabase);
+  const rows = await readCategoryRows();
 
   return new Map(rows.map((row) => [row.id, pick(row.slug, locale)]));
 }
@@ -244,7 +262,7 @@ export async function listProducts(
     "listProducts",
     async () => {
       const supabase = await createClient();
-      const categories = await categoriesService.listCategories(supabase);
+      const categories = await readCategoryRows();
       const slugs = new Map(
         categories.map((row) => [row.id, pick(row.slug, locale)]),
       );
@@ -537,10 +555,15 @@ const readNavigationTree = cache(
   async (locale: Locale): Promise<CategoryNavItem[]> => {
     const supabase = await createClient();
 
-    const [rows, directCounts] = await Promise.all([
-      categoriesService.listCategories(supabase, { visibleOnly: true }),
+    const [all, directCounts] = await Promise.all([
+      readCategoryRows(),
       categoriesService.countProductsByCategory(supabase),
     ]);
+
+    // Filtered here rather than in the query, so this shares the one memoised
+    // category read with every other caller instead of issuing a second,
+    // near-identical `visibleOnly` fetch.
+    const rows = all.filter((row) => row.isVisible);
 
     const counts = categoriesService.rollUpProductCounts(rows, directCounts);
 

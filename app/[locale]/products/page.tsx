@@ -10,11 +10,42 @@ import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
 import { CatalogUnavailable } from "@/components/shared/catalog-unavailable";
 import {
-  listCategories,
+  listCategoryNavigation,
   listProducts,
   readCatalog,
 } from "@/services/catalog.reads";
+import type { CategoryNavItem } from "@/types/catalog";
 import type { PageParams, PageSearchParams } from "@/types";
+
+/** Depth-first lookup by localized slug. Recursive, so nesting depth is free. */
+function findBySlug(
+  nodes: readonly CategoryNavItem[],
+  slug: string,
+): CategoryNavItem | null {
+  for (const node of nodes) {
+    if (node.slug === slug) return node;
+
+    const found = findBySlug(node.children, slug);
+    if (found) return found;
+  }
+
+  return null;
+}
+
+/** The node whose children contain `slug`, or `null` at the top level. */
+function findParent(
+  nodes: readonly CategoryNavItem[],
+  slug: string,
+): CategoryNavItem | null {
+  for (const node of nodes) {
+    if (node.children.some((child) => child.slug === slug)) return node;
+
+    const found = findParent(node.children, slug);
+    if (found) return found;
+  }
+
+  return null;
+}
 
 export async function generateMetadata({
   params,
@@ -63,19 +94,40 @@ export default async function ProductsPage({
   // boundary that `loading.tsx` opens above this route would turn that into a
   // permanent **200** with an empty skeleton (**K-19**).
   const data = await readCatalog(async () => {
-    const [categories, results] = await Promise.all([
-      listCategories(activeLocale),
+    const [tree, results] = await Promise.all([
+      // The nested tree, not the flat list. Rendering a filter chip per category
+      // produced a **424px** strip of 102 buttons above every listing — more
+      // vertical space than the results themselves on an empty catalog.
+      listCategoryNavigation(activeLocale),
       listProducts(activeLocale, { categorySlug, query }),
     ]);
 
-    return { categories, results };
+    return { tree, results };
   });
 
   if (!data) return <CatalogUnavailable />;
 
-  const { categories, results } = data;
+  const { tree, results } = data;
 
-  const activeCategory = categories.find((c) => c.slug === categorySlug);
+  const activeCategory = categorySlug ? findBySlug(tree, categorySlug) : null;
+
+  /**
+   * The filters, two rows deep at most.
+   *
+   * Departments are always offered, because they are how a shopper starts.
+   * Underneath, the level that is useful *from here*: the children of the
+   * department they are in, or — if they have already narrowed to a
+   * subcategory — its siblings, so moving sideways does not mean going back up
+   * first. Nothing deeper is shown, because a filter strip that lists the whole
+   * taxonomy is the mega menu with worse ergonomics.
+   */
+  const departments = tree;
+  const narrower = activeCategory
+    ? activeCategory.children.length > 0
+      ? activeCategory.children
+      : (findParent(tree, activeCategory.slug)?.children ?? [])
+    : [];
+
   const heading = activeCategory
     ? activeCategory.name[activeLocale]
     : t("title");
@@ -97,29 +149,58 @@ export default async function ProductsPage({
         ) : null}
       </div>
 
-      <nav
-        aria-label={t("filterByCategory")}
-        className="mb-8 flex flex-wrap gap-2"
-      >
-        <Button
-          asChild
-          size="sm"
-          variant={categorySlug ? "outline" : "default"}
-        >
-          <Link href={routes.catalog.index}>{t("all")}</Link>
-        </Button>
-        {categories.map((category) => (
+      <nav aria-label={t("filterByCategory")} className="mb-8 space-y-2">
+        <div className="flex flex-wrap gap-2">
           <Button
-            key={category.slug}
             asChild
             size="sm"
-            variant={categorySlug === category.slug ? "default" : "outline"}
+            variant={categorySlug ? "outline" : "default"}
           >
-            <Link href={routes.catalog.byCategory(category.slug)}>
-              {category.name[activeLocale]}
-            </Link>
+            <Link href={routes.catalog.index}>{t("all")}</Link>
           </Button>
-        ))}
+          {departments.map((department) => (
+            <Button
+              key={department.id}
+              asChild
+              size="sm"
+              // A department stays highlighted while a shopper is inside one of
+              // its subcategories, so the strip shows where they are rather than
+              // only what they last clicked.
+              variant={
+                activeCategory &&
+                (activeCategory.id === department.id ||
+                  department.children.some(
+                    (child) => child.id === activeCategory.id,
+                  ))
+                  ? "default"
+                  : "outline"
+              }
+            >
+              <Link href={routes.catalog.byCategory(department.slug)}>
+                {department.name[activeLocale]}
+              </Link>
+            </Button>
+          ))}
+        </div>
+
+        {narrower.length > 0 ? (
+          <div className="flex flex-wrap gap-2 border-t pt-2">
+            {narrower.map((child) => (
+              <Button
+                key={child.id}
+                asChild
+                size="sm"
+                variant={
+                  activeCategory?.id === child.id ? "secondary" : "ghost"
+                }
+              >
+                <Link href={routes.catalog.byCategory(child.slug)}>
+                  {child.name[activeLocale]}
+                </Link>
+              </Button>
+            ))}
+          </div>
+        ) : null}
       </nav>
 
       {/* The results region needs a heading of its own: the cards are `h3`, and

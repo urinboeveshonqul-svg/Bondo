@@ -12,7 +12,7 @@ import type { Locale } from "@/lib/site-config";
 import { CatalogUnavailable } from "@/components/shared/catalog-unavailable";
 import {
   listBrands,
-  listCategories,
+  listCategoryNavigation,
   listDealProducts,
   listFeaturedProducts,
   listProductsByCategory,
@@ -21,6 +21,17 @@ import {
   readCatalog,
 } from "@/services/catalog.reads";
 import type { PageParams } from "@/types";
+
+/**
+ * How many department rails the landing page shows.
+ *
+ * A cap, not a target: the shop has twelve departments and a landing page that
+ * scrolls through all of them is a catalog, not a shop window. Six is roughly
+ * three screens of browsing before the deals band, which is where a visitor who
+ * has not found what they want should be reaching for search or the menu
+ * instead.
+ */
+const HOME_RAILS = 6;
 
 /**
  * Home page.
@@ -57,17 +68,33 @@ export default async function HomePage({
   // document with the global boundary (**K-19**). `null` means the catalog is
   // unreachable, which is a different thing from the catalog being empty.
   const data = await readCatalog(async () => {
-    const [categories, featured, deals, brands] = await Promise.all([
-      listCategories(activeLocale),
+    const [departments, featured, deals, brands] = await Promise.all([
+      // The **twelve departments**, not all 102 categories. One rail per
+      // category rendered 102 sections of roughly 494px each — a 54,000px home
+      // page — and fired a product query per rail. Both are fixed by asking the
+      // navigation tree for its top level, which is already memoised for the
+      // header (**ADR-75**).
+      listCategoryNavigation(activeLocale),
       listFeaturedProducts(activeLocale),
       listDealProducts(activeLocale),
       listBrands(),
     ]);
 
+    /**
+     * A rail is only worth a query if the department has something in it.
+     *
+     * `productCount` is the subtree total the navigation read already computed,
+     * so this costs nothing and means an empty shop fetches nothing at all
+     * rather than issuing twelve queries that each return zero rows.
+     */
+    const withStock = departments
+      .filter((department) => department.productCount > 0)
+      .slice(0, HOME_RAILS);
+
     const rails = await Promise.all(
-      categories.map(async (category) => ({
-        category,
-        products: await listProductsByCategory(activeLocale, category.slug),
+      withStock.map(async (department) => ({
+        department,
+        products: await listProductsByCategory(activeLocale, department.slug),
       })),
     );
 
@@ -102,15 +129,15 @@ export default async function HomePage({
 
       <BrandStrip brands={brands} />
 
-      {rails.map(({ category, products }, index) => (
+      {rails.map(({ department, products }, index) => (
         <Section
-          key={category.slug}
-          id={category.slug}
-          title={category.name[activeLocale]}
-          description={category.description[activeLocale]}
-          href={routes.catalog.byCategory(category.slug)}
+          key={department.slug}
+          id={department.slug}
+          title={department.name[activeLocale]}
+          description={department.description[activeLocale]}
+          href={routes.catalog.byCategory(department.slug)}
           linkLabel={t("category.linkLabel", {
-            category: category.name[activeLocale],
+            category: department.name[activeLocale],
           })}
           muted={index % 2 === 1}
         >

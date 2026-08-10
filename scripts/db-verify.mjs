@@ -87,7 +87,7 @@ const { db, migrationCount } = await createSchema();
 
 check(
   "all migrations apply cleanly",
-  migrationCount === 21,
+  migrationCount === 22,
   `${migrationCount} files`,
 );
 
@@ -1379,6 +1379,40 @@ try {
   check(
     "a product filed under Graphics cards is reachable from Components",
     gpuInSubtree.ok === true,
+  );
+
+  // The components department carries the wording the business asked for, in
+  // Uzbek only — Russian and English keep the word their own shoppers use.
+  const componentWording = (
+    await db.query(
+      `select locale, name from public.category_translations
+       where category_id = $1 order by locale`,
+      [components.id],
+    )
+  ).rows;
+
+  check(
+    "the components department reads as the business words it",
+    componentWording.some(
+      (r) => r.locale === "uz" && r.name === "Kompyuter qismlari",
+    ) &&
+      componentWording.some(
+        (r) => r.locale === "ru" && r.name === "Комплектующие",
+      ) &&
+      componentWording.some(
+        (r) => r.locale === "en" && r.name === "PC components",
+      ),
+    componentWording.map((r) => `${r.locale}=${r.name}`).join(" "),
+  );
+
+  check(
+    "renaming it did not move its URL",
+    (
+      await db.query(
+        `select count(*)::int as n from public.category_translations
+         where locale = 'uz' and slug = 'butlovchi-qismlar'`,
+      )
+    ).rows[0].n === 1,
   );
 
   // The ADR-68 flat defaults are gone, not sitting beside the new tree.

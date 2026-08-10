@@ -12,6 +12,83 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Fixed — the page was 54,246px tall, and the footer was 2% of it
+
+The brief was "the footer is too tall". Measuring first said otherwise: at
+1280px the home page document was **54,246px** and the footer was **870px**.
+
+**The cause was two uncapped loops meeting the new taxonomy.** The home page
+rendered one section per category and the listing rendered one filter chip per
+category. Both were written for twenty categories and survived the jump to 102
+without being re-measured: 102 empty sections of ~494px each, 102 product
+queries — one per rail, each re-fetching the whole category list first — and a
+424px filter strip above every listing.
+
+Both now derive from the navigation tree instead of the flat list (**ADR-75**).
+The home page takes at most six **departments** and skips any with no products,
+so an empty catalog fetches nothing and renders no rails. The listing offers the
+twelve departments plus one level of narrower filters. `catalog.reads` memoises
+the raw category read per request, collapsing the duplicate fetches into one.
+
+| Measured at 1280px   | Before   | After       |
+| -------------------- | -------- | ----------- |
+| Home page document   | 54,246px | **3,323px** |
+| Home page sections   | 108      | **6**       |
+| Listing filter strip | 424px    | **64px**    |
+
+Nothing was hidden to get there. An empty rail has no content by definition, and
+every category is still reachable from the mega menu, the mobile accordion, the
+footer and the listing's filter strip.
+
+### Fixed — the site claimed a three-year warranty and a one-year warranty
+
+The footer said three years; the home page's service highlights — real database
+rows — say one. The shop contradicted itself on its main trust claim, in all
+three languages. Every warranty string is now **one year**, including the hero's
+eyebrow and its assurance row.
+
+### Fixed — signing in from a protected link landed on a 404 (**K-24**)
+
+Middleware stored `redirectTo` **with** its locale prefix while every consumer
+treats the value as unprefixed: `signInAction` hands it to `router.push()` from
+`@/i18n/navigation`, which prefixes whatever it is given, so `/uz/account`
+became `/uz/uz/account`. Sign-in itself succeeded, which is why it read as a
+broken link rather than a broken login. `supabase/session.ts` now stores the
+path from `splitLocale()`, matching `lib/routes.ts` and `lib/auth/guards.ts`.
+
+### Changed — the footer, rebuilt compact and honest
+
+Three blocks on a twelve-column grid — brand 4, departments 5, account 3 —
+collapsing to three equal columns at `sm` and to two `<details>` disclosures on a
+phone. Still a Server Component shipping no client JavaScript.
+
+| Footer height | Before | After     |
+| ------------- | ------ | --------- |
+| 1280px        | 870px  | **314px** |
+| 768px         | 546px  | **426px** |
+| 375px         | 523px  | **364px** |
+
+**Removed, because each showed a visitor something untrue:** the newsletter form
+(no endpoint records a signup), four hardcoded social "links" for accounts that
+do not exist, and eight inert grey rows plus a footnote apologising for the
+support and company pages. `content_pages` exists and has no rows — writing
+delivery windows, warranty terms and a returns policy is the business's job, and
+inventing them would be the fake content ADR-20 forbids. They return as links the
+day the pages have copy.
+
+Link rows are **44px on touch, 32px from `sm`**. The previous `py-1.5` carried a
+comment claiming it made a 44px target; 20px of line box plus 12px of padding is
+32px, and the claim had been in the file since the last footer pass.
+
+### Changed — `butlovchi qismlar` → `kompyuter qismlari` in Uzbek
+
+At the business's request, and applied where it is read: the footer, the catalog
+and home metadata, and the components department itself
+(`20260816001000_component_category_wording.sql`). Guarded so a category an
+operator renamed keeps their name, and the slug is untouched so no URL moves.
+Russian keeps «Комплектующие» and English keeps "PC components" — the ban is on
+an Uzbek word, not on the concept.
+
 ### Added — the category system, redesigned as a real retail hierarchy
 
 **A twelve-department tree, 102 categories, none of them hardcoded.**

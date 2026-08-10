@@ -71,15 +71,26 @@ function hasAuthCookie(request: NextRequest): boolean {
 function redirectToSignIn(request: NextRequest) {
   const signInUrl = request.nextUrl.clone();
   const { pathname, search } = request.nextUrl;
-  const { locale } = splitLocale(pathname);
+  const { locale, pathname: unprefixed } = splitLocale(pathname);
 
   // Sent to the sign-in page *in the language they were already reading*.
   // `routes.auth.signIn` is unprefixed, so without this the gate would drop a
-  // Russian shopper onto the Uzbek sign-in form. `redirectTo` keeps its prefix
-  // so the round trip returns them to the same localized page.
+  // Russian shopper onto the Uzbek sign-in form.
   signInUrl.pathname = localizePath(locale, routes.auth.signIn);
   signInUrl.search = "";
-  signInUrl.searchParams.set("redirectTo", `${pathname}${search}`);
+
+  // **`redirectTo` is stored without its locale prefix** (**K-24**). It used to
+  // keep one, and every consumer then added a second: `signInAction` hands the
+  // value to `router.push()` from `@/i18n/navigation`, which prefixes whatever
+  // it is given, so `/uz/account` became `/uz/uz/account` and a visitor who
+  // signed in from the footer's account link landed on a 404. Sign-in itself
+  // succeeded, which is why it read as a broken link rather than a broken login.
+  //
+  // Unprefixed is the project's convention everywhere else — `lib/routes.ts`
+  // carries no locale and `lib/auth/guards.ts` already passes bare `routes.*`
+  // values here. Nothing is lost by dropping it: the visitor is on a localized
+  // sign-in page, so the router re-adds the locale they are actually reading.
+  signInUrl.searchParams.set("redirectTo", `${unprefixed}${search}`);
 
   return NextResponse.redirect(signInUrl);
 }

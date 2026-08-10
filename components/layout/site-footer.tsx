@@ -2,7 +2,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, ShieldCheck } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
-import { NewsletterForm } from "@/components/layout/newsletter-form";
 import { Link } from "@/i18n/navigation";
 import { routes } from "@/lib/routes";
 import { siteConfig, type Locale } from "@/lib/site-config";
@@ -11,78 +10,104 @@ import type { CategoryNavItem } from "@/types/catalog";
 /**
  * Site footer.
  *
- * The column headings are real `<h2>` elements inside a `<nav>` per group, so a
- * screen reader can jump between "Shop", "Support" and "Company" instead of
- * hearing one undifferentiated list of thirty links. `h2` rather than `h3`
- * because the columns sit directly under the page `h1` — the footer is a
- * top-level region, and a page whose body has no `h2` would otherwise skip a
- * level on the way down to them.
+ * A Server Component with no client JavaScript at all — the mobile disclosures
+ * are `<details>`, which the browser opens on its own.
  *
- * Only links whose pages exist are rendered as links. Support, warranty and
- * company pages arrive with the content phase; until then they are listed as
- * plain text with a note, because a footer full of 404s is worse than a footer
- * that is honest about what is built.
+ * ## What is here, and what is deliberately not
  *
- * ## Why the mobile accordion is `<details>` and not the Accordion primitive
+ * The footer shows **only destinations that exist**. That is the rule from
+ * CLAUDE.md § 5 ("no dead links") and it is what decided this layout:
  *
- * Measured before changing anything: the old footer was **1062px tall at 320px**
- * — 1.33 phone screens of links under every page on the site. Collapsing it was
- * the fix, and the question was what to collapse it with.
+ * | Asked for                              | Here?                                         |
+ * | -------------------------------------- | --------------------------------------------- |
+ * | Departments, all products              | ✅ real routes                                |
+ * | Account, order tracking                | ✅ `/account`, `/account/orders`              |
+ * | Delivery, warranty, returns, contact…  | ❌ **no such pages exist** — see below        |
+ * | Newsletter form                        | ❌ nothing records a signup                   |
+ * | Social links                           | ❌ no account is configured                   |
+ * | Privacy / Terms in the bottom bar      | ❌ no such pages exist                        |
+ *
+ * The previous version rendered the missing ones as **inert grey text** with a
+ * footnote apologising for them. That is worse than omitting them: it fills two
+ * columns with things that look like links, do nothing, and tell every visitor
+ * the shop is unfinished. `content_pages` exists in the schema and has no rows;
+ * writing delivery windows, warranty terms and a returns policy is the
+ * business's job, not this component's, and inventing them would be the fake
+ * content ADR-20 forbids. They come back as links the day the pages have copy.
+ *
+ * Likewise the newsletter: `NewsletterForm` has no endpoint behind it and says
+ * so in a toast. A signup box that records nothing is a promise the shop cannot
+ * keep, so it is not in the footer. (It still appears in the home page's own
+ * newsletter band, which is outside this component.)
+ *
+ * And the social row was four hardcoded strings — `X`, `YouTube`, `LinkedIn`,
+ * `GitHub` — for accounts that do not exist, under a label that admitted they
+ * were "not yet live". Gone entirely.
+ *
+ * ## Why the mobile groups are `<details>` and not the Accordion primitive
  *
  * `components/ui/accordion.tsx` is Radix, and Radix is a Client Component. Using
- * it would have turned the footer — currently pure server-rendered markup on
- * every page of the site — into a hydration root, to animate four disclosure
- * triangles. `<details>`/`<summary>` is the platform's own disclosure widget: it
- * opens with no JavaScript, it is keyboard operable and correctly announced
- * without a single ARIA attribute, and it survives hydration failing entirely.
+ * it would turn the footer — server-rendered markup on every page of the site —
+ * into a hydration root, to animate two disclosure triangles.
+ * `<details>`/`<summary>` is the platform's own disclosure widget: it opens with
+ * no JavaScript, it is keyboard operable and correctly announced without a
+ * single ARIA attribute, and it survives hydration failing entirely.
  *
  * The cost is that `<details>` cannot be forced open by CSS at a breakpoint —
- * the `open` attribute governs it, not a stylesheet. So the group markup is
+ * the `open` attribute governs it, not a stylesheet. So each group's markup is
  * rendered twice, once inside `<details>` for mobile and once as a plain column
- * for `sm:` and up, with `FooterGroupLinks` shared between them so the link list
- * itself exists once. That is roughly 400 bytes of duplicated static HTML per
- * group against a client bundle and a hydration pass on every route — and the
- * duplicate costs nothing to render, because none of it is interactive.
+ * for `sm:` and up, with `FooterLinks` shared between them so the list itself is
+ * written once. That is a few hundred bytes of duplicated static HTML against a
+ * client bundle and a hydration pass on every route.
  */
 
 /**
- * Translation keys, not labels. The order is the display order, and the strings
- * themselves live in `messages/<locale>/footer.json` — listing them here in one
- * language is exactly the hardcoding the i18n policy forbids.
+ * How many departments the Shop column lists.
+ *
+ * A layout decision, not a taxonomy one: seven rows plus "All products" is the
+ * height that balances against the brand column. **Which** seven is the
+ * operator's call — this takes them in `display_order`, so reordering
+ * departments in `/admin/categories` reorders the footer. Nothing here names a
+ * category (CLAUDE.md § 12); the full hierarchy lives in the mega menu, which is
+ * where a shopper browsing by category should be.
  */
-const SUPPORT_ITEMS = ["contact", "delivery", "warranty", "tracking"] as const;
-const COMPANY_ITEMS = ["about", "buildService", "business", "careers"] as const;
+const FOOTER_DEPARTMENTS = 7;
 
 /**
- * Social channels, as text rather than icons.
+ * A footer link row.
  *
- * lucide-react v1 removed brand glyphs, and substituting a generic icon for a
- * platform mark is the same mistake as inventing a manufacturer logo — it
- * implies a relationship that does not exist. When the accounts are real, the
- * platforms' own licensed marks go here.
+ * **44px on touch, 32px from `sm`.** The previous version used `py-1.5` alone
+ * and carried a comment claiming that made a 44px target; it does not — 20px of
+ * line box plus 12px of padding is 32px, and the claim had been in the file
+ * since the last footer pass. Measured, not re-derived from the comment.
  *
- * Not translated: these are product names, and "YouTube" is "YouTube" in every
- * language.
+ * 32px clears WCAG 2.2 SC 2.5.8 (24×24) on its own, so the desktop columns are
+ * conformant as well as compact. `min-h-11` is scoped to the phone, where the
+ * pointer is a thumb and the 44px guideline earns its height — and where these
+ * rows sit inside a collapsed disclosure anyway, so it costs the closed footer
+ * nothing.
  */
-const SOCIAL_CHANNELS = ["X", "YouTube", "LinkedIn", "GitHub"] as const;
-
 const LINK_CLASS =
-  "rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+  "flex min-h-11 items-center rounded-sm py-1.5 text-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:min-h-8";
+
+/** Small, but clearly a heading. Not a shouty one — this is a footer. */
+const HEADING_CLASS = "text-xs font-semibold tracking-wide uppercase";
+
+type FooterGroup = "shop" | "account";
 
 /**
- * One group's links, without the heading.
+ * One group's links, without its heading.
  *
- * Shared by the mobile disclosure and the desktop column so the list is written
- * once. `py-1.5` on each row is what takes a 20px text line to a 44px touch
- * target without making the desktop column look airy.
+ * Shared by the mobile disclosure and the desktop column, so the list exists
+ * once — see `LINK_CLASS` for how one set of rows is sized for both.
  */
-function FooterGroupLinks({
+function FooterLinks({
   group,
-  categories,
+  departments,
   locale,
 }: {
-  group: "shop" | "support" | "company";
-  categories: CategoryNavItem[];
+  group: FooterGroup;
+  departments: CategoryNavItem[];
   locale: Locale;
 }) {
   const t = useTranslations("footer");
@@ -90,22 +115,22 @@ function FooterGroupLinks({
 
   if (group === "shop") {
     return (
-      <ul className="space-y-0.5">
-        {categories.map((category) => (
-          <li key={category.id}>
+      // Eight departments stacked in one column were 256px, and that column
+      // alone decided the footer's height. Two columns from `lg` make it four
+      // rows without dropping a link or shrinking a touch target.
+      <ul className="lg:grid lg:grid-cols-2 lg:gap-x-6">
+        {departments.map((department) => (
+          <li key={department.id}>
             <Link
-              href={routes.catalog.byCategory(category.slug)}
-              className={`${LINK_CLASS} block py-1.5`}
+              href={routes.catalog.byCategory(department.slug)}
+              className={LINK_CLASS}
             >
-              {category.name[locale]}
+              {department.name[locale]}
             </Link>
           </li>
         ))}
         <li>
-          <Link
-            href={routes.catalog.index}
-            className={`${LINK_CLASS} block py-1.5`}
-          >
+          <Link href={routes.catalog.index} className={LINK_CLASS}>
             {tCommon("allProducts")}
           </Link>
         </li>
@@ -113,16 +138,18 @@ function FooterGroupLinks({
     );
   }
 
-  const items = group === "support" ? SUPPORT_ITEMS : COMPANY_ITEMS;
-  const prefix = group === "support" ? "supportItems" : "companyItems";
-
   return (
-    <ul className="space-y-0.5 text-sm text-muted-foreground">
-      {items.map((item) => (
-        <li key={item} className="py-1.5">
-          {t(`${prefix}.${item}`)}
-        </li>
-      ))}
+    <ul>
+      <li>
+        <Link href={routes.account.index} className={LINK_CLASS}>
+          {t("accountItems.account")}
+        </Link>
+      </li>
+      <li>
+        <Link href={routes.account.orders} className={LINK_CLASS}>
+          {t("accountItems.orders")}
+        </Link>
+      </li>
     </ul>
   );
 }
@@ -130,10 +157,10 @@ function FooterGroupLinks({
 /**
  * One collapsible group, mobile only.
  *
- * `group//details` + `group-open:` is how the chevron rotates without a single
- * line of JavaScript: the browser toggles `[open]` on the element and CSS reads
- * it. `list-none` and the `::-webkit-details-marker` reset remove the platform's
- * default triangle so the chevron is the only affordance.
+ * `group` + `group-open:` is how the chevron rotates without a line of
+ * JavaScript: the browser toggles `[open]` and CSS reads it. `list-none` and the
+ * `::-webkit-details-marker` reset remove the platform triangle so the chevron
+ * is the only affordance.
  */
 function FooterDisclosure({
   heading,
@@ -144,14 +171,16 @@ function FooterDisclosure({
 }) {
   return (
     <details className="group border-b [&_summary::-webkit-details-marker]:hidden">
-      <summary className="flex cursor-pointer list-none items-center justify-between py-3 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+      <summary
+        className={`${HEADING_CLASS} flex min-h-11 cursor-pointer list-none items-center justify-between focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none`}
+      >
         {heading}
         <ChevronDown
           className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
           aria-hidden="true"
         />
       </summary>
-      <div className="pb-3">{children}</div>
+      <div className="pb-2">{children}</div>
     </details>
   );
 }
@@ -161,124 +190,109 @@ export function SiteFooter({ categories }: { categories: CategoryNavItem[] }) {
   const t = useTranslations("footer");
   const locale = useLocale() as Locale;
 
+  // The tree's top level. `categories` is already nested and ordered, so this is
+  // a slice rather than a filter over 102 rows.
+  const departments = categories.slice(0, FOOTER_DEPARTMENTS);
+
   const groups = [
     { id: "shop", heading: t("shop") },
-    { id: "support", heading: t("support") },
-    { id: "company", heading: t("company") },
+    { id: "account", heading: t("account") },
   ] as const;
 
   return (
+    // `mt-auto` is what keeps the footer at the bottom of a short page. The body
+    // is `flex min-h-svh flex-col` and `<main>` is `flex-1`, so main already
+    // absorbs the slack — this is the belt to that pair of braces, and costs
+    // nothing.
     <footer className="mt-auto border-t bg-muted/40">
-      <Container className="py-8 sm:py-12 lg:py-16">
-        {/* Brand block. Compact on mobile, where it is the only thing above the
-            fold of the footer and every line costs a scroll. */}
-        <div className="mb-6 space-y-2 sm:mb-10 sm:space-y-4">
-          <p className="text-base font-semibold tracking-tight sm:text-lg">
-            {siteConfig.name}
-          </p>
-          <p className="max-w-sm text-sm text-pretty text-muted-foreground">
-            {t("tagline")}
-          </p>
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />
-            {t("warranty")}
-          </p>
-        </div>
+      {/*
+        40px of padding at every width, 48px from `lg`. The old value was
+        `py-8 sm:py-12 lg:py-16` — 128px top and bottom on a desktop, which is
+        most of why the footer measured 870px.
+      */}
+      <Container className="py-10 lg:py-12">
+        {/*
+          Three equal columns from `sm`, then twelve from `lg` so the blocks can
+          be 4 / 5 / 3 rather than thirds: the brand needs a readable measure,
+          the department list needs room for two sub-columns, and the account
+          list needs neither.
 
-        {/* Mobile: collapsed disclosures, no JavaScript. */}
-        <div className="border-t sm:hidden">
-          {groups.map((group) => (
-            <FooterDisclosure key={group.id} heading={group.heading}>
-              <FooterGroupLinks
-                group={group.id}
-                categories={categories}
-                locale={locale}
-              />
-            </FooterDisclosure>
-          ))}
-
-          <details className="group border-b [&_summary::-webkit-details-marker]:hidden">
-            <summary className="flex cursor-pointer list-none items-center justify-between py-3 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-              {t("stayInTouch")}
-              <ChevronDown
-                className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+          Three-across at `sm` rather than two, because a 2×2 grid put the
+          eight-row department list in its own row and made the tablet footer
+          **taller than the desktop one** — 546px at 768px wide, against 314px at
+          1280px. Measured at every breakpoint in the brief, not assumed.
+        */}
+        <div className="grid gap-8 sm:grid-cols-3 lg:grid-cols-12 lg:gap-10">
+          {/* Column 1 — the brand. */}
+          <div className="space-y-2.5 lg:col-span-4">
+            <p className="text-base font-semibold tracking-tight">
+              {siteConfig.name}
+            </p>
+            <p className="max-w-xs text-sm text-pretty text-muted-foreground">
+              {t("tagline")}
+            </p>
+            <p className="flex items-start gap-2 text-sm text-muted-foreground">
+              <ShieldCheck
+                className="mt-0.5 size-4 shrink-0"
                 aria-hidden="true"
               />
-            </summary>
-            <div className="space-y-3 pb-4">
-              <p className="text-sm text-pretty text-muted-foreground">
-                {t("newsletterNote")}
-              </p>
-              <NewsletterForm compact />
-            </div>
-          </details>
-        </div>
-
-        {/* Desktop: the columns, unchanged in substance. */}
-        <div className="hidden gap-10 sm:grid sm:grid-cols-2 lg:grid-cols-12">
-          <nav aria-labelledby="footer-shop" className="lg:col-span-3">
-            <h2 id="footer-shop" className="mb-3 text-sm font-semibold">
-              {t("shop")}
-            </h2>
-            <FooterGroupLinks
-              group="shop"
-              categories={categories}
-              locale={locale}
-            />
-          </nav>
-
-          <div className="lg:col-span-3">
-            <h2 className="mb-3 text-sm font-semibold">{t("support")}</h2>
-            <FooterGroupLinks
-              group="support"
-              categories={categories}
-              locale={locale}
-            />
-          </div>
-
-          <div className="lg:col-span-3">
-            <h2 className="mb-3 text-sm font-semibold">{t("company")}</h2>
-            <FooterGroupLinks
-              group="company"
-              categories={categories}
-              locale={locale}
-            />
-          </div>
-
-          <div className="space-y-3 lg:col-span-3">
-            <h2 className="text-sm font-semibold">{t("stayInTouch")}</h2>
-            <p className="text-sm text-pretty text-muted-foreground">
-              {t("newsletterNote")}
+              {t("warranty")}
             </p>
-            <NewsletterForm compact />
           </div>
+
+          {/* Mobile: the same two groups, collapsed. `sm:hidden` rather than a
+              separate component, so the link markup below is the same markup. */}
+          <div className="-mt-2 sm:hidden">
+            {groups.map((group) => (
+              <FooterDisclosure key={group.id} heading={group.heading}>
+                <FooterLinks
+                  group={group.id}
+                  departments={departments}
+                  locale={locale}
+                />
+              </FooterDisclosure>
+            ))}
+          </div>
+
+          {/* Desktop columns 2 and 3. */}
+          {groups.map((group) => (
+            <nav
+              key={group.id}
+              aria-labelledby={`footer-${group.id}`}
+              className={
+                group.id === "shop"
+                  ? "hidden sm:block lg:col-span-5"
+                  : "hidden sm:block lg:col-span-3"
+              }
+            >
+              {/*
+                `h2`, not `h3`: the columns sit directly under the page `h1`, so
+                anything lower would skip a level for a screen reader walking the
+                document outline down into the footer.
+              */}
+              <h2 id={`footer-${group.id}`} className={`${HEADING_CLASS} mb-2`}>
+                {group.heading}
+              </h2>
+              <FooterLinks
+                group={group.id}
+                departments={departments}
+                locale={locale}
+              />
+            </nav>
+          ))}
         </div>
 
-        {/* Bottom bar. `border-t` replaces the old `<Separator />` plus its
-            `my-8`: one element and 16px instead of two and 64px. */}
-        <div className="mt-6 flex flex-col-reverse items-center gap-3 border-t pt-5 sm:mt-10 sm:flex-row sm:justify-between">
+        {/* Bottom bar. One line, 16px of padding above it. */}
+        <div className="mt-8 border-t pt-4">
           <p className="text-xs text-muted-foreground">
             {/*
-              The year is passed through as a plain string rather than a number:
-              a copyright year is an identifier, and `Intl` would render 2026 as
-              "2,026" in English and "2 026" in Russian.
+              The year is a plain string rather than a number: a copyright year
+              is an identifier, and `Intl` would render 2026 as "2,026" in
+              English and "2 026" in Russian.
             */}
             {t("copyright", { year: String(new Date().getFullYear()) })}
           </p>
-
-          <ul
-            aria-label={t("socialLabel")}
-            className="flex items-center gap-4 text-xs text-muted-foreground"
-          >
-            {SOCIAL_CHANNELS.map((channel) => (
-              <li key={channel}>{channel}</li>
-            ))}
-          </ul>
         </div>
-
-        <p className="mt-4 text-xs text-muted-foreground/70">
-          {t("pagesNote")}
-        </p>
       </Container>
     </footer>
   );

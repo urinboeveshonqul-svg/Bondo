@@ -1,15 +1,15 @@
 {
   "metaTitle": "Laptops, computers and PC parts",
-  "metaDescription": "Bondo sells laptops, desktops, PC components and accessories. Custom builds tested before they ship, three-year warranty.",
+  "metaDescription": "Bondo sells laptops, desktops, PC components and accessories. Custom builds tested before they ship, one-year warranty.",
   "hero": {
-    "eyebrow": "Three-year warranty",
+    "eyebrow": "One-year warranty",
     "title": "Laptops, computers and PC parts",
     "body": "Tell us what the machine is for and we'll build it. Every build runs 24 hours on the bench before it ships, and the test results come in the box.",
     "browseCatalog": "Browse the catalog",
     "prebuilt": "Prebuilt computers",
     "assurances": {
       "built": "Built in our own workshop",
-      "warranty": "Three-year warranty",
+      "warranty": "One-year warranty",
       "delivery": "Free delivery over {amount}"
     },
     "panelValue": "24h",
