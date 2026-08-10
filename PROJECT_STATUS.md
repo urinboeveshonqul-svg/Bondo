@@ -4,7 +4,7 @@
 > It is updated at the end of every completed task. If this file and the code
 > disagree, the code is right and this file is a bug — fix it immediately.
 
-**Last updated:** 2026-08-08
+**Last updated:** 2026-08-09
 **Version:** v0.4.0 (unreleased) — v0.1.0 is the last tag
 **Phase:** 4A Authentication & authorization ✅ **Complete.** K-1 and K-2 both
 closed; the panel is behind a real role check and the storefront has accounts.
@@ -1132,6 +1132,8 @@ reversal here.**
 
 | ID     | Decision                                                                                                                                                                                                                                                                                                                      | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ADR-79 | **A filter exists only where a column backs it.** The listing offers price, brand and on-sale. It does **not** offer availability or specification facets.                                                                                                                                                                    | `inventory` exists but this shop does not maintain stock levels — the low-stock badge was removed for that reason — so an "in stock" checkbox would filter on a number nobody updates, and it would look authoritative while doing it. `product_specifications` is free-text key/value, so faceting it means guessing which keys are worth offering and rendering whatever an editor typed. Sorting is held to the same rule: there is no "by name", because a product's name lives on a to-many translation row that PostgREST cannot order a parent by, and a sort control that changes the URL without changing the order is worse than an absent one. Each returns the day the data does.                                                                                                                                                                                                                                                                                                                                                                                      |
+| ADR-78 | **The catalog listing's state is the URL, and the page stays a Server Component.** `lib/catalog/search-params.ts` is the only module that knows the query-string encoding; `CatalogFilters` and `CatalogToolbar` are the sole client islands.                                                                                 | A filter panel built on `useState` re-renders instantly and loses everything else: the result is not shareable, not bookmarkable, does not survive a reload, breaks the back button, and forces the whole listing into a Client Component to hold the state. Routing every control through one encoder also means the brand checkbox, the removal chip and the "clear" link cannot disagree about how a filter is spelled — they call the same functions. The cost is a round trip per filter change, which is a Server Component render rather than a page load, and is the trade this codebase already makes everywhere else.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ADR-77 | **A page whose copy nobody has approved is not created.** Privacy, terms, "build service" and "business accounts" have no `content_pages` row and no footer link; the returns page exists and states that the policy is not finalised.                                                                                        | Every one of them was requested. The difference is that delivery, warranty and about have _facts_ behind them — carriers, a 24-hour window, a one-year term — while a privacy policy and a returns window are legal commitments, and writing plausible ones would bind the business to terms nobody agreed. A missing page is visibly missing and costs a link; an invented policy is invisible until somebody relies on it. Returns is the interesting case and is the pattern for the rest: the page exists because customers need somewhere to land, and it says what is true — talk to us — rather than inventing a window. Each becomes a link with one row in `content_pages` and one line in `SUPPORT_LINKS`.                                                                                                                                                                                                                                                                                                                                                               |
 | ADR-76 | **Content page bodies are plain text in a three-rule syntax** — `## ` heading, `- ` list item, blank line between paragraphs — parsed by `components/content/content-body.tsx`. Not HTML, not Markdown, not JSON.                                                                                                             | HTML in the column is the flexible answer and means rendering database markup through `dangerouslySetInnerHTML`; the write path is permission-gated and RLS-protected, so it is not an open door, but "an editor account can inject script into every visitor's page" is a poor trade for formatting a warranty page. Markdown needs a parser _and_ a sanitiser — two server-bundle dependencies to support three block types out of forty. A JSON block structure would be more expressive and would turn the admin editor into a form nobody can type prose into. Plain text is what an operator can read and edit in a textarea, and anything the parser does not recognise renders as a paragraph — so unexpected input becomes visible text rather than markup or silence.                                                                                                                                                                                                                                                                                                    |
 | ADR-75 | **The landing page and the listing filter are built from the navigation _tree_, capped, and skip anything empty.** Home shows at most 6 department rails and only those with products; the listing offers the 12 departments plus one level of narrower filters, never the whole taxonomy.                                    | Both rendered one element per category, which was survivable at twenty and became absurd at 102: the home page emitted **102 sections and a 54,246px document**, and the listing put a **424px** strip of 102 filter chips above results that were often empty. Both also cost a query per element — the home page fired a product query per rail. Deriving from the tree fixes the count and the query volume together, because the top level is twelve things and `productCount` is already the rolled-up subtree total, so an empty department is skipped without asking the database anything. The caps are layout decisions and are stated as such: **which** departments appear is `display_order`, which an operator sets in `/admin/categories`, so nothing here names a category (§ 12).                                                                                                                                                                                                                                                                                  |
@@ -2165,6 +2167,98 @@ verified by removing `checkout` from the list and watching the check fail.
 **Not verified:** 390 / 768 / 1024 / 1440 / 1920 on the new pages specifically.
 The layout is a single `max-w-[1120px]` container with one `lg:` breakpoint, and
 375 and 1280 were both measured — but the intermediate widths were not opened.
+
+---
+
+## The catalog listing
+
+🟢 **Rebuilt around an information architecture rather than a row of chips.**
+
+The listing used to render one filter chip per category — every level in
+identical pills, above every result. Capping it at twelve departments fixed the
+height; it did not fix the fact that nothing on the page told a shopper which
+level they were looking at. Four levels now look like four levels:
+
+| Level       | Component        | Treatment                                          |
+| ----------- | ---------------- | -------------------------------------------------- |
+| Department  | `CategoryNav`    | Bordered chips with icons, one active              |
+| Subcategory | `SubcategoryNav` | Lighter text links — **only when in a department** |
+| Filter      | `CatalogFilters` | A sidebar, or a sheet on a phone                   |
+| Product     | `ProductGrid`    | The grid                                           |
+
+**Desktop:** five departments inline, the remaining seven behind a "Yana / Ещё /
+More" disclosure, so the row stays one line at every width. The disclosure is
+`<details>` — no JavaScript, keyboard operable, announced without ARIA — which is
+what keeps the primary navigation server-rendered. The trade is that it does not
+close on outside click or Escape; for a list of links, where the next click
+navigates anyway, that is cheaper than making navigation depend on hydration.
+
+**Mobile:** all twelve in a horizontal scroller that scrolls **inside itself**,
+so the page never widens. The sidebar is not stacked above the products; the same
+filter panel opens in a sheet from a `[Filtrlar]` button beside `[Saralash]`.
+
+**Filters are not categories.** Price, brand and on-sale — each backed by a real
+column (**ADR-79**). Availability and specification facets are deliberately
+absent, and so is sorting by name; the reasons are in the ADR.
+
+**The URL is the state** (**ADR-78**). `lib/catalog/search-params.ts` owns the
+encoding, so the page reads `searchParams`, queries and renders — a Server
+Component with two client islands. Every filter is shareable, bookmarkable and
+survives the back button.
+
+### Measured
+
+| Metric                         | Before           | After                    |
+| ------------------------------ | ---------------- | ------------------------ |
+| Category navigation height     | 424px, 102 chips | **49px**, 12 departments |
+| Nav + subcategory + breadcrumb | 424px            | **154px**                |
+| Empty state height             | 294px            | **238px** (compact)      |
+| Horizontal page overflow       | —                | **0** at 375 and 1280    |
+
+### Verified
+
+`npm run admin:verify` — **45/45** against the live project, up from 36. Nine are
+new and prove the filters and sorts, through the **anon** client so RLS is in the
+path: three throwaway products with known prices, brands and sale prices are
+created, the queries the service issues are run against them, and they are
+deleted in the `finally` block.
+
+| Assertion                                         | Result                |
+| ------------------------------------------------- | --------------------- |
+| price range returns only what is inside it        | 1 of 3                |
+| brand filter returns only that brand              | 1 of 3                |
+| two brands return the union, not the intersection | 3 of 3                |
+| the sale filter returns only discounted products  | 1 of 3                |
+| price ascending                                   | 10000 < 50000 < 90000 |
+| price descending                                  | 90000 > 50000 > 10000 |
+| recommended puts the featured product first       | ✅                    |
+| the listing count is exact, not estimated         | `count=3`             |
+
+**Driven in a browser**, with three products and two brands temporarily inserted
+and then removed:
+
+- ticking a brand updated the URL, the count went 3 → 1, the grid showed only
+  that brand, a removal chip and "Tozalash" appeared;
+- `?sort=price-asc` ordered 549k → 899k → 1249k;
+- brand checkboxes carried **real** per-brand counts (ASUS 2, Lenovo 1) and the
+  price hint showed the catalog's actual range;
+- the mobile sheet opened with focus inside it, 2-column grid, zero page
+  overflow;
+- 12 URLs across uz/ru/en returned **200** against the production build,
+  including `?brand=nope&min=abc&page=-5`, which the parser discards rather than
+  passing to the query.
+
+**A defect this surfaced.** The filter panel renders twice — sidebar and sheet —
+and both emitted the same element ids. Radix keeps sheet content mounted after
+its first open, so once a shopper opened the drawer, `<Label htmlFor>` resolved
+to the **first** match and a label tapped in the drawer toggled the checkbox
+behind it in the sidebar. Fixed with `useId()`; the production HTML now has zero
+duplicate ids.
+
+**Not verified:** the listing has never been seen with more than three products,
+so pagination beyond one page has not been exercised in a browser — only the
+`pageCount` arithmetic and the `?page=` parser. 390 / 768 / 1024 / 1440 / 1920
+were not opened on this page; 375 and 1280 were.
 
 ---
 

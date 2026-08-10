@@ -4,8 +4,18 @@ import { cache } from "react";
 import { unstable_rethrow } from "next/navigation";
 
 import { createClient } from "@/supabase/server";
+import { SORT_QUERY, type CatalogQuery } from "@/lib/catalog/search-params";
 import { pick, toLocalizedText } from "@/lib/i18n/translations";
 import { logger } from "@/lib/logger";
+
+/**
+ * How many products a listing page shows.
+ *
+ * `settings.catalog.products_per_page` is 24 and is the value this should read
+ * once the settings service is wired to the storefront; until then the constant
+ * matches it rather than diverging from it silently.
+ */
+export const CATALOG_PAGE_SIZE = 24;
 import type { Locale } from "@/lib/site-config";
 import type {
   Brand,
@@ -327,6 +337,150 @@ export async function listProducts(
       });
     },
   );
+}
+
+/** One page of the catalog listing, plus everything its chrome needs. */
+export type CatalogPage = {
+  products: ProductSummary[];
+  /** Exact, from the database. Never estimated and never invented. */
+  total: number;
+  page: number;
+  pageCount: number;
+  /** Brands that have at least one product, for the filter panel. */
+  brands: { slug: string; name: string; productCount: number }[];
+  /** The lowest and highest list price in the catalog, in minor units. */
+  priceRange: { min: number; max: number } | null;
+};
+
+/**
+ * The catalog listing.
+ *
+ * One read for the whole page: the products, the exact count, the brands the
+ * filter panel offers and the price bounds it suggests.
+ *
+ * **The brand list is not "every brand".** It is the brands that actually have
+ * products, because a filter offering a brand that returns nothing is a filter
+ * that teaches shoppers not to trust it. With an empty catalog that list is
+ * empty and the panel says so, which is the honest state rather than a column
+ * of checkboxes that all lead nowhere.
+ *
+ * `categoryIds` resolves the whole subtree from `path` (ADR-74), so choosing a
+ * department finds the products filed under its subcategories.
+ */
+export async function listCatalog(
+  locale: Locale,
+  query: CatalogQuery,
+): Promise<CatalogPage> {
+  const supabase = await createClient();
+
+  const [categories, brandRows, counts] = await Promise.all([
+    readCategoryRows(),
+    brandsService.listBrands(supabase, { visibleOnly: true }),
+    brandsService.countProductsByBrand(supabase),
+  ]);
+
+  const slugs = new Map(
+    categories.map((row) => [row.id, pick(row.slug, locale)]),
+  );
+
+  const selected = query.category
+    ? categories.find((row) => pick(row.slug, locale) === query.category)
+    : undefined;
+
+  const categoryIds = selected
+    ? categories
+        .filter((row) => row.path.includes(selected.id))
+        .map((r) => r.id)
+    : undefined;
+
+  const brandIds = query.brands.length
+    ? brandRows
+        .filter((brand) => query.brands.includes(brand.slug))
+        .map((brand) => brand.id)
+    : undefined;
+
+  const sort = SORT_QUERY[query.sort];
+
+  const { rows, total, pageCount, page } = await productsService.listProducts(
+    supabase,
+    {
+      status: "active",
+      visibility: "public",
+      categoryIds,
+      // A brand slug that matches nothing must return nothing, not everything.
+      // Without this, a typed-in `?brand=nope` would silently drop the filter.
+      brandIds: query.brands.length ? (brandIds ?? []) : undefined,
+      // Major units in the URL, minor units in the column (ADR-2).
+      minPriceCents:
+        query.minPrice !== undefined
+          ? Math.round(query.minPrice * 100)
+          : undefined,
+      maxPriceCents:
+        query.maxPrice !== undefined
+          ? Math.round(query.maxPrice * 100)
+          : undefined,
+      onSaleOnly: query.onSale,
+      search: query.q,
+      locale,
+      sort: sort.sort,
+      direction: sort.direction,
+      featuredFirst: sort.featuredFirst,
+      page: query.page,
+      pageSize: CATALOG_PAGE_SIZE,
+    },
+  );
+
+  const withProducts = brandRows
+    .map((brand) => ({
+      slug: brand.slug,
+      name: brand.name,
+      productCount: counts.get(brand.id) ?? 0,
+    }))
+    .filter((brand) => brand.productCount > 0);
+
+  return {
+    products: rows.map((row) =>
+      toSummary(row, locale, slugs.get(row.categoryId ?? "") ?? ""),
+    ),
+    total,
+    page,
+    pageCount,
+    brands: withProducts,
+    priceRange: await readPriceRange(supabase),
+  };
+}
+
+/**
+ * The catalog's cheapest and dearest list price, in minor units.
+ *
+ * Two one-row queries rather than an aggregate, because PostgREST has no `min`
+ * or `max` — ordering by price and taking the first row is the same answer for
+ * the same cost. Used to label the price inputs with the real range instead of
+ * a placeholder somebody made up.
+ *
+ * Returns `null` for an empty catalog, and the panel then renders the price
+ * filter without bounds rather than "0 – 0".
+ */
+async function readPriceRange(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<{ min: number; max: number } | null> {
+  const bound = async (ascending: boolean) => {
+    const { data } = await supabase
+      .from("products")
+      .select("price_cents")
+      .eq("status", "active")
+      .eq("visibility", "public")
+      .is("deleted_at", null)
+      .order("price_cents", { ascending })
+      .limit(1)
+      .maybeSingle();
+
+    return data?.price_cents ?? null;
+  };
+
+  const [min, max] = await Promise.all([bound(true), bound(false)]);
+
+  return min === null || max === null ? null : { min, max };
 }
 
 export async function getProductBySlug(

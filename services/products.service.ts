@@ -120,11 +120,35 @@ export type ProductListParams = {
    */
   categoryIds?: readonly string[];
   brandId?: string;
+  /** Several brands at once — the storefront's brand filter is multi-select. */
+  brandIds?: readonly string[];
   status?: Enums<"product_status">;
   visibility?: Enums<"product_visibility">;
   featuredOnly?: boolean;
-  sort?: "updated_at" | "price_cents" | "created_at";
+  /**
+   * Price bounds in **minor units** (ADR-2), inclusive.
+   *
+   * Compared against `price_cents`, the list price, not against
+   * `sale_price_cents`. A shopper filtering "under 5,000,000" while a discounted
+   * product's list price is above it is the debatable case; matching on list
+   * price is the one that keeps the filter and the price shown on the card
+   * describing the same number.
+   */
+  minPriceCents?: number;
+  maxPriceCents?: number;
+  /** Only products with a live sale price. `sale_price_cents` is a real column. */
+  onSaleOnly?: boolean;
+  sort?: "updated_at" | "price_cents" | "created_at" | "published_at";
   direction?: "asc" | "desc";
+  /**
+   * Featured products first, then the primary sort.
+   *
+   * This is what "recommended" means here: an operator ticking `is_featured` is
+   * the only editorial signal this catalog carries. There is no popularity
+   * ranking, because nothing counts views or sales yet — inventing one would be
+   * a sort order with no data under it.
+   */
+  featuredFirst?: boolean;
   includeDeleted?: boolean;
 };
 
@@ -217,10 +241,21 @@ export async function listProducts(
   let query = supabase
     .from("products")
     .select(LIST_COLUMNS, { count: "exact" })
-    .range(from, from + pageSize - 1)
-    .order(params.sort ?? "updated_at", {
-      ascending: params.direction === "asc",
-    });
+    .range(from, from + pageSize - 1);
+
+  // Featured first is a *secondary* key applied before the primary one, so it
+  // groups rather than overrides: within the featured block and within the rest,
+  // the shopper's chosen sort still decides the order.
+  if (params.featuredFirst) {
+    query = query.order("is_featured", { ascending: false });
+  }
+
+  query = query.order(params.sort ?? "updated_at", {
+    ascending: params.direction === "asc",
+    // A null `published_at` is a draft. Sorting newest-first must not put drafts
+    // above real products on the one code path an administrator uses this with.
+    nullsFirst: false,
+  });
 
   if (!params.includeDeleted) query = query.is("deleted_at", null);
   // `categoryIds` wins when both are given: it is the more specific request,
@@ -230,10 +265,24 @@ export async function listProducts(
   } else if (params.categoryId) {
     query = query.eq("category_id", params.categoryId);
   }
-  if (params.brandId) query = query.eq("brand_id", params.brandId);
+  // Same precedence as the category pair: the multi-value form is the more
+  // specific request, so a caller that sent both meant the list.
+  if (params.brandIds?.length) {
+    query = query.in("brand_id", [...params.brandIds]);
+  } else if (params.brandId) {
+    query = query.eq("brand_id", params.brandId);
+  }
   if (params.status) query = query.eq("status", params.status);
   if (params.visibility) query = query.eq("visibility", params.visibility);
   if (params.featuredOnly) query = query.eq("is_featured", true);
+
+  if (typeof params.minPriceCents === "number") {
+    query = query.gte("price_cents", params.minPriceCents);
+  }
+  if (typeof params.maxPriceCents === "number") {
+    query = query.lte("price_cents", params.maxPriceCents);
+  }
+  if (params.onSaleOnly) query = query.not("sale_price_cents", "is", null);
 
   if (params.search?.trim()) {
     // Search runs against the translation row for the *reader's* locale, using

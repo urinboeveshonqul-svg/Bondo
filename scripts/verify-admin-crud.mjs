@@ -55,6 +55,8 @@ const made = {
   category: null,
   childCategory: null,
   product: null,
+  brandB: null,
+  catalogProducts: [],
   upload: null,
 };
 
@@ -514,6 +516,167 @@ try {
   );
 
   // ---------------------------------------------------------------------------
+  // CATALOG FILTERS AND SORTING — the storefront's own queries, anonymously
+  // ---------------------------------------------------------------------------
+  // The listing's filters and sort orders cannot be proven against the live
+  // catalog, because it is empty — and populating it with invented products is
+  // what ADR-20 forbids. So this creates **three throwaway products** with known
+  // prices, brands and sale prices, runs the queries
+  // `services/products.service.ts` issues, asserts the results, and deletes them
+  // again in the `finally` block.
+  //
+  // Through the **anon** client, so RLS is in the path rather than around it:
+  // these are the queries a shopper's request actually makes.
+  const secondBrand = await asAdmin
+    .from("brands")
+    .insert({
+      name: `CRUD Brand B ${stamp}`,
+      slug: `crud-brand-b-${stamp}`,
+      is_visible: true,
+    })
+    .select("id")
+    .single();
+  made.brandB = secondBrand.data?.id ?? null;
+
+  // cheap (brand A, on sale) · mid (brand B) · dear (brand A, featured)
+  const catalogSpecs = [
+    {
+      suffix: "CHEAP",
+      price: 10000,
+      sale: 8000,
+      brand: made.brand,
+      featured: false,
+    },
+    {
+      suffix: "MID",
+      price: 50000,
+      sale: null,
+      brand: made.brandB,
+      featured: false,
+    },
+    {
+      suffix: "DEAR",
+      price: 90000,
+      sale: null,
+      brand: made.brand,
+      featured: true,
+    },
+  ];
+
+  for (const spec of catalogSpecs) {
+    const inserted = await asAdmin
+      .from("products")
+      .insert({
+        sku: `CRUD-${spec.suffix}-${stamp}`,
+        brand_id: spec.brand,
+        category_id: made.category,
+        price_cents: spec.price,
+        sale_price_cents: spec.sale,
+        status: "active",
+        visibility: "public",
+        is_featured: spec.featured,
+        published_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (inserted.data) made.catalogProducts.push(inserted.data.id);
+  }
+
+  check(
+    "three catalog fixtures created",
+    made.catalogProducts.length === 3,
+    `${made.catalogProducts.length}/3`,
+  );
+
+  const inFixtures = (rows) =>
+    (rows ?? []).filter((row) => made.catalogProducts.includes(row.id));
+
+  const base = () =>
+    anon
+      .from("products")
+      .select("id, price_cents, sale_price_cents, brand_id, is_featured")
+      .eq("status", "active")
+      .eq("visibility", "public")
+      .is("deleted_at", null)
+      .in("category_id", [made.category]);
+
+  const priced = await base()
+    .gte("price_cents", 20000)
+    .lte("price_cents", 60000);
+  const pricedRows = inFixtures(priced.data);
+  check(
+    "CATALOG price filter returns only what is inside the range",
+    pricedRows.length === 1 && pricedRows[0].price_cents === 50000,
+    priced.error?.message ?? `${pricedRows.length} row(s)`,
+  );
+
+  const branded = await base().in("brand_id", [made.brandB]);
+  const brandedRows = inFixtures(branded.data);
+  check(
+    "CATALOG brand filter returns only that brand",
+    brandedRows.length === 1 && brandedRows[0].brand_id === made.brandB,
+    branded.error?.message ?? `${brandedRows.length} row(s)`,
+  );
+
+  const bothBrands = await base().in("brand_id", [made.brand, made.brandB]);
+  check(
+    "CATALOG two brands return the union, not the intersection",
+    inFixtures(bothBrands.data).length === 3,
+    `${inFixtures(bothBrands.data).length} row(s)`,
+  );
+
+  const onSale = await base().not("sale_price_cents", "is", null);
+  const saleRows = inFixtures(onSale.data);
+  check(
+    "CATALOG the sale filter returns only discounted products",
+    saleRows.length === 1 && saleRows[0].sale_price_cents === 8000,
+    onSale.error?.message ?? `${saleRows.length} row(s)`,
+  );
+
+  const cheapFirst = await base().order("price_cents", { ascending: true });
+  const cheapOrder = inFixtures(cheapFirst.data).map((r) => r.price_cents);
+  check(
+    "CATALOG price ascending sorts cheapest first",
+    JSON.stringify(cheapOrder) === JSON.stringify([10000, 50000, 90000]),
+    cheapOrder.join(" < "),
+  );
+
+  const dearFirst = await base().order("price_cents", { ascending: false });
+  const dearOrder = inFixtures(dearFirst.data).map((r) => r.price_cents);
+  check(
+    "CATALOG price descending sorts dearest first",
+    JSON.stringify(dearOrder) === JSON.stringify([90000, 50000, 10000]),
+    dearOrder.join(" > "),
+  );
+
+  // "Recommended" is featured-first, then the primary key — the two `.order()`
+  // calls the service chains when `featuredFirst` is set.
+  const recommended = await base()
+    .order("is_featured", { ascending: false })
+    .order("published_at", { ascending: false, nullsFirst: false });
+  const recommendedRows = inFixtures(recommended.data);
+  check(
+    "CATALOG recommended puts the featured product first",
+    recommendedRows[0]?.is_featured === true,
+    recommended.error?.message ??
+      recommendedRows.map((r) => r.is_featured).join(","),
+  );
+
+  const counted = await anon
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "active")
+    .eq("visibility", "public")
+    .is("deleted_at", null)
+    .in("category_id", [made.category]);
+  check(
+    "CATALOG the listing count is exact, not estimated",
+    counted.count === 3,
+    counted.error?.message ?? `count=${counted.count}`,
+  );
+
+  // ---------------------------------------------------------------------------
   // STORAGE — upload into the products bucket
   // ---------------------------------------------------------------------------
   // A 1×1 transparent PNG, so the MIME allow-list is genuinely exercised.
@@ -616,6 +779,10 @@ try {
 } finally {
   // Clean up whatever exists, in dependency order.
   if (made.upload) await admin.storage.from("products").remove([made.upload]);
+  for (const id of made.catalogProducts) {
+    await admin.from("inventory").delete().eq("product_id", id);
+    await admin.from("products").delete().eq("id", id);
+  }
   if (made.product) {
     await admin
       .from("product_translations")
@@ -639,6 +806,10 @@ try {
       .delete()
       .eq("category_id", made.category);
     await admin.from("categories").delete().eq("id", made.category);
+  }
+  if (made.brandB) {
+    await admin.from("brand_translations").delete().eq("brand_id", made.brandB);
+    await admin.from("brands").delete().eq("id", made.brandB);
   }
   if (made.brand) {
     await admin.from("brand_translations").delete().eq("brand_id", made.brand);

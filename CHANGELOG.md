@@ -12,6 +12,60 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Changed — the catalog listing, rebuilt around an information architecture
+
+The listing rendered one filter chip per category: every level in identical
+pills, above every result. Capping it at twelve departments last pass fixed the
+height; it did not fix the fact that nothing on the page told a shopper which
+level they were looking at. Four levels now look like four levels.
+
+| Level       | Component        | Treatment                                         |
+| ----------- | ---------------- | ------------------------------------------------- |
+| Department  | `CategoryNav`    | Bordered chips with icons, one active state       |
+| Subcategory | `SubcategoryNav` | Lighter text links, **only** when in a department |
+| Filter      | `CatalogFilters` | A sidebar on desktop, a sheet on a phone          |
+| Product     | `ProductGrid`    | The grid                                          |
+
+**Desktop:** five departments inline, the other seven behind a "Yana / Ещё /
+More" disclosure, so the row stays one line at every width. The disclosure is
+`<details>` — no JavaScript, keyboard operable, announced without ARIA — which is
+what keeps the primary navigation server-rendered.
+
+**Mobile:** all twelve in a scroller that scrolls _inside itself_, so the page
+never widens. The sidebar is not stacked above the products; the same panel
+opens in a sheet from `[Filtrlar]`, beside `[Saralash]`.
+
+**Filters are not categories.** Price, brand and on-sale, each backed by a real
+column (**ADR-79**). Availability and specification facets are deliberately
+absent — this shop does not maintain stock levels, and specs are free-text — and
+so is sorting by name, because a product's name is on a to-many translation row
+PostgREST cannot order a parent by. A control that changes the URL without
+changing the result is worse than an absent one.
+
+**The URL is the state** (**ADR-78**). `lib/catalog/search-params.ts` owns the
+encoding; the page reads `searchParams`, queries and renders. Every filter is
+shareable, bookmarkable and survives the back button, and the listing stays a
+Server Component with two client islands.
+
+Also: a breadcrumb, exact result counts from the database, active-filter chips
+that each remove one filter, pagination, and a compact empty state that no
+longer promises products are coming.
+
+| Measured                       | Before           | After                    |
+| ------------------------------ | ---------------- | ------------------------ |
+| Category navigation height     | 424px, 102 chips | **49px**, 12 departments |
+| Nav + subcategory + breadcrumb | 424px            | **154px**                |
+| Empty state                    | 294px            | **238px**                |
+
+### Fixed — the filter panel emitted duplicate element ids
+
+It renders twice, in the sidebar and in the mobile sheet, and both used the same
+`id` values. Radix keeps sheet content mounted after its first open, so once a
+shopper had opened the drawer, `<Label htmlFor>` resolved to the **first** match
+in the document and a label tapped in the drawer toggled the checkbox behind it
+in the sidebar. Scoped with `useId()`; the production HTML now has zero duplicate
+ids.
+
 ### Added — the five business-information pages
 
 Delivery, warranty, returns, contact and about, at `/delivery`, `/warranty`,

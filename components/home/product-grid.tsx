@@ -42,7 +42,13 @@ export function ProductGrid({
   if (products.length === 0) {
     return (
       <div className="rounded-xl border border-dashed">
+        {/*
+          Compact: this sits inside a listing that already has a heading, a
+          category row and a filter panel around it, so it only has to say what
+          happened. At full size it was 294px — a screen and a half on a phone.
+        */}
         <EmptyState
+          compact
           icon={PackageSearch}
           title={emptyTitle ?? t("defaultTitle")}
           description={emptyDescription ?? t("defaultDescription")}

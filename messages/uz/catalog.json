@@ -4,15 +4,48 @@
   "resultsHeading": "Mahsulotlar",
   "count": "{count, plural, one {# ta mahsulot} other {# ta mahsulot}}",
   "showingResultsFor": "“{query}” bo'yicha natijalar",
-  "filterByCategory": "Kategoriya bo'yicha saralash",
-  "all": "Barchasi",
-  "clearFilters": "Filtrlarni tozalash",
   "empty": {
     "noMatchTitle": "“{query}” bo'yicha hech narsa topilmadi",
     "noMatchDescription": "Qisqaroq so'z bilan qidiring yoki brend nomi va model raqamini yozing.",
     "categoryTitle": "Bu bo'limda hozircha mahsulot yo'q",
-    "categoryDescription": "Yangi mahsulotlar kelishi bilan shu yerda ko'rinadi.",
+    "categoryDescription": "Boshqa bo'limlarni ko'rib chiqing yoki butun katalogni oching.",
     "defaultTitle": "Mahsulot topilmadi",
-    "defaultDescription": "Filtrlardan birini olib tashlang yoki qidiruv so'rovini soddalashtiring."
+    "defaultDescription": "Filtrlardan birini olib tashlang yoki qidiruvni soddalashtiring."
+  },
+  "home": "Bosh sahifa",
+  "breadcrumb": "Qayerdasiz",
+  "categoryNav": "Kategoriyalar",
+  "subcategoryNav": "{category} ichidagi bo'limlar",
+  "allCategories": "Barcha kategoriyalar",
+  "allInCategory": "Hammasi",
+  "moreCategories": "Yana",
+  "browseAll": "Barcha mahsulotlarni ko'rish",
+  "pagination": "Sahifalar",
+  "previous": "Oldingi",
+  "next": "Keyingi",
+  "pageOf": "{page} / {total}",
+  "sort": {
+    "label": "Saralash",
+    "recommended": "Tavsiya etilgan",
+    "price-asc": "Avval arzoni",
+    "price-desc": "Avval qimmati",
+    "newest": "Yangi kelganlari"
+  },
+  "filters": {
+    "title": "Filtrlar",
+    "description": "Narx va brend bo'yicha toraytiring.",
+    "price": "Narx",
+    "priceMin": "dan",
+    "priceMax": "gacha",
+    "priceRange": "Katalogda: {min} – {max}",
+    "apply": "Qo'llash",
+    "brand": "Brend",
+    "noBrands": "Brendlar mahsulot qo'shilgach paydo bo'ladi.",
+    "onSale": "Chegirmadagilar",
+    "active": "Tanlangan:",
+    "remove": "{filter} — olib tashlash",
+    "clear": "Tozalash",
+    "priceFrom": "{price} va undan yuqori",
+    "priceTo": "{price} gacha"
   }
 }
