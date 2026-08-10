@@ -5,6 +5,7 @@ import { unstable_rethrow } from "next/navigation";
 
 import { createClient } from "@/supabase/server";
 import { SORT_QUERY, type CatalogQuery } from "@/lib/catalog/search-params";
+import { isAppError } from "@/lib/errors";
 import { pick, toLocalizedText } from "@/lib/i18n/translations";
 import { logger } from "@/lib/logger";
 
@@ -483,6 +484,27 @@ async function readPriceRange(
   return min === null || max === null ? null : { min, max };
 }
 
+/**
+ * One product by its localized slug, or `null` when there is no such product.
+ *
+ * **`null` means "no such product"; a throw means "the catalog is broken".**
+ * That distinction is the whole of this function, and it used not to exist:
+ * `productsService.getProductBySlug` raises `notFoundOrForbidden` for a missing
+ * row, this returned it unchanged despite the `| null` in its own signature,
+ * and the page's `if (!product) notFound()` therefore never ran. `readCatalog`
+ * caught the `AppError`, logged "page read failed — rendering the unavailable
+ * state" and rendered `CatalogUnavailable` — so every unknown product URL
+ * answered **200** with "we could not load the catalog", when the truth was a
+ * 404 and "this product does not exist".
+ *
+ * Two things were wrong with that, not one: the status invited dead product
+ * URLs into the search index, and the message blamed the shop's infrastructure
+ * for a typo in a link.
+ *
+ * Only `not_found` is converted. A `forbidden`, a timeout or a connection
+ * failure still throws, because those genuinely are "the catalog is
+ * unavailable" and must not be disguised as an empty shelf.
+ */
 export async function getProductBySlug(
   locale: Locale,
   slug: string,
@@ -491,11 +513,14 @@ export async function getProductBySlug(
     "getProductBySlug",
     async () => {
       const supabase = await createClient();
-      const detail = await productsService.getProductBySlug(
-        supabase,
-        locale,
-        slug,
-      );
+      const detail = await productsService
+        .getProductBySlug(supabase, locale, slug)
+        .catch((error: unknown) => {
+          if (isAppError(error) && error.code === "not_found") return null;
+          throw error;
+        });
+
+      if (!detail) return null;
       const slugs = await categorySlugs(locale);
 
       return {

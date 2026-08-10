@@ -12,6 +12,38 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Fixed — an unknown product URL answered 200 instead of 404
+
+`/uz/products/does-not-exist` returned **200** with "we could not load the
+catalog". Two independent causes, both measured on a production build
+(**ADR-81**):
+
+1. **`catalog.reads.getProductBySlug` threw instead of returning `null`.** Its
+   signature said `Promise<Product | null>`, but `productsService` raises
+   `notFoundOrForbidden` for a missing row and the facade passed it straight
+   through — so the page's `if (!product) notFound()` never ran. `readCatalog`
+   caught the `AppError`, logged "page read failed" and rendered
+   `CatalogUnavailable`. The status was wrong _and_ the message blamed the
+   shop's infrastructure for a typo in a link. Only `not_found` is converted; a
+   `forbidden` or a connection failure still throws, because those really are
+   "the catalog is unavailable".
+
+2. **`products/loading.tsx` opened a Suspense boundary above `[slug]`.** A
+   `loading.tsx` covers its segment _and every route beneath it_, so the
+   response shell flushed with 200 before the page body ran and `notFound()`
+   could no longer set the status. It moved into a `(listing)` route group,
+   which is URL-transparent: `/products` is unchanged, the listing keeps its
+   skeleton, and the detail route is simply outside the boundary.
+
+Both were necessary. Fixing only the read left the status at 200; putting the
+`loading.tsx` back reproduced the 200 with `notFound()` firing, which is
+**ADR-41**'s mechanism — that guard had been dropped when the route moved to
+on-demand rendering, and ADR-81 replaces it structurally.
+
+Verified on `next start`: `/uz`, `/ru` and `/en` product URLs for unknown slugs
+all return **404**, and the listing, filters, home page and information pages
+all still return 200.
+
 ### Changed — the admin panel manages the real catalog
 
 Products, categories and brands all persist to the connected Supabase project.

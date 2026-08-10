@@ -7,8 +7,26 @@ import { Skeleton } from "@/components/ui/skeleton";
  *
  * Scoped to this segment rather than the root: the home page is static and a
  * root `loading.tsx` would flash a fallback on every navigation for no benefit
- * (ADR-18). Listing is the first route that does real work per request —
- * filtering now, a database query shortly — so it is the first that earns one.
+ * (ADR-18). The listing does real work per request — a category tree, a
+ * filtered product query, an exact count — so it is the first route that earns
+ * one.
+ *
+ * ## Why it lives inside a `(listing)` route group
+ *
+ * A `loading.tsx` opens a Suspense boundary for its segment **and every route
+ * beneath it**. Sitting one level up at `products/`, this one wrapped
+ * `products/[slug]` too — so the detail route's response shell flushed with
+ * **200** before the page body ran, and the `notFound()` inside it could no
+ * longer change the status. Every unknown product slug answered 200 with
+ * not-found copy: a soft 404, which invites dead product URLs into the search
+ * index.
+ *
+ * That is exactly the failure ADR-41 recorded and solved with
+ * `dynamicParams = false`; the guard was dropped when the detail route moved to
+ * on-demand rendering, and the boundary came back with it. The group is the
+ * structural fix rather than a second guard — `(listing)` is URL-transparent,
+ * so `/products` is unchanged, and `[slug]` is now outside the boundary and
+ * free to answer 404 (**ADR-81**).
  *
  * The block sizes mirror the real page's heading, filter row and grid, so the
  * layout does not move when content replaces this. It carries no text, which is
