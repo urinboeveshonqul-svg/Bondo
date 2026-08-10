@@ -12,6 +12,56 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Changed — the admin panel manages the real catalog
+
+Products, categories and brands all persist to the connected Supabase project.
+An administrator signs in, creates a product, uploads an image, publishes it,
+and a shopper sees it.
+
+**Why the panel said "Qisman ulangan".** Three things, not one: the shell
+rendered a hand-written banner unconditionally; seven controls called a
+`notSaved()` helper that raised a toast and wrote nothing; and the product pages
+read `mocks/admin` and `mocks/catalog`, with the editor bound to a type built on
+the storefront's `Product` — carrying `rating`, `stock` and `badges`, none of
+which an administrator can write. That was **D-29**, the same class as **K-15**:
+a form designed against an imagined schema.
+
+Connected this pass:
+
+- **Product list** — `listProducts`, all statuses, real counts, real filters.
+- **Product editor** — `AdminProductDraft`, every field a column; `saveProduct`
+  on submit, and the result decides what the operator is told.
+- **Publish / unpublish** — from the row menu and the editor, through
+  `saveProduct` rather than a second write path.
+- **Delete / restore** — soft delete plus a **new** `restoreProduct` action.
+- **Specifications** — **new** on `saveProduct`, via `replaceSpecifications`.
+- **Product images** — **new** upload, delete, set-primary and reorder actions
+  over Supabase Storage. Uploads survive a refresh; nothing lives in browser
+  state.
+- **Brand create** — the manager had edit and delete but no way to add one.
+- **Command palette** — products, categories and brands from the database.
+
+The banner is now **derived** from a `persistence` field on each module record
+(**ADR-80**). It names only the modules still on fixtures — inventory,
+homepage, content pages, users, settings — and renders nothing when there are
+none.
+
+### Fixed — a new product could not be saved at all
+
+`assertPublishable` demanded a price, a category and a brand on **every** write,
+including `status = 'draft'`. The first Save of a new product failed with "This
+product is not ready to publish", which is also what the operator saw when they
+had typed only a name. A draft is allowed to be incomplete — that is what draft
+means. The guard now returns early unless the product is going active, and its
+message names what is missing.
+
+### Fixed — a soft-deleted product could not be restored
+
+`getProductById` filtered `deleted_at is null`, so a deleted product could not be
+opened and `restoreProduct` was unreachable from the only screen that offers it.
+It now takes `includeDeleted`, which the admin editor passes and the storefront
+does not.
+
 ### Changed — the catalog listing, rebuilt around an information architecture
 
 The listing rendered one filter chip per category: every level in identical

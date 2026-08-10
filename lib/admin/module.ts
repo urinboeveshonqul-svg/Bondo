@@ -173,6 +173,20 @@ export type AdminModule = {
   seo: false | { localizedSlug: boolean };
   /** Whether the record has an audit trail worth showing on its detail view. */
   audit: boolean;
+  /**
+   * Whether this module's screens actually reach the database.
+   *
+   * The panel used to carry a hand-written banner saying "brands are connected,
+   * everything else is sample data" — a sentence that had to be edited every
+   * time a module landed and was wrong the moment somebody forgot. Declaring it
+   * per module means the banner is **derived**: it names exactly the modules
+   * still on fixtures, and it disappears on its own when the last one lands.
+   *
+   * `read-only` is its own value rather than a variant of `live` because the
+   * distinction matters to an operator: the audit log is real data nobody can
+   * edit, which is different from a screen whose Save does nothing.
+   */
+  persistence: "live" | "read-only" | "fixtures";
 };
 
 // -----------------------------------------------------------------------------

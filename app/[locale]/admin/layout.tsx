@@ -16,14 +16,17 @@ import {
   type QuickAction,
 } from "@/components/admin/layout/quick-actions";
 import { can } from "@/lib/admin/permissions";
+import { ADMIN_MODULES } from "@/lib/admin/modules";
 import { requireAdmin } from "@/lib/auth/guards";
 import { touchAdminLastSeen } from "@/services/authorization.service";
 import { createClient } from "@/supabase/server";
 import { navItems, visibleNav } from "@/lib/admin/navigation";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { adminProducts, adminRoles, contentPages } from "@/mocks/admin";
-import { brands, categories } from "@/mocks/catalog";
+import { contentPages } from "@/mocks/admin";
+import * as brandsService from "@/services/brands.service";
+import * as categoriesService from "@/services/categories.service";
+import * as productsService from "@/services/products.service";
 import type { PageParams } from "@/types";
 
 /**
@@ -110,6 +113,39 @@ export default async function AdminLayout({
   ]);
   const activeLocale = (await getLocale()) as Locale;
 
+  /**
+   * The palette's catalog, read from the database.
+   *
+   * It listed `mocks/admin` and `mocks/catalog`, so typing a real product name
+   * found nothing and typing an invented one opened an editor for a row that
+   * does not exist. Capped rather than unbounded: this is a jump list, and a
+   * thousand products serialised into a client component is a payload nobody
+   * reads.
+   *
+   * Each read degrades to an empty group rather than failing the layout — a
+   * layout that throws takes the whole panel down with it (**K-18**).
+   */
+  const [paletteProducts, paletteCategories, paletteBrands] = await Promise.all(
+    [
+      can(permissions, "products.read")
+        ? productsService
+            .listProducts(supabase, {
+              pageSize: 50,
+              sort: "updated_at",
+              direction: "desc",
+            })
+            .then((page) => page.rows)
+            .catch(() => [])
+        : Promise.resolve([]),
+      can(permissions, ["categories.read", "categories.manage"])
+        ? categoriesService.listCategories(supabase).catch(() => [])
+        : Promise.resolve([]),
+      can(permissions, ["brands.read", "brands.manage"])
+        ? brandsService.listBrands(supabase).catch(() => [])
+        : Promise.resolve([]),
+    ],
+  );
+
   // Quick actions mirror the permission model: an inventory manager gets
   // "Adjust stock" and nothing else, because that is all they can create.
   const quickActions: QuickAction[] = [
@@ -126,34 +162,28 @@ export default async function AdminLayout({
    * permission rules.
    */
   const entries: AdminSearchEntry[] = [
-    ...(can(permissions, "products.read")
-      ? adminProducts.map((product) => ({
-          id: `product-${product.id}`,
-          group: "products",
-          label: product.name[activeLocale],
-          hint: product.sku,
-          href: routes.admin.product(product.id),
-          icon: "Package",
-        }))
-      : []),
-    ...(can(permissions, ["categories.read", "categories.manage"])
-      ? categories.map((category) => ({
-          id: `category-${category.slug}`,
-          group: "categories",
-          label: category.name[activeLocale],
-          href: routes.admin.categories,
-          icon: "FolderTree",
-        }))
-      : []),
-    ...(can(permissions, ["brands.read", "brands.manage"])
-      ? brands.map((brand) => ({
-          id: `brand-${brand.slug}`,
-          group: "brands",
-          label: brand.name,
-          href: routes.admin.brands,
-          icon: "Tag",
-        }))
-      : []),
+    ...paletteProducts.map((product) => ({
+      id: `product-${product.id}`,
+      group: "products",
+      label: product.name[activeLocale] || product.sku,
+      hint: product.sku,
+      href: routes.admin.product(product.id),
+      icon: "Package",
+    })),
+    ...paletteCategories.map((category) => ({
+      id: `category-${category.id}`,
+      group: "categories",
+      label: category.name[activeLocale],
+      href: routes.admin.categories,
+      icon: "FolderTree",
+    })),
+    ...paletteBrands.map((brand) => ({
+      id: `brand-${brand.id}`,
+      group: "brands",
+      label: brand.name,
+      href: routes.admin.brands,
+      icon: "Tag",
+    })),
     // Customers and orders are deliberately absent from the palette. Both used
     // to be listed from `mocks/admin.ts`, which meant typing a real customer's
     // name found nothing and typing an invented one found a row that does not
@@ -188,20 +218,34 @@ export default async function AdminLayout({
   // there is nothing to list. The bell shows its empty state until there is.
   const notifications: AdminNotificationItem[] = [];
 
-  const roleLabel = user.roles
-    .map(
-      (key) =>
-        adminRoles.find((role) => role.key === key)?.name[activeLocale] ?? key,
-    )
-    .join(", ");
+  // The role **keys** are real — `authorizationFor()` resolved them from
+  // `user_roles` against the database. Only the display label came from a
+  // fixture role table, so the key is shown directly rather than looked up in a
+  // list that could disagree with the schema about which roles exist.
+  const roleLabel = user.roles.join(", ");
 
   // `t` is read so the group headings are resolved eagerly and a missing key
   // fails here rather than inside the palette on first open.
   void t;
 
+  /**
+   * The modules still running on fixtures, named for the banner.
+   *
+   * Only the ones this administrator can actually see: telling a catalog
+   * manager that the settings screen does not persist is noise about a screen
+   * they cannot open. Empty for a role whose modules are all live, and the
+   * banner then renders nothing.
+   */
+  const fixtureModules = ADMIN_MODULES.filter(
+    (module) => module.persistence === "fixtures",
+  )
+    .filter((module) => can(permissions, module.grants.view ?? []))
+    .map((module) => tAdmin(module.labelKey));
+
   return (
     <AdminShell
       sections={sections}
+      fixtureModules={fixtureModules}
       topbar={
         <>
           <AdminSearch navItems={items} entries={entries} />

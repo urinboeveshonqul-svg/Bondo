@@ -3,7 +3,7 @@
   "backToStore": "Back to store",
   "preview": {
     "label": "Partly connected",
-    "body": "Brands now write to the database. Products, categories and the other modules still run on sample data."
+    "body": "Still on sample data and saving nothing: {modules}"
   },
   "nav": {
     "label": "Admin navigation",
@@ -94,7 +94,9 @@
     "indent": "Nest under previous",
     "outdent": "Move out one level",
     "hide": "Hide",
-    "show": "Show"
+    "show": "Show",
+    "saving": "Saving…",
+    "restore": "Restore"
   },
   "status": {
     "draft": "Draft",

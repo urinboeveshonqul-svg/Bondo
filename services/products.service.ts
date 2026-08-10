@@ -54,7 +54,7 @@ const DETAIL_COLUMNS = `
   id, sku, price_cents, sale_price_cents, cost_price_cents,
   status, visibility, is_featured, published_at,
   warranty_months, weight_grams, width_mm, height_mm, length_mm,
-  created_at, updated_at, created_by, updated_by,
+  created_at, updated_at, created_by, updated_by, deleted_at,
   brand:brands ( id, slug, name ),
   category:categories ( id, path ),
   images:product_images ( id, storage_path, alt_text, display_order, is_primary, width, height ),
@@ -100,6 +100,8 @@ export type ProductDetail = ProductListItem & {
   inventory: Tables<"inventory"> | null;
   createdAt: string;
   updatedAt: string;
+  /** Non-null means soft-deleted. The admin editor offers Restore. */
+  deletedAt: string | null;
 };
 
 export type ProductListParams = {
@@ -218,6 +220,7 @@ function foldDetail(row: Record<string, unknown>): ProductDetail {
     inventory: (row.inventory ?? null) as Tables<"inventory"> | null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
+    deletedAt: (row.deleted_at ?? null) as string | null,
   };
 }
 
@@ -335,16 +338,25 @@ export async function getProductBySlug(
   return getProductById(supabase, match.product_id);
 }
 
+/**
+ * One product by id.
+ *
+ * `includeDeleted` exists for the admin editor. A soft delete is reversible by
+ * design — `restoreProduct` is right below — and a read that hides the row makes
+ * the undo unreachable: the operator would have deleted it from a screen they
+ * can no longer open. The storefront never passes it, so an anonymous read is
+ * unchanged and RLS refuses a deleted row anyway.
+ */
 export async function getProductById(
   supabase: Client,
   id: string,
+  options: { includeDeleted?: boolean } = {},
 ): Promise<ProductDetail> {
-  const { data, error } = await supabase
-    .from("products")
-    .select(DETAIL_COLUMNS)
-    .eq("id", id)
-    .is("deleted_at", null)
-    .maybeSingle();
+  let query = supabase.from("products").select(DETAIL_COLUMNS).eq("id", id);
+
+  if (!options.includeDeleted) query = query.is("deleted_at", null);
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) throw toAppError(error, "load the product");
   if (!data) throw notFoundOrForbidden("Product");
@@ -693,23 +705,36 @@ export async function listDeals(
  * than in the form, so it holds for an import script too.
  */
 export function assertPublishable(input: ProductInput): void {
+  // **A draft is allowed to be incomplete — that is what a draft is.**
+  //
+  // Every check below used to run on every save, including `status = 'draft'`,
+  // so a product could not be created without already having a price, a
+  // category and a brand. An operator adding a product types a name first;
+  // demanding the whole record before the first save makes the draft state
+  // useless and was the reason "New product" could not be completed at all.
+  //
+  // The guard is named for a publish transition and its doc describes one, so
+  // it now behaves like one.
+  if (input.status !== "active") return;
+
   const problems: string[] = [];
 
   if (input.priceCents <= 0) problems.push("price");
   if (!input.categoryId) problems.push("category");
   if (!input.brandId) problems.push("brand");
 
-  if (
-    input.status === "active" &&
-    !isPublishable([input.name, input.shortDescription, input.slug])
-  ) {
+  if (!isPublishable([input.name, input.shortDescription, input.slug])) {
     problems.push("translations");
   }
 
   if (problems.length > 0) {
-    throw new AppError("validation", "This product is not ready to publish.", {
-      details: { product: problems },
-    });
+    throw new AppError(
+      // Names what is missing rather than only that something is. The operator
+      // is looking at a form with thirty fields on it.
+      "validation",
+      `This product cannot be published yet — missing: ${problems.join(", ")}.`,
+      { details: { product: problems } },
+    );
   }
 }
 

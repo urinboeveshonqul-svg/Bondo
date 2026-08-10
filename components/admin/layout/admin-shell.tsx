@@ -48,11 +48,21 @@ import { cn } from "@/lib/utils";
 export function AdminShell({
   sections,
   topbar,
+  fixtureModules,
   children,
 }: {
   sections: readonly AdminNavSection[];
   /** Search, quick actions, notifications and the user menu, built server-side. */
   topbar: React.ReactNode;
+  /**
+   * Already-translated labels of the modules still running on fixtures.
+   *
+   * Derived from `persistence` in the module registry, not written by hand —
+   * the previous banner was a sentence naming brands as the only connected
+   * module, which had to be edited whenever one landed and was stale in between.
+   * Empty means every module persists, and the notice disappears entirely.
+   */
+  fixtureModules: readonly string[];
   children: React.ReactNode;
 }) {
   const t = useTranslations("admin");
@@ -119,25 +129,31 @@ export function AdminShell({
           </div>
 
           {/*
-            Unmissable, and deliberately not dismissible. There is no
-            authentication in front of this panel yet (K-1, K-2); anyone reading
-            it should know that before they trust anything on screen.
+            Shown only while some module is still on fixtures, and it names
+            them. Not dismissible: an operator about to type into a form that
+            saves nothing should be told before, not after.
+
+            When `fixtureModules` is empty this renders nothing at all — which
+            is the correct end state and the reason it is derived rather than
+            written out. Products, categories and brands are no longer in it.
           */}
-          <p
-            role="status"
-            className="flex items-start gap-2 border-t bg-foreground/5 px-3 py-1.5 text-xs text-muted-foreground sm:px-4"
-          >
-            <TriangleAlert
-              className="mt-0.5 size-3.5 shrink-0"
-              aria-hidden="true"
-            />
-            <span>
-              <span className="font-medium text-foreground">
-                {t("preview.label")}
-              </span>{" "}
-              {t("preview.body")}
-            </span>
-          </p>
+          {fixtureModules.length > 0 ? (
+            <p
+              role="status"
+              className="flex items-start gap-2 border-t bg-foreground/5 px-3 py-1.5 text-xs text-muted-foreground sm:px-4"
+            >
+              <TriangleAlert
+                className="mt-0.5 size-3.5 shrink-0"
+                aria-hidden="true"
+              />
+              <span>
+                <span className="font-medium text-foreground">
+                  {t("preview.label")}
+                </span>{" "}
+                {t("preview.body", { modules: fixtureModules.join(", ") })}
+              </span>
+            </p>
+          ) : null}
         </header>
 
         <main id="admin-main" className="flex-1 p-4 sm:p-6">

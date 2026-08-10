@@ -29,7 +29,9 @@
       "delete": "Delete"
     },
     "variantCount": "{count, plural, one {# variant} other {# variants}}",
-    "noVariants": "One variant"
+    "noVariants": "One variant",
+    "untranslated": "Missing a translation",
+    "confirmDelete": "Delete this product?"
   },
   "editor": {
     "newTitle": "New product",
@@ -67,7 +69,11 @@
       "visibility": "Visibility",
       "featured": "Show in featured rails",
       "scheduledFor": "Publish at",
-      "scheduledForHint": "Leave empty to publish immediately."
+      "scheduledForHint": "Leave empty to publish immediately.",
+      "seoTitle": "Search title",
+      "seoDescription": "Search description",
+      "none": "Not set",
+      "featuredHint": "Appears in the featured row on the home page."
     },
     "images": {
       "title": "Images",
@@ -79,7 +85,15 @@
       "emptyTitle": "No images yet",
       "emptyDescription": "Image uploads are not connected yet, so cards show the brand monogram instead.",
       "unavailableTitle": "Uploads are not wired yet",
-      "unavailableDescription": "Uploading arrives in the next phase. You can write the alt text now."
+      "unavailableDescription": "Uploading arrives in the next phase. You can write the alt text now.",
+      "needsSave": "Save the product before uploading images.",
+      "hint": "WebP, AVIF, JPEG or PNG. Up to 5 MB.",
+      "uploaded": "Image uploaded",
+      "removed": "Image removed",
+      "primarySet": "Primary image set",
+      "moveEarlier": "Move earlier",
+      "moveLater": "Move later",
+      "remove": "Remove"
     },
     "specs": {
       "title": "Specifications",
@@ -90,7 +104,8 @@
       "unit": "Unit",
       "add": "Add specification",
       "emptyTitle": "No specifications",
-      "emptyDescription": "Add the figures a shopper compares before buying."
+      "emptyDescription": "Add the figures a shopper compares before buying.",
+      "groupPlaceholder": "For example: Display"
     },
     "variants": {
       "title": "Variants",
@@ -114,7 +129,10 @@
       },
       "weightGrams": "g",
       "tooMany": "That would create {count} variants. Reduce the options first."
-    }
+    },
+    "deletedNotice": "This product is deleted. Restore it before editing.",
+    "confirmDelete": "Delete this product? You can restore it afterwards.",
+    "lastSaved": "Last saved {date}"
   },
   "categories": {
     "title": "Categories",

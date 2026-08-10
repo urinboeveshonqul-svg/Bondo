@@ -32,6 +32,7 @@ import { routes } from "@/lib/routes";
 export const ADMIN_MODULES: readonly AdminModule[] = [
   {
     id: "dashboard",
+    persistence: "live",
     labelKey: "nav.dashboard",
     href: routes.admin.index,
     icon: "LayoutDashboard",
@@ -68,6 +69,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   // `app/[locale]/admin/orders/`. Tracked as **D-30**.
   {
     id: "products",
+    persistence: "live",
     labelKey: "nav.products",
     href: routes.admin.products,
     icon: "Package",
@@ -102,6 +104,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "categories",
+    persistence: "live",
     labelKey: "nav.categories",
     href: routes.admin.categories,
     icon: "FolderTree",
@@ -122,6 +125,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "brands",
+    persistence: "live",
     labelKey: "nav.brands",
     href: routes.admin.brands,
     icon: "Tag",
@@ -145,6 +149,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "inventory",
+    persistence: "fixtures",
     labelKey: "nav.inventory",
     href: routes.admin.inventory,
     icon: "Boxes",
@@ -169,6 +174,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "homepage",
+    persistence: "fixtures",
     labelKey: "nav.homepage",
     href: routes.admin.homepage,
     icon: "LayoutTemplate",
@@ -189,6 +195,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "highlights",
+    persistence: "live",
     labelKey: "nav.highlights",
     href: routes.admin.highlights,
     icon: "BadgeCheck",
@@ -215,6 +222,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "content",
+    persistence: "fixtures",
     labelKey: "nav.content",
     href: routes.admin.content,
     icon: "FileText",
@@ -235,6 +243,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "users",
+    persistence: "fixtures",
     labelKey: "nav.users",
     href: routes.admin.users,
     icon: "Users",
@@ -259,6 +268,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "audit",
+    persistence: "read-only",
     labelKey: "nav.audit",
     href: routes.admin.audit,
     icon: "ScrollText",
@@ -282,6 +292,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "settings",
+    persistence: "fixtures",
     labelKey: "nav.settings",
     href: routes.admin.settings,
     icon: "Settings",

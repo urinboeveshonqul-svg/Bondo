@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { deleteBrand, saveBrand } from "@/actions/catalog.actions";
 import { useRouter } from "@/i18n/navigation";
@@ -64,6 +64,24 @@ export type AdminBrandRow = {
 
 type EditableBrand = AdminBrandRow & { monogram: string };
 
+/**
+ * A blank brand, for the create flow.
+ *
+ * `id: ""` rather than a generated one: `saveBrand` branches on its presence to
+ * decide insert or update, and inventing a uuid client-side would make every
+ * create an update of a row that does not exist.
+ */
+const blankBrand = (): EditableBrand => ({
+  id: "",
+  slug: "",
+  name: "",
+  websiteUrl: "",
+  isFeatured: false,
+  isVisible: true,
+  productCount: 0,
+  monogram: "",
+});
+
 /** Two letters, derived rather than stored — `brands` has no monogram column. */
 const monogramOf = (name: string) => name.slice(0, 2).toUpperCase();
 
@@ -101,7 +119,7 @@ export function BrandsManager({
   function persist(brand: EditableBrand, onDone?: () => void) {
     startTransition(async () => {
       const result = await saveBrand({
-        id: brand.id,
+        ...(brand.id ? { id: brand.id } : {}),
         name: brand.name,
         slug: brand.slug,
         websiteUrl: brand.websiteUrl || null,
@@ -200,6 +218,21 @@ export function BrandsManager({
         searchIn={(brand) => `${brand.name} ${brand.slug}`}
         emptyTitle={t("emptyTitle")}
         emptyDescription={t("emptyDescription")}
+        emptyAction={
+          canManage ? (
+            <Button size="sm" onClick={() => setEditing(blankBrand())}>
+              {t("new")}
+            </Button>
+          ) : null
+        }
+        toolbarActions={
+          canManage ? (
+            <Button size="sm" onClick={() => setEditing(blankBrand())}>
+              <Plus aria-hidden="true" />
+              {t("new")}
+            </Button>
+          ) : null
+        }
         rowActions={(brand) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

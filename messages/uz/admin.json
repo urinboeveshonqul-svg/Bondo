@@ -3,7 +3,7 @@
   "backToStore": "Do'konga qaytish",
   "preview": {
     "label": "Qisman ulangan",
-    "body": "Brendlar bazaga yozilmoqda. Mahsulotlar, kategoriyalar va boshqa bo'limlar hali namunaviy ma'lumotlarda."
+    "body": "{modules} — hali namunaviy ma'lumotlarda ishlaydi, o'zgarishlar saqlanmaydi."
   },
   "nav": {
     "label": "Boshqaruv navigatsiyasi",
@@ -94,7 +94,9 @@
     "indent": "Ichkariga",
     "outdent": "Tashqariga",
     "hide": "Yashirish",
-    "show": "Ko'rsatish"
+    "show": "Ko'rsatish",
+    "saving": "Saqlanmoqda…",
+    "restore": "Tiklash"
   },
   "status": {
     "draft": "Qoralama",

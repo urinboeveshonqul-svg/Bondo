@@ -383,6 +383,30 @@ const productSchema = z.object({
   visibility: z.enum(["public", "hidden"]),
   isFeatured: z.boolean().default(false),
   warrantyMonths: z.number().int().min(0).max(240).nullish(),
+  // SEO lives on the translation row, same as the name and the slug (ADR-57).
+  seoTitle: optionalLocalizedText(120).optional(),
+  seoDescription: optionalLocalizedText(320).optional(),
+  seoKeywords: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
+  /**
+   * The whole specification table for this product, replacing what is there.
+   *
+   * Sent as a set rather than as individual add/remove calls because that is
+   * what the editor holds: an operator reorders three rows and deletes one
+   * before pressing Save, and replaying that as four mutations means four
+   * chances to end up half-applied. `replaceSpecifications` does it in a
+   * delete-then-insert, which is the closest to atomic PostgREST allows.
+   */
+  specifications: z
+    .array(
+      z.object({
+        group: z.string().trim().max(120).nullish(),
+        name: z.string().trim().min(1).max(120),
+        value: z.string().trim().min(1).max(2000),
+        unit: z.string().trim().max(32).nullish(),
+      }),
+    )
+    .max(200)
+    .optional(),
 });
 
 export const saveProduct = createAction(
@@ -408,15 +432,59 @@ export const saveProduct = createAction(
       visibility: input.visibility,
       isFeatured: input.isFeatured,
       warrantyMonths: input.warrantyMonths ?? null,
+      ...(input.seoTitle ? { seoTitle: input.seoTitle } : {}),
+      ...(input.seoDescription ? { seoDescription: input.seoDescription } : {}),
+      ...(input.seoKeywords ? { seoKeywords: input.seoKeywords } : {}),
     };
 
     const product = input.id
       ? await productsService.updateProduct(supabase, input.id, payload)
       : await productsService.createProduct(supabase, payload);
 
+    // After the parent, because a new product has no id until it exists. A
+    // failure here surfaces as a failed save rather than a silent partial one —
+    // the action throws and `createAction` returns `err`.
+    if (input.specifications) {
+      await productsService.replaceSpecifications(
+        supabase,
+        product.id,
+        input.specifications.map((spec, index) => ({
+          spec_group: spec.group || null,
+          name: spec.name,
+          value: spec.value,
+          unit: spec.unit || null,
+          display_order: index,
+        })),
+      );
+    }
+
     revalidateCatalog();
+    revalidatePath(routes.admin.products);
 
     return { id: product.id, sku: product.sku };
+  },
+);
+
+/**
+ * Brings a soft-deleted product back.
+ *
+ * The counterpart `deleteProduct` has always implied and nothing exposed —
+ * `restoreProduct` has been in the service since Phase 3B with no caller. A
+ * soft delete an operator cannot undo is a hard delete with extra steps.
+ */
+export const restoreProduct = createAction(
+  "restoreProduct",
+  z.object({ id: z.uuid() }),
+  async (input) => {
+    await requirePermission("products.update");
+
+    const supabase = await createClient();
+    await productsService.restoreProduct(supabase, input.id);
+
+    revalidateCatalog();
+    revalidatePath(routes.admin.products);
+
+    return { restored: true };
   },
 );
 
@@ -436,5 +504,118 @@ export const deleteProduct = createAction(
     revalidatePath(routes.admin.products);
 
     return { deleted: true };
+  },
+);
+
+// -----------------------------------------------------------------------------
+// Product images
+// -----------------------------------------------------------------------------
+// `services/storage.service.ts` has had upload, delete, reorder and
+// set-primary since Phase 3B, and `ModuleMediaManager` has never called any of
+// them (**D-12**). These are the four actions that connect the two.
+//
+// Every one of them writes a `product_images` row as well as touching the
+// bucket, so an image survives a refresh — which is the whole difference
+// between this and the previous editor, where a chosen file lived in React
+// state and vanished on reload.
+
+/**
+ * Uploads a file and appends it to the product's gallery.
+ *
+ * Unlike the category image, this **does** write immediately rather than
+ * returning a path for the form to save later. A product image is a row in its
+ * own table, not a column on the product, so there is no "save the form" step
+ * that would commit it — and a gallery that only persists when the operator
+ * remembers to press Save on a different section is the more surprising
+ * behaviour of the two.
+ */
+export const uploadProductImage = createAction(
+  "uploadProductImage",
+  z.object({
+    productId: z.uuid(),
+    file: z.instanceof(File, { message: "adminCatalog.errors.imageRequired" }),
+    altText: z.string().trim().max(300).nullish(),
+  }),
+  async (input) => {
+    await requirePermission("products.update");
+
+    const supabase = await createClient();
+    const image = await storageService.uploadProductImage(
+      supabase,
+      input.productId,
+      input.file,
+      { altText: input.altText ?? null },
+    );
+
+    revalidateCatalog();
+    revalidatePath(routes.admin.product(input.productId));
+
+    return {
+      id: image.id,
+      path: image.storage_path,
+      url: storageService.publicUrl(supabase, "products", image.storage_path),
+      isPrimary: image.is_primary,
+    };
+  },
+);
+
+export const deleteProductImage = createAction(
+  "deleteProductImage",
+  z.object({ productId: z.uuid(), imageId: z.uuid() }),
+  async (input) => {
+    await requirePermission("products.update");
+
+    const supabase = await createClient();
+    await storageService.deleteProductImage(supabase, input.imageId);
+
+    revalidateCatalog();
+    revalidatePath(routes.admin.product(input.productId));
+
+    return { deleted: true };
+  },
+);
+
+export const setPrimaryProductImage = createAction(
+  "setPrimaryProductImage",
+  z.object({ productId: z.uuid(), imageId: z.uuid() }),
+  async (input) => {
+    await requirePermission("products.update");
+
+    const supabase = await createClient();
+    await storageService.setPrimaryImage(
+      supabase,
+      input.productId,
+      input.imageId,
+    );
+
+    revalidateCatalog();
+    revalidatePath(routes.admin.product(input.productId));
+
+    return { primary: input.imageId };
+  },
+);
+
+export const reorderProductImages = createAction(
+  "reorderProductImages",
+  z.object({
+    productId: z.uuid(),
+    orderedIds: z.array(z.uuid()).min(1).max(50),
+  }),
+  async (input) => {
+    await requirePermission("products.update");
+
+    const supabase = await createClient();
+    // Explicit positions rather than array indices inferred downstream, so a
+    // caller cannot send a sparse order — the same contract `reorderCategories`
+    // uses.
+    await storageService.reorderProductImages(
+      supabase,
+      input.orderedIds.map((id, index) => ({ id, display_order: index })),
+    );
+
+    revalidateCatalog();
+    revalidatePath(routes.admin.product(input.productId));
+
+    return { ordered: input.orderedIds.length };
   },
 );

@@ -57,6 +57,7 @@ const made = {
   product: null,
   brandB: null,
   catalogProducts: [],
+  uploads: [],
   upload: null,
 };
 
@@ -726,6 +727,210 @@ try {
     !rowStillThere.error && rowStillThere.data?.deleted_at !== null,
   );
 
+  // ---------------------------------------------------------------------------
+  // PRODUCT restore, specifications and images — the editor's remaining writes
+  // ---------------------------------------------------------------------------
+  // Everything the product form and its gallery now do, through the same
+  // RLS-enforced administrator session. Each of these was a "nothing was saved"
+  // toast before this pass.
+  const restored = await asAdmin
+    .from("products")
+    .update({ deleted_at: null })
+    .eq("id", made.product)
+    .select("deleted_at")
+    .single();
+  check(
+    "PRODUCT restore brings a soft-deleted row back",
+    !restored.error && restored.data?.deleted_at === null,
+    restored.error?.message,
+  );
+
+  // `replaceSpecifications` is a delete-then-insert, so this asserts the whole
+  // set rather than a single row: writing three, then two, must leave two.
+  const specsFirst = await asAdmin.from("product_specifications").insert([
+    {
+      product_id: made.product,
+      spec_group: "Display",
+      name: "Panel",
+      value: "IPS",
+      display_order: 0,
+    },
+    {
+      product_id: made.product,
+      spec_group: "Display",
+      name: "Refresh rate",
+      value: "144",
+      unit: "Hz",
+      display_order: 1,
+    },
+    {
+      product_id: made.product,
+      name: "Weight",
+      value: "2.3",
+      unit: "kg",
+      display_order: 2,
+    },
+  ]);
+  check(
+    "PRODUCT specifications insert",
+    !specsFirst.error,
+    specsFirst.error?.message,
+  );
+
+  await asAdmin
+    .from("product_specifications")
+    .delete()
+    .eq("product_id", made.product);
+  const specsSecond = await asAdmin.from("product_specifications").insert([
+    {
+      product_id: made.product,
+      name: "Panel",
+      value: "OLED",
+      display_order: 0,
+    },
+  ]);
+  const specsNow = await asAdmin
+    .from("product_specifications")
+    .select("name, value, unit, spec_group, display_order")
+    .eq("product_id", made.product);
+  check(
+    "PRODUCT specifications replace, not append",
+    !specsSecond.error &&
+      specsNow.data?.length === 1 &&
+      specsNow.data[0].value === "OLED",
+    specsSecond.error?.message ?? `${specsNow.data?.length} row(s)`,
+  );
+
+  // --- images ---------------------------------------------------------------
+  // A real upload into the products bucket, then the row that points at it —
+  // which is the pair that makes an image survive a refresh.
+  const imgPath = `${made.product}/${stamp}-a.png`;
+  const imgUp = await asAdmin.storage
+    .from("products")
+    .upload(imgPath, png, { contentType: "image/png", upsert: true });
+  check("PRODUCT image uploads to storage", !imgUp.error, imgUp.error?.message);
+  if (!imgUp.error) made.uploads.push(imgPath);
+
+  const imgRow = await asAdmin
+    .from("product_images")
+    .insert({
+      product_id: made.product,
+      storage_path: imgPath,
+      display_order: 0,
+      is_primary: true,
+    })
+    .select("id, is_primary")
+    .single();
+  check(
+    "PRODUCT image row written and primary",
+    !imgRow.error && imgRow.data?.is_primary === true,
+    imgRow.error?.message,
+  );
+
+  const imgPath2 = `${made.product}/${stamp}-b.png`;
+  const imgUp2 = await asAdmin.storage
+    .from("products")
+    .upload(imgPath2, png, { contentType: "image/png", upsert: true });
+  if (!imgUp2.error) made.uploads.push(imgPath2);
+
+  const imgRow2 = await asAdmin
+    .from("product_images")
+    .insert({
+      product_id: made.product,
+      storage_path: imgPath2,
+      display_order: 1,
+      is_primary: false,
+    })
+    .select("id")
+    .single();
+
+  // Exactly one primary, enforced by a partial unique index — so promoting the
+  // second must demote the first, which is what `setPrimaryImage` does in two
+  // statements with the demotion first.
+  await asAdmin
+    .from("product_images")
+    .update({ is_primary: false })
+    .eq("product_id", made.product);
+  await asAdmin
+    .from("product_images")
+    .update({ is_primary: true })
+    .eq("id", imgRow2.data?.id);
+
+  const primaries = await asAdmin
+    .from("product_images")
+    .select("id, is_primary, display_order")
+    .eq("product_id", made.product)
+    .order("display_order");
+  check(
+    "PRODUCT exactly one primary image after promotion",
+    primaries.data?.filter((row) => row.is_primary).length === 1 &&
+      primaries.data?.find((row) => row.is_primary)?.id === imgRow2.data?.id,
+    `${primaries.data?.filter((r) => r.is_primary).length} primary`,
+  );
+
+  // Reorder is a display_order write per row — the shape the action sends.
+  await asAdmin
+    .from("product_images")
+    .update({ display_order: 0 })
+    .eq("id", imgRow2.data?.id);
+  await asAdmin
+    .from("product_images")
+    .update({ display_order: 1 })
+    .eq("id", imgRow.data?.id);
+  const reordered = await asAdmin
+    .from("product_images")
+    .select("id, display_order")
+    .eq("product_id", made.product)
+    .order("display_order");
+  check(
+    "PRODUCT images reorder",
+    reordered.data?.[0]?.id === imgRow2.data?.id,
+    reordered.data?.map((r) => r.display_order).join(","),
+  );
+
+  // The gallery is what a shopper sees, so it has to come back through the
+  // anonymous client once the product is published.
+  await asAdmin
+    .from("products")
+    .update({
+      status: "active",
+      visibility: "public",
+      published_at: new Date().toISOString(),
+    })
+    .eq("id", made.product);
+
+  const anonImages = await anon
+    .from("products")
+    .select("id, images:product_images ( id, storage_path, is_primary )")
+    .eq("id", made.product)
+    .maybeSingle();
+  check(
+    "STOREFRONT sees the published product's images",
+    anonImages.data?.images?.length === 2,
+    anonImages.error?.message ??
+      `${anonImages.data?.images?.length ?? 0} image(s)`,
+  );
+
+  const imgDel = await asAdmin
+    .from("product_images")
+    .delete()
+    .eq("id", imgRow.data?.id);
+  const afterDel = await asAdmin
+    .from("product_images")
+    .select("id")
+    .eq("product_id", made.product);
+  check(
+    "PRODUCT image delete removes the row",
+    !imgDel.error && afterDel.data?.length === 1,
+    imgDel.error?.message ?? `${afterDel.data?.length} remaining`,
+  );
+
+  // Put it back the way the delete assertions below expect to find it.
+  await asAdmin
+    .from("products")
+    .update({ status: "draft", visibility: "hidden", deleted_at: null })
+    .eq("id", made.product);
+
   const catDel = await asAdmin
     .from("categories")
     .update({ deleted_at: new Date().toISOString() })
@@ -771,6 +976,84 @@ try {
     custWrite.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
   );
 
+  const custProduct = await asCustomer
+    .from("products")
+    .insert({ sku: `NOPE-${stamp}`, price_cents: 100, status: "draft" })
+    .select("id");
+  check(
+    "a signed-in customer cannot create a product (RLS)",
+    custProduct.error !== null,
+    custProduct.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const custCategory = await asCustomer
+    .from("categories")
+    .insert({ display_order: 1 })
+    .select("id");
+  check(
+    "a signed-in customer cannot create a category (RLS)",
+    custCategory.error !== null,
+    custCategory.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const custPublish = await asCustomer
+    .from("products")
+    .update({ status: "active" })
+    .eq("id", made.product)
+    .select("id");
+  check(
+    "a signed-in customer cannot publish somebody else's product (RLS)",
+    custPublish.error !== null || custPublish.data?.length === 0,
+    custPublish.error?.code ??
+      `${custPublish.data?.length ?? 0} row(s) updated`,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Anonymous — the same three mutations, with no session at all
+  // ---------------------------------------------------------------------------
+  // The brief asks for it explicitly, and it is the cheapest possible check that
+  // the policies key off a real identity rather than merely off "not the wrong
+  // one". `anon` is the same public key the storefront ships in its bundle.
+  const anonProduct = await anon
+    .from("products")
+    .insert({ sku: `ANON-${stamp}`, price_cents: 100, status: "draft" })
+    .select("id");
+  check(
+    "an anonymous visitor cannot create a product (RLS)",
+    anonProduct.error !== null,
+    anonProduct.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const anonCategory = await anon
+    .from("categories")
+    .insert({ display_order: 1 })
+    .select("id");
+  check(
+    "an anonymous visitor cannot create a category (RLS)",
+    anonCategory.error !== null,
+    anonCategory.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const anonBrand = await anon
+    .from("brands")
+    .insert({ name: "Anon", slug: `anon-${stamp}` })
+    .select("id");
+  check(
+    "an anonymous visitor cannot create a brand (RLS)",
+    anonBrand.error !== null,
+    anonBrand.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const anonImage = await anon
+    .from("product_images")
+    .insert({ product_id: made.product, storage_path: "nope.png" })
+    .select("id");
+  check(
+    "an anonymous visitor cannot attach a product image (RLS)",
+    anonImage.error !== null,
+    anonImage.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
   if (cust.data?.user?.id) {
     await admin.auth.admin.deleteUser(cust.data.user.id);
   }
@@ -779,6 +1062,9 @@ try {
 } finally {
   // Clean up whatever exists, in dependency order.
   if (made.upload) await admin.storage.from("products").remove([made.upload]);
+  if (made.uploads.length > 0) {
+    await admin.storage.from("products").remove(made.uploads);
+  }
   for (const id of made.catalogProducts) {
     await admin.from("inventory").delete().eq("product_id", id);
     await admin.from("products").delete().eq("id", id);

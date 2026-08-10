@@ -29,7 +29,9 @@
       "delete": "O'chirish"
     },
     "variantCount": "{count, plural, one {# ta variant} other {# ta variant}}",
-    "noVariants": "Bitta variant"
+    "noVariants": "Bitta variant",
+    "untranslated": "Tarjima to'liq emas",
+    "confirmDelete": "Mahsulot o'chirilsinmi?"
   },
   "editor": {
     "newTitle": "Yangi mahsulot",
@@ -67,7 +69,11 @@
       "visibility": "Ko'rinishi",
       "featured": "Tanlangan bo'limlarda ko'rsatish",
       "scheduledFor": "Chop etish vaqti",
-      "scheduledForHint": "Darhol chop etish uchun bo'sh qoldiring."
+      "scheduledForHint": "Darhol chop etish uchun bo'sh qoldiring.",
+      "seoTitle": "Qidiruvdagi sarlavha",
+      "seoDescription": "Qidiruvdagi tavsif",
+      "none": "Tanlanmagan",
+      "featuredHint": "Bosh sahifadagi tanlangan mahsulotlar qatorida chiqadi."
     },
     "images": {
       "title": "Rasmlar",
@@ -79,7 +85,15 @@
       "emptyTitle": "Hozircha rasm yo'q",
       "emptyDescription": "Rasm yuklash hali ulanmagan. Unga qadar kartochkalarda brend monogrammasi ko'rsatiladi.",
       "unavailableTitle": "Yuklash hali ulanmagan",
-      "unavailableDescription": "Rasm yuklash keyingi bosqichda qo'shiladi. Alt matnini hozirdan yozib qo'yish mumkin."
+      "unavailableDescription": "Rasm yuklash keyingi bosqichda qo'shiladi. Alt matnini hozirdan yozib qo'yish mumkin.",
+      "needsSave": "Rasm yuklashdan oldin mahsulotni saqlang.",
+      "hint": "WebP, AVIF, JPEG yoki PNG. 5 MB gacha.",
+      "uploaded": "Rasm yuklandi",
+      "removed": "Rasm o'chirildi",
+      "primarySet": "Asosiy rasm belgilandi",
+      "moveEarlier": "Oldinga surish",
+      "moveLater": "Orqaga surish",
+      "remove": "O'chirish"
     },
     "specs": {
       "title": "Texnik xususiyatlar",
@@ -90,7 +104,8 @@
       "unit": "Birlik",
       "add": "Xususiyat qo'shish",
       "emptyTitle": "Texnik xususiyat kiritilmagan",
-      "emptyDescription": "Xaridor sotib olishdan oldin solishtiradigan raqamlarni yozing."
+      "emptyDescription": "Xaridor sotib olishdan oldin solishtiradigan raqamlarni yozing.",
+      "groupPlaceholder": "Masalan: Ekran"
     },
     "variants": {
       "title": "Variantlar",
@@ -114,7 +129,10 @@
       },
       "weightGrams": "g",
       "tooMany": "Bu {count} ta variant yaratadi. Avval parametrlarni kamaytiring."
-    }
+    },
+    "deletedNotice": "Bu mahsulot o'chirilgan. Tahrirlash uchun avval tiklang.",
+    "confirmDelete": "Mahsulot o'chirilsinmi? Keyin tiklash mumkin.",
+    "lastSaved": "Oxirgi saqlangan: {date}"
   },
   "categories": {
     "title": "Kategoriyalar",

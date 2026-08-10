@@ -471,7 +471,7 @@ verified against RLS with a second account.
 
 ## Phase 6 — Admin: connecting the panel
 
-**Status:** 🟡 3 of 10 modules connected · **Target version:** v0.6.0
+**Status:** 🟡 5 of 11 modules connected (+1 read-only) · **Target version:** v0.6.0
 
 - [x] Server Actions over the services for brands, categories and products
 - [x] **Brands** — read and write, verified live
@@ -480,10 +480,10 @@ verified against RLS with a second account.
       upload to Storage, three languages, SEO. 36/36 live CRUD checks
 - [x] **Audit** — real `audit_logs`
 - [x] Live CRUD harness (`npm run admin:verify`, 23 checks through RLS)
-- [ ] **Products** — actions exist and are verified; the 639-line form and the
-      288-line table still hold mock state
-- [ ] **Media manager** — Storage proven working; `ModuleMediaManager` does not
-      call it
+- [x] **Products** — form, table, images and specifications all write to the
+      database; 61/61 live CRUD checks and a browser walk-through
+- [x] **Product images** — upload, delete, primary and reorder over Storage,
+      wired into the product editor. `ModuleMediaManager` itself is still unused
 - [ ] **Settings** — `settings.service.ts` exists, the 518-line form does not use it
 - [ ] **Inventory** — `inventory.service.ts` exists, the 455-line manager does not
 - [ ] **Content pages** — `content_pages` exists, no service

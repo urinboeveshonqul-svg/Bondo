@@ -23,11 +23,85 @@ import type {
 } from "@/types/catalog";
 
 /**
+ * One image in a product's gallery, as the editor holds it.
+ *
+ * `path` is the Storage object key — the thing the database stores — and `url`
+ * is that key resolved for an `<img>`. Both, because the editor needs to show
+ * the picture and the row needs to survive a restore into a different project
+ * (the convention every image column in this schema follows).
+ */
+export type AdminProductImage = {
+  id: string;
+  path: string;
+  url: string;
+  altText: string;
+  isPrimary: boolean;
+};
+
+/** A specification row, shaped like `public.product_specifications`. */
+export type AdminProductSpec = {
+  group: string | null;
+  name: string;
+  value: string;
+  unit: string | null;
+};
+
+/**
+ * A product as the editor holds it, shaped like the database.
+ *
+ * **This replaces `AdminProduct` for the editor**, and the difference is the
+ * point. `AdminProduct` extends the storefront's `Product`, which carries
+ * `rating`, `reviewCount`, `stock`, `badges`, a single `image` and slug-shaped
+ * `brand`/`category` — none of which is a column an administrator can write.
+ * The editor bound to it therefore had fields with nowhere to go, which is
+ * **K-15** and **D-29** exactly: a form designed against an imagined schema.
+ *
+ * Every field here maps to a column or a row the services already write:
+ * the parent in `products`, the localized copy in `product_translations`, the
+ * gallery in `product_images`, the specs in `product_specifications`.
+ *
+ * `id` is `null` for a product that has not been created yet, rather than the
+ * string `"new"` the fixture form used — a sentinel that looked like a uuid and
+ * would have been sent to the database as one.
+ */
+export type AdminProductDraft = {
+  id: string | null;
+  sku: string;
+  name: LocalizedText;
+  /** Per locale (ADR-52) — a Russian shopper's URL reads as Russian. */
+  slug: LocalizedText;
+  shortDescription: LocalizedText;
+  description: LocalizedText;
+  brandId: string | null;
+  categoryId: string | null;
+  /** Minor units (ADR-2). The form converts on the way in and out. */
+  priceCents: number;
+  salePriceCents: number | null;
+  warrantyMonths: number | null;
+  status: ProductStatus;
+  visibility: ProductVisibility;
+  isFeatured: boolean;
+  seoTitle: LocalizedText;
+  seoDescription: LocalizedText;
+  /** Search terms, identical in every language — not localized. */
+  seoKeywords: string[];
+  specifications: AdminProductSpec[];
+  images: AdminProductImage[];
+  publishedAt: string | null;
+  updatedAt: string | null;
+  /** Non-null means soft-deleted, and the editor offers Restore instead. */
+  deletedAt: string | null;
+};
+
+/**
  * A product as the admin edits it.
  *
  * Composed on top of the storefront's `Product` rather than replacing it, so
  * adding an editor field cannot change what the storefront renders. The
  * storefront reads a published projection; this is the whole record.
+ *
+ * **Superseded for the editor by `AdminProductDraft`.** Still used by the
+ * modules that have not been connected yet, which is why it is still here.
  */
 export type AdminProduct = Product & {
   status: ProductStatus;

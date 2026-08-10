@@ -1,92 +1,67 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Plus, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { ProductSpec } from "@/types/catalog";
+import { Label } from "@/components/ui/label";
+import type { AdminProductSpec } from "@/types/admin";
 
 /**
- * The specification table editor.
+ * The specifications table for one product.
  *
- * Group and name are **selects over a shared vocabulary**, not free text. The
- * storefront translates them through `product.specs.*`, so a hand-typed
- * "Capacity" would render as the literal key path in Russian and Uzbek. Binding
- * the control to the vocabulary makes that impossible rather than merely
- * discouraged — and it is why "Capacity" reads identically on a memory kit, a
- * battery and an SSD.
+ * ## Free text, because the column is free text
  *
- * Values stay free text: they are figures and identifiers. `"3840 x 2160"` is
- * not translatable and does not belong in a vocabulary.
+ * This used to render `ProductSpec`, whose `group` and `name` are **translation
+ * keys** into the `product` namespace — a design that works for a fixed
+ * vocabulary in a fixture and cannot express what `product_specifications`
+ * actually stores, which is free text an operator types per row. A GPU's
+ * "Boost clock" and a keyboard's "Switch type" are not a shared vocabulary, and
+ * the schema said so from the start: the column is `text` and the table comment
+ * explains that the useful attributes of a GPU and a keyboard have nothing in
+ * common.
+ *
+ * So the editor writes what the table holds: `spec_group`, `name`, `value`,
+ * `unit`. Nothing here is a key, and nothing needs a translation file entry
+ * before an operator can use it.
+ *
+ * ## Not localized, and that is a decision
+ *
+ * "24", "GDDR6X", "AM5", "3840 x 2160" are identifiers and measurements that
+ * read the same in every language, and the value column is one `text` field per
+ * row. A product whose specs genuinely need prose in three languages is one this
+ * table cannot serve, and the honest place to fix that is the schema — not a
+ * form that pretends the column is localized. Recorded as **D-33**.
+ *
+ * Order is the array order, written to `display_order` on save.
  */
-const SPEC_GROUPS = [
-  "general",
-  "memory",
-  "power",
-  "connectivity",
-  "cores",
-  "clocks",
-  "platform",
-  "physical",
-  "display",
-  "battery",
-  "switches",
-  "build",
-  "processor",
-  "graphics",
-  "storage",
-  "sensor",
-  "colour",
-] as const;
-
-const SPEC_NAMES = [
-  "capacity",
-  "type",
-  "boardPower",
-  "displayOutputs",
-  "coreCount",
-  "threadCount",
-  "boostClock",
-  "socket",
-  "speed",
-  "latency",
-  "height",
-  "size",
-  "resolution",
-  "weight",
-  "refreshRate",
-  "model",
-  "actuation",
-  "topPlate",
-  "life",
-  "adobeRgb",
-] as const;
-
 export function SpecEditor({
   specs,
   onChange,
   disabled = false,
 }: {
-  specs: readonly ProductSpec[];
-  onChange: (next: ProductSpec[]) => void;
+  specs: readonly AdminProductSpec[];
+  onChange: (next: AdminProductSpec[]) => void;
   disabled?: boolean;
 }) {
   const t = useTranslations("adminCatalog.editor.specs");
-  const tAdmin = useTranslations("admin");
-  const tProduct = useTranslations("product.specs");
+  const tAdmin = useTranslations("admin.actions");
 
-  function patch(index: number, changes: Partial<ProductSpec>) {
+  function patch(index: number, changes: Partial<AdminProductSpec>) {
     onChange(
       specs.map((spec, i) => (i === index ? { ...spec, ...changes } : spec)),
     );
+  }
+
+  function move(from: number, to: number) {
+    if (to < 0 || to >= specs.length) return;
+
+    const next = [...specs];
+    const [moved] = next.splice(from, 1);
+    if (!moved) return;
+    next.splice(to, 0, moved);
+    onChange(next);
   }
 
   return (
@@ -100,137 +75,146 @@ export function SpecEditor({
         </div>
       ) : (
         <ul className="space-y-2">
-          {specs.map((spec, index) => {
-            // The value union allows localized prose; the editor handles the
-            // literal case and leaves localized values untouched, because a
-            // single-line input cannot represent three languages.
-            const isLocalized = typeof spec.value !== "string";
-
-            return (
-              <li
-                key={`${spec.group}-${spec.name}-${index}`}
-                className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_1fr_1.5fr_0.6fr_auto] sm:items-end"
+          {specs.map((spec, index) => (
+            <li
+              key={index}
+              className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_6rem_auto] sm:items-end"
+            >
+              <span
+                aria-hidden="true"
+                className="hidden self-center text-muted-foreground sm:block"
               >
-                <div className="space-y-1.5">
-                  <label
-                    className="text-xs font-medium text-muted-foreground"
-                    htmlFor={`spec-group-${index}`}
-                  >
-                    {t("group")}
-                  </label>
-                  <Select
-                    value={spec.group ?? "general"}
-                    disabled={disabled}
-                    onValueChange={(group) => patch(index, { group })}
-                  >
-                    <SelectTrigger id={`spec-group-${index}`} size="sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SPEC_GROUPS.map((group) => (
-                        <SelectItem key={group} value={group}>
-                          {tProduct(`groups.${group}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <GripVertical className="size-4" />
+              </span>
 
-                <div className="space-y-1.5">
-                  <label
-                    className="text-xs font-medium text-muted-foreground"
-                    htmlFor={`spec-name-${index}`}
-                  >
-                    {t("name")}
-                  </label>
-                  <Select
-                    value={spec.name}
-                    disabled={disabled}
-                    onValueChange={(name) => patch(index, { name })}
-                  >
-                    <SelectTrigger id={`spec-name-${index}`} size="sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SPEC_NAMES.map((name) => (
-                        <SelectItem key={name} value={name}>
-                          {tProduct(`names.${name}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-1">
+                <Label
+                  htmlFor={`spec-name-${index}`}
+                  className="text-xs text-muted-foreground"
+                >
+                  {t("name")}
+                </Label>
+                <Input
+                  id={`spec-name-${index}`}
+                  value={spec.name}
+                  disabled={disabled}
+                  onChange={(event) =>
+                    patch(index, { name: event.target.value })
+                  }
+                  className="h-9"
+                />
+              </div>
 
-                <div className="space-y-1.5">
-                  <label
-                    className="text-xs font-medium text-muted-foreground"
-                    htmlFor={`spec-value-${index}`}
-                  >
-                    {t("value")}
-                  </label>
-                  <Input
-                    id={`spec-value-${index}`}
-                    value={isLocalized ? "" : (spec.value as string)}
-                    disabled={disabled || isLocalized}
-                    placeholder={
-                      isLocalized ? tAdmin("localized.label") : undefined
-                    }
-                    onChange={(event) =>
-                      patch(index, { value: event.target.value })
-                    }
-                    className="h-8"
-                  />
-                </div>
+              <div className="space-y-1">
+                <Label
+                  htmlFor={`spec-value-${index}`}
+                  className="text-xs text-muted-foreground"
+                >
+                  {t("value")}
+                </Label>
+                <Input
+                  id={`spec-value-${index}`}
+                  value={spec.value}
+                  disabled={disabled}
+                  onChange={(event) =>
+                    patch(index, { value: event.target.value })
+                  }
+                  className="h-9"
+                />
+              </div>
 
-                <div className="space-y-1.5">
-                  <label
-                    className="text-xs font-medium text-muted-foreground"
-                    htmlFor={`spec-unit-${index}`}
-                  >
-                    {t("unit")}
-                  </label>
-                  <Input
-                    id={`spec-unit-${index}`}
-                    value={spec.unit ?? ""}
-                    disabled={disabled}
-                    onChange={(event) =>
-                      patch(index, { unit: event.target.value || null })
-                    }
-                    className="h-8"
-                  />
-                </div>
+              <div className="space-y-1">
+                <Label
+                  htmlFor={`spec-unit-${index}`}
+                  className="text-xs text-muted-foreground"
+                >
+                  {t("unit")}
+                </Label>
+                <Input
+                  id={`spec-unit-${index}`}
+                  value={spec.unit ?? ""}
+                  disabled={disabled}
+                  onChange={(event) =>
+                    patch(index, { unit: event.target.value || null })
+                  }
+                  className="h-9"
+                />
+              </div>
 
+              <div className="flex items-center gap-0.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={disabled || index === 0}
+                  onClick={() => move(index, index - 1)}
+                  aria-label={`${tAdmin("moveUp")} — ${spec.name || index + 1}`}
+                >
+                  ↑
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={disabled || index === specs.length - 1}
+                  onClick={() => move(index, index + 1)}
+                  aria-label={`${tAdmin("moveDown")} — ${spec.name || index + 1}`}
+                >
+                  ↓
+                </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
                   disabled={disabled}
-                  aria-label={`${tAdmin("actions.remove")} — ${tProduct(`names.${spec.name}`)}`}
                   onClick={() => onChange(specs.filter((_, i) => i !== index))}
+                  aria-label={`${tAdmin("remove")} — ${spec.name || index + 1}`}
                 >
                   <Trash2 />
                 </Button>
-              </li>
-            );
-          })}
+              </div>
+
+              {/* The group spans the row beneath, because it is optional and
+                  most products never set one. */}
+              <div className="space-y-1 sm:col-span-5 sm:col-start-2">
+                <Label
+                  htmlFor={`spec-group-${index}`}
+                  className="text-xs text-muted-foreground"
+                >
+                  {t("group")}
+                </Label>
+                <Input
+                  id={`spec-group-${index}`}
+                  value={spec.group ?? ""}
+                  disabled={disabled}
+                  placeholder={t("groupPlaceholder")}
+                  onChange={(event) =>
+                    patch(index, { group: event.target.value || null })
+                  }
+                  className="h-9"
+                />
+              </div>
+            </li>
+          ))}
         </ul>
       )}
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={disabled}
-        onClick={() =>
-          onChange([
-            ...specs,
-            { group: "general", name: "capacity", value: "", unit: null },
-          ])
-        }
-      >
-        <Plus aria-hidden="true" />
-        {t("add")}
-      </Button>
+      {!disabled ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            onChange([
+              ...specs,
+              { group: null, name: "", value: "", unit: null },
+            ])
+          }
+        >
+          <Plus aria-hidden="true" />
+          {t("add")}
+        </Button>
+      ) : null}
     </div>
   );
 }
