@@ -55,7 +55,7 @@ export default async function AccountPage({
       .join("") || "?";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/*
         The way into the panel, for staff only. `isAdmin` was resolved by the
         layout's guard for this request, so showing it costs nothing extra — and
@@ -65,7 +65,7 @@ export default async function AccountPage({
       {session.authorization.isAdmin ? (
         <section
           aria-labelledby="account-admin"
-          className="flex flex-wrap items-center gap-4 rounded-xl border bg-card p-5 sm:p-6"
+          className="flex flex-wrap items-center gap-4 rounded-xl border bg-card p-4 sm:p-6"
         >
           <ShieldCheck
             className="size-5 shrink-0 text-primary"
@@ -137,7 +137,7 @@ export default async function AccountPage({
           ) : null}
         </div>
 
-        <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+        <dl className="mt-4 grid gap-3 sm:mt-6 sm:grid-cols-2 sm:gap-4">
           <div>
             <dt className="text-xs text-muted-foreground">{t("language")}</dt>
             <dd className="text-sm" lang={activeLocale}>

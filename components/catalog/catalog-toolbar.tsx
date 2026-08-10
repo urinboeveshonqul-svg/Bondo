@@ -75,7 +75,15 @@ export function CatalogToolbar({
     (query.onSale ? 1 : 0);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
+    /*
+      Two rows on a phone, one from `lg`.
+
+      Wrapping a count, a filter button and a sort select onto one 390px line put
+      all three at `size="sm"` — 28px tall, side by side, each squeezed to fit.
+      The count is text and does not compete for the tap; giving it its own line
+      leaves the full width for two controls that are actually pressed.
+    */
+    <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-3">
       {/*
         `role="status"` so a screen reader hears the new count after a filter
         changes it — the visual change is obvious and the announcement is not.
@@ -84,10 +92,11 @@ export function CatalogToolbar({
         {t("count", { count: total })}
       </p>
 
-      <div className="flex items-center gap-2">
+      <div className="grid grid-cols-2 items-center gap-2 lg:flex">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="lg:hidden">
+            {/* 44px and full-width on touch; the compact desktop size from lg. */}
+            <Button variant="outline" className="h-11 w-full lg:hidden">
               <SlidersHorizontal aria-hidden="true" />
               {tFilters("title")}
               {activeCount > 0 ? (
@@ -119,9 +128,15 @@ export function CatalogToolbar({
           </SheetContent>
         </Sheet>
 
-        <div className="flex items-center gap-1.5">
+        {/*
+          The sort icon is decorative and was costing horizontal space the
+          select's own label needs — Russian sort labels run half again as long
+          as the Uzbek ones, and at 390px the trigger was truncating them. It
+          stays on desktop, where the row has room.
+        */}
+        <div className="flex min-w-0 items-center gap-1.5">
           <ArrowDownWideNarrow
-            className="size-4 shrink-0 text-muted-foreground lg:hidden"
+            className="hidden size-4 shrink-0 text-muted-foreground lg:block"
             aria-hidden="true"
           />
           <Select
@@ -137,7 +152,10 @@ export function CatalogToolbar({
               })
             }
           >
-            <SelectTrigger size="sm" aria-label={tSort("label")}>
+            <SelectTrigger
+              aria-label={tSort("label")}
+              className="w-full min-w-0 data-[size=default]:h-11 lg:data-[size=default]:h-7"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent align="end">

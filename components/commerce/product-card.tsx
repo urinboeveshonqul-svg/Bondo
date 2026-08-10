@@ -95,7 +95,13 @@ export function ProductCard({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      {/*
+        12px of padding on a phone, 16px from `sm`. Two cards share a 390px
+        screen, so each is ~180px wide and 16px of padding on both sides spent
+        18% of the card on nothing — the product name wrapped a word earlier for
+        it. Desktop cards are twice as wide and keep the roomier value.
+      */}
+      <div className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           {product.brand}
         </p>

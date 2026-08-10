@@ -12,6 +12,46 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Changed — the storefront is designed for a phone first
+
+Measured on a production build at 390px, before and after (**ADR-83**).
+
+**Category navigation.** A department with more than six sections no longer
+stacks a second horizontal scroller under the first. Aksessuarlar had a 1825px
+section rail directly beneath the departments' own 1682px rail — two sideways
+gestures competing, and 138px of navigation before any product. Past the
+threshold the sections become one 44px button opening `SubcategorySheet`: a
+bottom sheet, capped at 85% of the viewport, with the sections as a vertical
+list of 48px rows and the current one ticked. Departments with few sections keep
+the row, because opening a panel to choose between four things is friction with
+nothing behind it. Desktop is untouched.
+
+**Header.** 65px → **57px**, and four actions instead of six. Search is now an
+icon in the bar rather than something to be found inside the menu — three taps
+to one on the site where knowing the model number is the normal case. Language,
+theme and the wishlist moved into the menu panel, where they have labels and
+44px rows instead of being glyphs crowded against the logo.
+
+**Touch targets.** Set in the primitives rather than at each call site: the
+Button `icon` variant, `Input`, the auth submit, the sheet close button, the
+password reveal, the checkbox hit area and the category chips are 44px on touch
+and return to their compact size from `lg`. At 390px the listing went from 14
+elements under 44px to three — the hidden skip link and two inline text links,
+which the WCAG 2.2 inline exception covers.
+
+**Listing toolbar.** The count, the filter button and the sort select shared one
+390px line, which squeezed all three to 28px. The count takes its own line and
+the two controls split the width below it, both at 44px. Verified in Russian,
+where the labels are longest.
+
+**Footer and account.** Footer 409px → **329px** at 390px (−20%), through mobile
+padding rather than removed content — the three accordions, closed by default,
+were already there. The account pages lost the same kind of slack: 80px of
+vertical padding above a short page had let the footer dominate it.
+
+Desktop is unchanged and was re-measured to confirm it: 65px header, 314px
+footer, no overflow at 1024px or 1440px.
+
 ### Fixed — every 404 rendered the framework's bare document
 
 A 404 answered the right **status** and then showed

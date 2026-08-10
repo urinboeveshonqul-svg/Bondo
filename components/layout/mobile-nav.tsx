@@ -4,8 +4,11 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, Menu } from "lucide-react";
 
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { CategoryIcon } from "@/components/layout/category-icon";
+import { WishlistSheet } from "@/components/layout/basket-sheet";
 import { SearchBar } from "@/components/layout/search-bar";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -106,10 +109,32 @@ export function MobileNav({ categories }: { categories: CategoryNavItem[] }) {
           <Link
             href={routes.catalog.index}
             onClick={close}
-            className="-mx-2 rounded-md px-2 py-2.5 text-sm font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className={cn(
+              ROW,
+              "-mx-2 font-medium hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            )}
           >
             {tCommon("allProducts")}
           </Link>
+
+          <Separator />
+
+          {/*
+            Language, theme and the wishlist live here now. They were three icon
+            buttons in the mobile header competing with search, the account and
+            the basket for a 375px bar; here they have labels, 44px rows and the
+            room to be understood rather than guessed at from a glyph.
+          */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              {t("preferences")}
+            </span>
+            <div className="flex items-center gap-1">
+              <WishlistSheet />
+              <LanguageSwitcher />
+              <ThemeToggle />
+            </div>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

@@ -190,7 +190,8 @@ export function PasswordField({
           type="button"
           onClick={() => setVisible((current) => !current)}
           disabled={disabled}
-          className="absolute end-0 top-0 grid h-9 w-10 place-items-center rounded-e-md text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          /* Matches the field it sits inside: 44px on touch, 36px from lg. */
+          className="absolute end-0 top-0 grid h-11 w-11 place-items-center rounded-e-md text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:h-9 lg:w-10"
         >
           {visible ? (
             <EyeOff className="size-4" aria-hidden="true" />
@@ -323,7 +324,7 @@ export function SubmitButton({
       type="submit"
       disabled={pending}
       aria-busy={pending}
-      className={cn("w-full", className)}
+      className={cn("h-11 w-full lg:h-8", className)}
     >
       {pending ? (
         <>

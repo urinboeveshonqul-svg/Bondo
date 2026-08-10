@@ -231,11 +231,11 @@ export function SiteFooter({ categories }: { categories: CategoryNavItem[] }) {
     // nothing.
     <footer className="mt-auto border-t bg-muted/40">
       {/*
-        40px of padding at every width, 48px from `lg`. The old value was
-        `py-8 sm:py-12 lg:py-16` — 128px top and bottom on a desktop, which is
-        most of why the footer measured 870px.
+        24px on a phone, 40px from `sm`, 48px from `lg`. It was `py-10`
+        everywhere, and 80px of vertical padding is a fifth of a 390px screen
+        spent on nothing. Desktop keeps its air; the phone does not need it.
       */}
-      <Container className="py-10 lg:py-12">
+      <Container className="py-6 sm:py-10 lg:py-12">
         {/*
           Two columns from `sm`, four from `lg`. Twelve tracks rather than four
           so the brand can take three of them and still read as a paragraph
@@ -247,7 +247,7 @@ export function SiteFooter({ categories }: { categories: CategoryNavItem[] }) {
           1280px) before that was fixed. Measured at every breakpoint, not
           assumed.
         */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-12 lg:gap-10">
+        <div className="grid gap-5 sm:grid-cols-2 sm:gap-8 lg:grid-cols-12 lg:gap-10">
           {/* Column 1 — the brand. */}
           <div className="space-y-2.5 sm:col-span-2 lg:col-span-4">
             <p className="text-base font-semibold tracking-tight">
@@ -308,7 +308,7 @@ export function SiteFooter({ categories }: { categories: CategoryNavItem[] }) {
         </div>
 
         {/* Bottom bar. One line, 16px of padding above it. */}
-        <div className="mt-8 border-t pt-4">
+        <div className="mt-5 border-t pt-3 sm:mt-8 sm:pt-4">
           <p className="text-xs text-muted-foreground">
             {/*
               The year is a plain string rather than a number: a copyright year

@@ -2,6 +2,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, LayoutGrid } from "lucide-react";
 
 import { CategoryIcon } from "@/components/layout/category-icon";
+import { SubcategorySheet } from "@/components/catalog/subcategory-sheet";
 import { Link } from "@/i18n/navigation";
 import {
   buildCatalogHref,
@@ -55,8 +56,26 @@ import type { CategoryNavItem } from "@/types/catalog";
 /** How many departments sit inline before the rest move into "More". */
 const INLINE_DEPARTMENTS = 5;
 
+/**
+ * Above this many sections, the mobile subcategory row becomes a sheet.
+ *
+ * Declared here rather than in `subcategory-sheet.tsx` because that file is a
+ * Client Component, and a plain value exported from a `"use client"` module
+ * arrives in a Server Component as a client *reference*, not a number. The
+ * comparison then silently evaluates false and the sheet never renders — which
+ * is exactly what happened, with no error anywhere to say so.
+ */
+const SUBCATEGORY_SHEET_THRESHOLD = 6;
+
+/**
+ * 44px on a phone, 36px from `lg`.
+ *
+ * The row is the catalog's primary navigation and it is thumb-operated: WCAG 2.2
+ * SC 2.5.8 puts the floor at 44px, and the previous `min-h-9` sat at 36. A mouse
+ * pointer does not need the extra 8px, so the desktop row keeps its density.
+ */
 const CHIP =
-  "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+  "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border px-3.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:min-h-9 lg:px-3";
 
 const CHIP_IDLE = "bg-background hover:bg-muted";
 
@@ -222,18 +241,40 @@ export function SubcategoryNav({
 
   const wholeDepartment = query.category === department.slug;
 
+  /**
+   * A long section list becomes a sheet on mobile and stays a row on desktop.
+   *
+   * Fifteen sections scrolling sideways under the departments' own scroller was
+   * two rails competing for the same gesture — see `SubcategorySheet`. The
+   * threshold is a count, not a breakpoint guess: a department with four
+   * sections shows them, because opening a panel to pick from four is friction
+   * with nothing behind it.
+   */
+  const useSheet = department.children.length > SUBCATEGORY_SHEET_THRESHOLD;
+
   return (
     <nav
       aria-label={t("subcategoryNav", { category: department.name[locale] })}
       className="border-b py-2.5"
     >
-      <ul className="-mx-4 flex gap-x-1 gap-y-1 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0">
+      {useSheet ? (
+        <div className="pb-0.5 lg:hidden">
+          <SubcategorySheet department={department} query={query} />
+        </div>
+      ) : null}
+
+      <ul
+        className={cn(
+          "-mx-4 flex gap-x-1 gap-y-1 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0",
+          useSheet && "hidden lg:flex",
+        )}
+      >
         <li>
           <Link
             href={hrefFor(department.slug)}
             aria-current={wholeDepartment ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-8 shrink-0 items-center rounded-md px-2.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+              "inline-flex min-h-11 shrink-0 items-center rounded-md px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:min-h-8 lg:px-2.5",
               wholeDepartment
                 ? "bg-muted font-medium text-foreground"
                 : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -252,7 +293,7 @@ export function SubcategoryNav({
                 href={hrefFor(child.slug)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-8 shrink-0 items-center rounded-md px-2.5 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  "inline-flex min-h-11 shrink-0 items-center rounded-md px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:min-h-8 lg:px-2.5",
                   active
                     ? "bg-muted font-medium text-foreground"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",

@@ -324,21 +324,27 @@ say the premise is right.
       closed by default, built on `<details>` so the footer stays a Server
       Component and ships no JavaScript; desktop columns unchanged
 - [x] Footer link rows to 44px touch targets
+- [x] **Header optimisation** — 65px → **57px** on mobile, four prioritised
+      actions instead of six, and search reachable in one tap instead of three.
+      Language, theme and wishlist moved into the menu panel (**ADR-83**)
+- [x] **Tap targets on the storefront's touch paths** — the icon button variant,
+      inputs, the auth submit, the sheet close, category chips and the listing
+      toolbar are 44px on touch and unchanged from `lg`. At 390px the listing
+      is down to three sub-44px elements, all of them inline text links or the
+      hidden skip link; admin tables were not in scope
 
 ### Outstanding
 
-- [ ] **The full breakpoint sweep.** Only 320px and the pane's desktop width were
-      audited, and only on the home page. 360 / 375 / 390 / 414 / 768 / 1024 /
-      1280 / 1440 / 1920 across the listing, product, auth, account and all
-      thirteen admin routes have **not** been checked
+- [ ] **The full breakpoint sweep.** 320 / 360 / 375 / 390 / 414 / 768 / 1024 /
+      1440 are now audited on the home page, the listing, a department with
+      sections, and sign-in, in all three languages — no horizontal overflow at
+      any of them. Product detail, cart, checkout, account and the thirteen
+      admin routes are still **unchecked**: the first three need catalog data
+      the database does not have, and the rest need a signed-in session
 - [ ] **The "freezes when buttons are pressed" report — not investigated.** No
       interaction latency was measured, so the cause is unknown and no fix has
       been attempted. This is the item most worth doing next, and it needs a
       profile rather than a guess
-- [ ] **Header optimisation** — height, spacing, search, category nav, menu
-      animation. Measured at 65px on mobile; nothing changed
-- [ ] **17 tap targets under 40px**, including the header's 32×32 icon buttons.
-      Found and recorded, not fixed
 - [ ] Client Component audit — 74 files carry `"use client"`; no reduction
       attempted
 - [ ] First Load JS is unchanged at 143 kB (home) / 103 kB shared

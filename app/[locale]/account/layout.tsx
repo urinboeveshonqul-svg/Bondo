@@ -43,13 +43,16 @@ export default async function AccountLayout({
   const t = await getTranslations("account");
 
   return (
-    <Container className="py-10 sm:py-14">
+    /* 24px on a phone, 40px from sm, 56px from lg. 80px of vertical padding
+       put the account heading a fifth of a screen below a 56px header, and the
+       page's own content is short enough that the footer then dominated it. */
+    <Container className="py-6 sm:py-10 lg:py-14">
       <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
         {t("title")}
       </h1>
       <p className="mt-2 text-pretty text-muted-foreground">{t("subtitle")}</p>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="mt-5 grid gap-6 sm:mt-8 sm:gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
         <AccountNav isAdmin={authorization.isAdmin} />
         <div className="min-w-0">{children}</div>
       </div>

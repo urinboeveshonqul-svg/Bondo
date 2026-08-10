@@ -6,6 +6,7 @@ import { BasketSheet, WishlistSheet } from "@/components/layout/basket-sheet";
 import { CategoriesMenu } from "@/components/layout/categories-menu";
 import { Container } from "@/components/layout/container";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { MobileSearch } from "@/components/layout/mobile-search";
 import { SearchBar } from "@/components/layout/search-bar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -43,12 +44,18 @@ export function SiteHeader({ categories }: { categories: CategoryNavItem[] }) {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <Container>
-        <div className="flex h-16 items-center gap-3">
+        {/*
+          56px on a phone, 64px from `lg`. The header is sticky, so its height is
+          subtracted from every screen of the catalog for the whole session —
+          8px back is half a product row over a long scroll, and nothing in the
+          bar needs 64px to be legible.
+        */}
+        <div className="flex h-14 items-center gap-2 lg:h-16 lg:gap-3">
           <MobileNav categories={categories} />
 
           <Link
             href={routes.home}
-            className="shrink-0 rounded-sm text-lg font-semibold tracking-tight focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="flex min-h-11 shrink-0 items-center rounded-sm text-lg font-semibold tracking-tight focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:min-h-0"
           >
             {siteConfig.name}
           </Link>
@@ -72,10 +79,22 @@ export function SiteHeader({ categories }: { categories: CategoryNavItem[] }) {
             <SearchBar className="max-w-md" />
           </div>
 
+          {/*
+            Mobile carries four actions: menu, search, account, basket. Language,
+            theme and the wishlist moved into the menu panel — they were five
+            32px icon buttons crowded against the logo, and none of the three is
+            something a shopper reaches for mid-purchase. Everything stays
+            reachable; only the priority changed.
+          */}
           <div className="ms-auto flex items-center gap-0.5 lg:ms-0">
-            <LanguageSwitcher />
-            <ThemeToggle />
-            <WishlistSheet />
+            <div className="hidden items-center gap-0.5 lg:flex">
+              <LanguageSwitcher />
+              <ThemeToggle />
+              <WishlistSheet />
+            </div>
+
+            <MobileSearch />
+
             <Button variant="ghost" size="icon" asChild>
               <Link href={routes.account.index} aria-label={t("account")}>
                 <User />

@@ -19,6 +19,8 @@
   "allCategories": "Все категории",
   "allInCategory": "Все",
   "moreCategories": "Ещё",
+  "sections": "Разделы",
+  "sectionsDescription": "Выберите раздел, и мы покажем товары только из него.",
   "browseAll": "Смотреть все товары",
   "pagination": "Страницы",
   "previous": "Назад",

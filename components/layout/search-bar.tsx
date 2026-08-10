@@ -25,7 +25,17 @@ import { cn } from "@/lib/utils";
  * the debounce hook (`use-debounced-value`) is already in the codebase waiting
  * for it.
  */
-export function SearchBar({ className }: { className?: string }) {
+export function SearchBar({
+  className,
+  autoFocus,
+  onSubmitted,
+}: {
+  className?: string;
+  /** Only for the mobile search sheet, whose sole purpose is to type into. */
+  autoFocus?: boolean;
+  /** Lets a container that opened this — a sheet — close itself on submit. */
+  onSubmitted?: () => void;
+}) {
   const t = useTranslations("header.search");
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -39,6 +49,7 @@ export function SearchBar({ className }: { className?: string }) {
         const trimmed = query.trim();
         if (!trimmed) return;
         router.push(`${routes.catalog.index}?q=${encodeURIComponent(trimmed)}`);
+        onSubmitted?.();
       }}
     >
       <label htmlFor="site-search" className="sr-only">
@@ -48,14 +59,21 @@ export function SearchBar({ className }: { className?: string }) {
         aria-hidden="true"
         className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
       />
+      {/*
+        `h-11` on touch: this is the one field on the site a shopper aims at
+        with a thumb, and the shared Input height is 36px. It also stops iOS
+        Safari zooming the page on focus, which it does below a 16px font size —
+        `text-base` here, back to the site's `text-sm` from `lg`.
+      */}
       <Input
         id="site-search"
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder={t("placeholder")}
-        className="ps-9"
+        className="h-11 ps-9 text-base lg:h-9 lg:text-sm"
         autoComplete="off"
+        autoFocus={autoFocus}
       />
     </form>
   );

@@ -72,7 +72,10 @@ function SheetContent({
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
             <Button
               variant="ghost"
-              className="absolute top-3 right-3"
+              /* 44px on touch — a dismiss control is the one a thumb misses
+                 most, and it sits in the screen's top corner where aim is
+                 worst. The compact size returns with the pointer at lg. */
+              className="absolute top-2 right-2 size-11 lg:top-3 lg:right-3 lg:size-8"
               size="icon-sm"
             >
               <XIcon />

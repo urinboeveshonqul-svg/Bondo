@@ -26,7 +26,16 @@ const buttonVariants = cva(
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        icon: "size-8",
+        /*
+         * 44px on touch, 32px from `lg`.
+         *
+         * Icon buttons are the header's whole action set — menu, search,
+         * account, basket — and at 32px every one of them was below the WCAG
+         * 2.2 SC 2.5.8 floor. Fixing it here rather than at each call site
+         * keeps one definition and avoids two size utilities landing on the
+         * same element, where the loser depends on stylesheet order.
+         */
+        icon: "size-11 lg:size-8",
         "icon-xs":
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
         "icon-sm":
