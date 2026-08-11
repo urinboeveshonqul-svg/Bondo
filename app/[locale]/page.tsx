@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { BrandStrip } from "@/components/home/brand-strip";
 import { Hero } from "@/components/home/hero";
+import { PromoBanners } from "@/components/home/promo-banners";
 import { NewsletterSection } from "@/components/home/newsletter-section";
 import { ProductGrid } from "@/components/home/product-grid";
 import { Reviews } from "@/components/home/reviews";
@@ -107,6 +108,10 @@ export default async function HomePage({
 
   return (
     <>
+      {/* Above the hero: an operator switches a banner on to be seen, and
+          under the fold is not seen. Renders nothing when none are active. */}
+      <PromoBanners />
+
       <Hero />
 
       {/*

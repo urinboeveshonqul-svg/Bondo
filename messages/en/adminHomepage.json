@@ -1,0 +1,45 @@
+{
+  "title": "Homepage",
+  "subtitle": "Every band on the storefront home page, in the order it renders.",
+  "visible": "Visible",
+  "hidden": "Hidden",
+  "emptyTitle": "No sections",
+  "emptyDescription": "Add a section to build the home page.",
+  "banners": {
+    "title": "Hero banners",
+    "description": "Shown in the hero band. A banner with a start date goes live on its own.",
+    "new": "New banner",
+    "emptyTitle": "No banners",
+    "emptyDescription": "The hero band falls back to the default copy without one.",
+    "columns": {
+      "banner": "Banner",
+      "schedule": "Schedule",
+      "visibility": "Visibility"
+    },
+    "fields": {
+      "title": "Headline",
+      "subtitle": "Supporting line",
+      "ctaLabel": "Button label",
+      "ctaHref": "Button link",
+      "startsAt": "Starts",
+      "endsAt": "Ends",
+      "visible": "Visible",
+      "placement": "Where it appears"
+    },
+    "always": "Always on",
+    "scheduled": "{from} → {to}",
+    "openEnded": "no end date",
+    "dialogHint": "Fill in all three languages. A banner without a translation is hidden from readers of that language."
+  },
+  "placements": {
+    "home_hero": "Home — main",
+    "home_secondary": "Home — secondary",
+    "category_top": "Above a category",
+    "site_wide_notice": "Site-wide notice"
+  },
+  "errors": {
+    "titleRequired": "Add a title",
+    "titleTooLong": "That title is too long",
+    "endBeforeStart": "The end date has to come after the start"
+  }
+}

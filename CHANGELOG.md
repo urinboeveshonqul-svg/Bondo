@@ -12,6 +12,53 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Fixed — the homepage admin showed raw translation keys
+
+The screen rendered the literal strings `adminHomepage.title` and
+`adminHomepage.subtitle`. The cause was a namespace that never existed:
+`app/[locale]/admin/homepage/page.tsx` called
+`getTranslations("adminHomepage")` while the copy lived under
+`adminContent.homepage`, so next-intl printed the key path. Git shows the page
+used the correct namespace until the module was wired to Supabase, and the
+rewrite introduced the wrong one.
+
+The fix is the namespace, not a patch at the call site: the homepage is its own
+registry module now, so its copy moved out of `adminContent` into
+`messages/*/adminHomepage.json`, registered in `i18n/messages.ts`. The keys
+belonging to the deleted section editor — `reorderHint`, `sectionLabel`,
+`types`, `position`, `linkedTo` — went with it rather than being carried over.
+
+All 24 keys the two screens request now resolve in all three languages, checked
+against the message files rather than assumed.
+
+### Added — the storefront renders active banners
+
+`site_banners` has had a table, RLS, translations and a full editor, and
+**nothing on the storefront read it**. An operator could create a banner, write
+three languages, switch it on, and see no change anywhere — which made the
+switch a control over a row rather than over the shop.
+
+`components/home/promo-banners.tsx` renders the active `home_hero` banners
+above the hero. The date window and `is_active` are applied in the query, so a
+scheduled banner never reaches the browser early, and a banner with no row for
+the visitor's language is dropped rather than shown with an empty heading. A
+failure logs and renders nothing: a marketing strip must not take the home page
+with it (**K-18**).
+
+### Verified
+
+Against the linked Supabase project, writing through a signed-in administrator
+on the anon key so RLS is in the path — never the service role.
+
+Data: create, three translations, edit, toggle, re-read, soft delete, and a
+signed-in customer refused the toggle (0 rows). 13 checks.
+
+Browser, actually performed: a real banner was created, then `/uz`, `/ru` and
+`/en` were loaded in a browser against the linked project. Each rendered its own
+title, subtitle and CTA with no leakage between languages. The banner was
+switched off, the home page reloaded, and the strip was gone while the rest of
+the page still rendered. Test data removed afterwards.
+
 ### Added — order management
 
 `/admin/orders` and `/admin/orders/[id]`, over the schema, services and Server

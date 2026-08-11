@@ -88,7 +88,7 @@ export function HomepageManager({
   capabilities: ModuleCapabilities;
 }) {
   const canManage = capabilities.update;
-  const t = useTranslations("adminContent.homepage");
+  const t = useTranslations("adminHomepage");
   const tAdmin = useTranslations("admin");
   const locale = useLocale() as Locale;
   const router = useRouter();

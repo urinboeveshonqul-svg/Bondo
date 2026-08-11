@@ -1,0 +1,45 @@
+{
+  "title": "Bosh sahifa",
+  "subtitle": "Do'kon bosh sahifasidagi barcha bo'limlar, ko'rinish tartibida.",
+  "visible": "Ko'rinadi",
+  "hidden": "Yashirilgan",
+  "emptyTitle": "Bo'lim yo'q",
+  "emptyDescription": "Bosh sahifani yig'ish uchun bo'lim qo'shing.",
+  "banners": {
+    "title": "Bosh bannerlar",
+    "description": "Bosh bo'limda ko'rsatiladi. Boshlanish sanasi bo'lgan banner o'zi ishga tushadi.",
+    "new": "Yangi banner",
+    "emptyTitle": "Banner yo'q",
+    "emptyDescription": "Bannersiz bosh bo'lim standart matnga qaytadi.",
+    "columns": {
+      "banner": "Banner",
+      "schedule": "Jadval",
+      "visibility": "Ko'rinishi"
+    },
+    "fields": {
+      "title": "Sarlavha",
+      "subtitle": "Qo'shimcha satr",
+      "ctaLabel": "Tugma matni",
+      "ctaHref": "Tugma havolasi",
+      "startsAt": "Boshlanishi",
+      "endsAt": "Tugashi",
+      "visible": "Ko'rinadi",
+      "placement": "Qayerda ko'rinadi"
+    },
+    "always": "Doim yoqilgan",
+    "scheduled": "{from} → {to}",
+    "openEnded": "tugash sanasi yo'q",
+    "dialogHint": "Banner uch tilda ham to'ldirilishi kerak, aks holda u o'sha tildagi xaridorga ko'rinmaydi."
+  },
+  "placements": {
+    "home_hero": "Bosh sahifa — asosiy",
+    "home_secondary": "Bosh sahifa — qo'shimcha",
+    "category_top": "Kategoriya tepasi",
+    "site_wide_notice": "Sayt bo'ylab e'lon"
+  },
+  "errors": {
+    "titleRequired": "Sarlavhani yozing",
+    "titleTooLong": "Sarlavha juda uzun",
+    "endBeforeStart": "Tugash sanasi boshlanishidan keyin bo'lsin"
+  }
+}

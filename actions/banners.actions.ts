@@ -37,8 +37,8 @@ const translationSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(1, "adminContent.errors.titleRequired")
-    .max(200, "adminContent.errors.titleTooLong"),
+    .min(1, "adminHomepage.errors.titleRequired")
+    .max(200, "adminHomepage.errors.titleTooLong"),
   subtitle: z.string().trim().max(400).optional(),
   ctaLabel: z.string().trim().max(80).optional(),
 });
@@ -88,7 +88,7 @@ export const saveBanner = createAction(
     if (input.startsAt && input.endsAt && input.endsAt <= input.startsAt) {
       // Caught here rather than by a check constraint because the message is
       // for the operator, and a 23514 is not.
-      throw new Error("adminContent.errors.endBeforeStart");
+      throw new Error("adminHomepage.errors.endBeforeStart");
     }
 
     const supabase = await createClient();
