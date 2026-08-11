@@ -160,6 +160,42 @@ export function orderProgress(
  * A delivered or cancelled order is terminal and returns an empty list, which is
  * what makes the admin's status control disappear rather than offer a no-op.
  */
+/**
+ * Every status, in workflow order, for filter controls.
+ *
+ * `ORDER_STATUS_FLOW` is the forward pipeline and stops at `delivered`;
+ * a filter has to offer `cancelled` too, because an operator looking for a
+ * cancelled order is looking for exactly the one the pipeline excludes.
+ */
+export const ORDER_STATUSES = [
+  ...ORDER_STATUS_FLOW,
+  "cancelled",
+] as const satisfies readonly OrderStatus[];
+
+/**
+ * The badge tone for a status, on the operator's side.
+ *
+ * Deliberately not the customer's palette: `new` is neutral to a shopper and
+ * *needs attention* to somebody working the queue, which is the whole reason
+ * the two maps are separate rather than shared (see `OrderStatusBadge`).
+ */
+export function statusTone(
+  status: OrderStatus,
+): "neutral" | "warning" | "success" | "danger" | "muted" {
+  switch (status) {
+    case "new":
+      return "warning";
+    case "delivered":
+      return "success";
+    case "cancelled":
+      return "danger";
+    case "shipped":
+      return "neutral";
+    default:
+      return "muted";
+  }
+}
+
 export function nextOrderStatuses(status: OrderStatus): OrderStatus[] {
   if (status === "delivered" || status === "cancelled") return [];
 

@@ -1,0 +1,98 @@
+{
+  "title": "Buyurtmalar",
+  "subtitle": "Qabul qilingan buyurtmalar va ular bilan ishlash.",
+  "stats": {
+    "awaiting": "Javob kutmoqda",
+    "inProgress": "Ishlanmoqda",
+    "revenue": "Yetkazilgan buyurtmalar summasi",
+    "total": "Jami buyurtmalar"
+  },
+  "filters": {
+    "search": "Buyurtma raqami yoki telefon",
+    "status": "Holat",
+    "allStatuses": "Barcha holatlar",
+    "clear": "Filtrlarni tozalash"
+  },
+  "columns": {
+    "reference": "Raqam",
+    "customer": "Xaridor",
+    "contact": "Aloqa",
+    "items": "Mahsulot",
+    "total": "Summa",
+    "status": "Holat",
+    "placed": "Qabul qilingan"
+  },
+  "itemCount": "{count} ta mahsulot",
+  "emptyTitle": "Hozircha buyurtma yo'q",
+  "emptyDescription": "Xaridor buyurtma bergan zahoti u shu yerda ko'rinadi.",
+  "noResultsTitle": "Bunday buyurtma topilmadi",
+  "noResultsDescription": "Raqamni yoki telefonni tekshirib, qaytadan qidiring.",
+  "detail": {
+    "backToList": "Buyurtmalar ro'yxati",
+    "placedAt": "Qabul qilingan vaqt",
+    "customer": "Xaridor",
+    "contactTitle": "Aloqa",
+    "phonePrimary": "Asosiy telefon",
+    "phoneSecondary": "Qo'shimcha telefon",
+    "telegram": "Telegram",
+    "email": "Elektron pochta",
+    "call": "Qo'ng'iroq qilish",
+    "openTelegram": "Telegramda yozish",
+    "deliveryTitle": "Yetkazib berish",
+    "method": "Usul",
+    "address": "Manzil",
+    "pickupLocation": "Pochta bo'limi",
+    "region": "Viloyat",
+    "city": "Shahar",
+    "itemsTitle": "Buyurtma tarkibi",
+    "quantity": "Soni",
+    "unitPrice": "Narxi",
+    "lineTotal": "Jami",
+    "subtotal": "Mahsulotlar",
+    "deliveryFee": "Yetkazib berish",
+    "total": "Umumiy summa",
+    "customerNote": "Xaridor izohi",
+    "noCustomerNote": "Xaridor izoh qoldirmagan.",
+    "timelineTitle": "Holatlar tarixi",
+    "timelineEmpty": "Holat hali o'zgartirilmagan.",
+    "internalNoteTitle": "Ichki izoh",
+    "internalNoteHint": "Bu izohni faqat jamoa ko'radi, xaridorga ko'rinmaydi.",
+    "internalNotePlaceholder": "Masalan: mijoz kechqurun qo'ng'iroqni so'radi",
+    "saveNote": "Izohni saqlash",
+    "guestOrder": "Mehmon sifatida berilgan",
+    "linkedAccount": "Hisobga bog'langan"
+  },
+  "actions": {
+    "title": "Keyingi qadam",
+    "contacted": "Bog'lanildi deb belgilash",
+    "confirmed": "Buyurtmani tasdiqlash",
+    "preparing": "Tayyorlashni boshlash",
+    "shipped": "Jo'natildi deb belgilash",
+    "delivered": "Yetkazildi deb belgilash",
+    "cancelled": "Buyurtmani bekor qilish",
+    "cancelTitle": "Buyurtma bekor qilinsinmi?",
+    "cancelBody": "Buyurtma bekor qilinadi va xaridor buni o'z hisobida ko'radi. Bu amalni orqaga qaytarib bo'lmaydi.",
+    "cancelConfirm": "Ha, bekor qilinsin",
+    "noneLeft": "Bu buyurtma yakunlangan.",
+    "statusChanged": "Holat o'zgartirildi",
+    "noteSaved": "Izoh saqlandi",
+    "cancelDismiss": "Yopish"
+  },
+  "status": {
+    "new": "Yangi",
+    "contacted": "Bog'lanildi",
+    "confirmed": "Tasdiqlangan",
+    "preparing": "Tayyorlanmoqda",
+    "shipped": "Jo'natilgan",
+    "delivered": "Yetkazilgan",
+    "cancelled": "Bekor qilingan"
+  },
+  "delivery": {
+    "courier": "Kuryer orqali",
+    "pickup": "Pochta bo'limidan olib ketish"
+  },
+  "errors": {
+    "noteTooLong": "Izoh juda uzun",
+    "invalidTransition": "Bu holatdan bunday o'zgartirib bo'lmaydi"
+  }
+}

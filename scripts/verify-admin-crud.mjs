@@ -51,6 +51,8 @@ const PASSWORD = `Crud-${stamp}-Aa1!`;
 
 let userId = null;
 const made = {
+  order: null,
+  review: null,
   banner: null,
   contentPage: null,
   mateUser: null,
@@ -1311,6 +1313,300 @@ try {
   );
 
   // ---------------------------------------------------------------------------
+  // ORDERS — the whole lifecycle, placed as a guest
+  // ---------------------------------------------------------------------------
+  // Placed through \`place_order\`, the same security-definer function checkout
+  // calls, from an anonymous client. That is the real path: a guest holds no
+  // insert privilege on \`orders\` at all, so a test that inserted the row
+  // directly would prove nothing about the flow customers actually use.
+  // The earlier storefront checks left this product back at `draft`, and
+  // `place_order` refuses a line whose product is not purchasable — correctly.
+  // Publishing it again is part of the setup for this section, not a fix.
+  await asAdmin
+    .from("products")
+    .update({ status: "active", visibility: "public" })
+    .eq("id", made.product);
+
+  const guestPhone = "+998 90 111 " + String(stamp).slice(-4);
+  const placed = await anon.rpc("place_order", {
+    p_first_name: "Guest",
+    p_last_name: "Tester",
+    p_phone: guestPhone,
+    p_address: "Toshkent, Chilonzor 12",
+    p_items: [{ product_id: made.product, quantity: 2 }],
+    p_phone_secondary: "+998 90 222 0000",
+    p_telegram: "@guesttester",
+    p_region: "Toshkent",
+    p_city: "Toshkent",
+    p_delivery_method: "delivery",
+    p_notes: "crud check " + stamp,
+    p_locale: "uz",
+    p_email: "guest-" + stamp + "@bondo.test",
+  });
+  check(
+    "GUEST places an order through place_order (anonymous)",
+    !placed.error && Boolean(placed.data),
+    placed.error?.message ?? JSON.stringify(placed.data)?.slice(0, 80),
+  );
+
+  const placedRow = Array.isArray(placed.data) ? placed.data[0] : placed.data;
+  made.order = placedRow?.id ?? placedRow?.order_id ?? null;
+  const claimToken = placedRow?.claim_token ?? null;
+
+  if (made.order) {
+    const adminSees = await asAdmin
+      .from("orders")
+      .select("id, reference, status, phone, total_cents")
+      .eq("id", made.order)
+      .maybeSingle();
+    check(
+      "ADMIN sees the guest order immediately (orders.read)",
+      !adminSees.error && adminSees.data?.status === "new",
+      adminSees.error?.message ?? adminSees.data?.status,
+    );
+
+    const guestCannotRead = await anon
+      .from("orders")
+      .select("id")
+      .eq("id", made.order)
+      .maybeSingle();
+    check(
+      "ANONYMOUS cannot read the order row it just created (RLS)",
+      !guestCannotRead.error && guestCannotRead.data === null,
+      guestCannotRead.data ? "READABLE — RLS HOLE" : "hidden",
+    );
+
+    // Every transition in the business workflow, in order.
+    const flow = [
+      "contacted",
+      "confirmed",
+      "preparing",
+      "shipped",
+      "delivered",
+    ];
+    let flowOk = true;
+    let flowDetail = "";
+    for (const next of flow) {
+      const moved = await asAdmin
+        .from("orders")
+        .update({ status: next })
+        .eq("id", made.order)
+        .select("status")
+        .single();
+      if (moved.error || moved.data?.status !== next) {
+        flowOk = false;
+        flowDetail = next + ": " + (moved.error?.message ?? "not applied");
+        break;
+      }
+    }
+    check(
+      "ORDER moves new -> contacted -> confirmed -> preparing -> shipped -> delivered",
+      flowOk,
+      flowDetail || "5 transitions",
+    );
+
+    const persisted = await asAdmin
+      .from("orders")
+      .select("status")
+      .eq("id", made.order)
+      .single();
+    check(
+      "ORDER status persisted after a fresh read",
+      persisted.data?.status === "delivered",
+      persisted.data?.status,
+    );
+
+    const history = await asAdmin
+      .from("order_status_history")
+      .select("from_status, to_status")
+      .eq("order_id", made.order);
+    check(
+      "ORDER history written by the trigger, one row per transition",
+      (history.data?.length ?? 0) >= 5,
+      (history.data?.length ?? 0) + " events",
+    );
+
+    const note = await asAdmin
+      .from("orders")
+      .update({ internal_note: "called at 15:00 " + stamp })
+      .eq("id", made.order)
+      .select("internal_note")
+      .single();
+    check(
+      "ORDER internal note saved (orders.update)",
+      !note.error && note.data?.internal_note?.includes(String(stamp)),
+      note.error?.message,
+    );
+
+    // -------------------------------------------------------------------------
+    // CLAIMING — by token, never by phone number
+    // -------------------------------------------------------------------------
+    const buyerEmail = "buyer-" + stamp + "@bondo.test";
+    const buyer = await admin.auth.admin.createUser({
+      email: buyerEmail,
+      password: PASSWORD,
+      email_confirm: true,
+    });
+    made.buyerUser = buyer.data?.user?.id ?? null;
+
+    const asBuyer = createClient(
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { auth: { persistSession: false } },
+    );
+    await asBuyer.auth.signInWithPassword({
+      email: buyerEmail,
+      password: PASSWORD,
+    });
+
+    // A different customer, holding no token, must not be able to take it.
+    const thiefEmail = "thief-" + stamp + "@bondo.test";
+    const thief = await admin.auth.admin.createUser({
+      email: thiefEmail,
+      password: PASSWORD,
+      email_confirm: true,
+    });
+    made.thiefUser = thief.data?.user?.id ?? null;
+    const asThief = createClient(
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { auth: { persistSession: false } },
+    );
+    await asThief.auth.signInWithPassword({
+      email: thiefEmail,
+      password: PASSWORD,
+    });
+
+    const stolen = await asThief
+      .from("orders")
+      .update({ user_id: made.thiefUser })
+      .eq("id", made.order)
+      .select("id");
+    check(
+      "GUEST order cannot be taken by another customer (RLS)",
+      stolen.error !== null || stolen.data?.length === 0,
+      stolen.error?.code ?? (stolen.data?.length ?? 0) + " row(s) updated",
+    );
+
+    const guessed = await asThief
+      .from("orders")
+      .select("id")
+      .eq("phone", guestPhone)
+      .maybeSingle();
+    check(
+      "GUEST order cannot be found by guessing the phone number (RLS)",
+      !guessed.error && guessed.data === null,
+      guessed.data ? "READABLE — RLS HOLE" : "hidden",
+    );
+
+    if (claimToken) {
+      const claimed = await asBuyer.rpc("claim_orders", {
+        p_tokens: [claimToken],
+      });
+      check(
+        "CLAIM with the token moves the order to the customer",
+        !claimed.error,
+        claimed.error?.message ?? String(claimed.data),
+      );
+
+      const buyerSees = await asBuyer
+        .from("orders")
+        .select("id, status")
+        .eq("id", made.order)
+        .maybeSingle();
+      check(
+        "CUSTOMER sees the claimed order in their account",
+        !buyerSees.error && buyerSees.data?.id === made.order,
+        buyerSees.error?.message ??
+          (buyerSees.data ? "visible" : "not visible"),
+      );
+    } else {
+      check(
+        "CLAIM with the token moves the order to the customer",
+        false,
+        "place_order returned no claim_token",
+      );
+    }
+
+    const custStatus = await asBuyer
+      .from("orders")
+      .update({ status: "cancelled" })
+      .eq("id", made.order)
+      .select("id");
+    check(
+      "CUSTOMER cannot change their own order's status (RLS)",
+      custStatus.error !== null || custStatus.data?.length === 0,
+      custStatus.error?.code ??
+        (custStatus.data?.length ?? 0) + " row(s) updated",
+    );
+
+    // -------------------------------------------------------------------------
+    // REVIEWS — only the buyer, only what was delivered
+    // -------------------------------------------------------------------------
+    const review = await asBuyer
+      .from("product_reviews")
+      .insert({
+        product_id: made.product,
+        order_id: made.order,
+        user_id: made.buyerUser,
+        rating: 5,
+        title: "CRUD review " + stamp,
+        body: "Verified purchase review.",
+      })
+      .select("id")
+      .single();
+    check(
+      "REVIEW accepted from the buyer of a delivered order",
+      !review.error,
+      review.error?.message,
+    );
+    made.review = review.data?.id ?? null;
+
+    const duplicate = await asBuyer
+      .from("product_reviews")
+      .insert({
+        product_id: made.product,
+        order_id: made.order,
+        user_id: made.buyerUser,
+        rating: 1,
+      })
+      .select("id");
+    check(
+      "REVIEW refuses a second review of the same product",
+      duplicate.error !== null,
+      duplicate.error?.code ?? "INSERT SUCCEEDED — DUPLICATE ALLOWED",
+    );
+
+    const strangerReview = await asThief
+      .from("product_reviews")
+      .insert({
+        product_id: made.product,
+        order_id: made.order,
+        user_id: made.thiefUser,
+        rating: 5,
+      })
+      .select("id");
+    check(
+      "REVIEW refused from somebody who did not buy it (RLS)",
+      strangerReview.error !== null,
+      strangerReview.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+    );
+
+    if (made.review) {
+      const persistedReview = await asBuyer
+        .from("product_reviews")
+        .select("rating, title")
+        .eq("id", made.review)
+        .maybeSingle();
+      check(
+        "REVIEW persisted after a fresh read",
+        persistedReview.data?.rating === 5,
+        String(persistedReview.data?.rating),
+      );
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // A customer must be refused every one of these
   // ---------------------------------------------------------------------------
   const custEmail = `cust-${stamp}@bondo.test`;
@@ -1357,6 +1653,32 @@ try {
     "a signed-in customer cannot create a category (RLS)",
     custCategory.error !== null,
     custCategory.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const custOrders = await asCustomer.from("orders").select("id");
+  check(
+    "a signed-in customer sees no orders but their own (RLS)",
+    !custOrders.error && (custOrders.data?.length ?? 0) === 0,
+    (custOrders.data?.length ?? 0) + " visible",
+  );
+
+  const anonOrders = await anon.from("orders").select("id");
+  check(
+    "an anonymous visitor sees no orders at all (RLS)",
+    !anonOrders.error && (anonOrders.data?.length ?? 0) === 0,
+    (anonOrders.data?.length ?? 0) + " visible",
+  );
+
+  const custOrderWrite = await asCustomer
+    .from("orders")
+    .update({ status: "delivered" })
+    .eq("id", made.order)
+    .select("id");
+  check(
+    "a signed-in customer cannot mark an order delivered (RLS)",
+    custOrderWrite.error !== null || custOrderWrite.data?.length === 0,
+    custOrderWrite.error?.code ??
+      (custOrderWrite.data?.length ?? 0) + " row(s) updated",
   );
 
   const custSetting = await asCustomer
@@ -1493,6 +1815,20 @@ try {
   check("admin CRUD run", false, error.message ?? String(error));
 } finally {
   // Clean up whatever exists, in dependency order.
+  if (made.review) {
+    await admin.from("product_reviews").delete().eq("id", made.review);
+  }
+  if (made.order) {
+    await admin
+      .from("order_status_history")
+      .delete()
+      .eq("order_id", made.order);
+    await admin.from("order_items").delete().eq("order_id", made.order);
+    await admin.from("orders").delete().eq("id", made.order);
+  }
+  for (const id of [made.buyerUser, made.thiefUser]) {
+    if (id) await admin.auth.admin.deleteUser(id);
+  }
   for (const row of made.settingsBefore ?? []) {
     await admin
       .from("settings")

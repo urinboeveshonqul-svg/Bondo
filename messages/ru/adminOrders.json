@@ -1,0 +1,98 @@
+{
+  "title": "Заказы",
+  "subtitle": "Все поступившие заказы и работа по ним.",
+  "stats": {
+    "awaiting": "Ждут ответа",
+    "inProgress": "В работе",
+    "revenue": "Сумма доставленных заказов",
+    "total": "Всего заказов"
+  },
+  "filters": {
+    "search": "Номер заказа или телефон",
+    "status": "Статус",
+    "allStatuses": "Любой статус",
+    "clear": "Сбросить фильтры"
+  },
+  "columns": {
+    "reference": "Номер",
+    "customer": "Покупатель",
+    "contact": "Контакты",
+    "items": "Позиции",
+    "total": "Сумма",
+    "status": "Статус",
+    "placed": "Поступил"
+  },
+  "itemCount": "{count} поз.",
+  "emptyTitle": "Заказов пока нет",
+  "emptyDescription": "Как только покупатель оформит заказ, он появится здесь.",
+  "noResultsTitle": "Ничего не нашлось",
+  "noResultsDescription": "Проверьте номер или телефон и попробуйте ещё раз.",
+  "detail": {
+    "backToList": "К списку заказов",
+    "placedAt": "Поступил",
+    "customer": "Покупатель",
+    "contactTitle": "Контакты",
+    "phonePrimary": "Основной телефон",
+    "phoneSecondary": "Запасной телефон",
+    "telegram": "Telegram",
+    "email": "Электронная почта",
+    "call": "Позвонить",
+    "openTelegram": "Написать в Telegram",
+    "deliveryTitle": "Доставка",
+    "method": "Способ",
+    "address": "Адрес",
+    "pickupLocation": "Отделение почты",
+    "region": "Область",
+    "city": "Город",
+    "itemsTitle": "Состав заказа",
+    "quantity": "Кол-во",
+    "unitPrice": "Цена",
+    "lineTotal": "Сумма",
+    "subtotal": "Товары",
+    "deliveryFee": "Доставка",
+    "total": "Итого",
+    "customerNote": "Комментарий покупателя",
+    "noCustomerNote": "Покупатель ничего не написал.",
+    "timelineTitle": "История статусов",
+    "timelineEmpty": "Статус ещё не менялся.",
+    "internalNoteTitle": "Внутренняя заметка",
+    "internalNoteHint": "Заметку видит только команда — покупателю она не показывается.",
+    "internalNotePlaceholder": "Например: просил перезвонить после 18:00",
+    "saveNote": "Сохранить заметку",
+    "guestOrder": "Оформлен без регистрации",
+    "linkedAccount": "Привязан к аккаунту"
+  },
+  "actions": {
+    "title": "Что дальше",
+    "contacted": "Отметить, что связались",
+    "confirmed": "Подтвердить заказ",
+    "preparing": "Начать сборку",
+    "shipped": "Отметить отправку",
+    "delivered": "Отметить доставку",
+    "cancelled": "Отменить заказ",
+    "cancelTitle": "Отменить заказ?",
+    "cancelBody": "Заказ будет отменён, и покупатель увидит это в своём аккаунте. Вернуть его обратно не получится.",
+    "cancelConfirm": "Да, отменить",
+    "noneLeft": "Работа по этому заказу завершена.",
+    "statusChanged": "Статус изменён",
+    "noteSaved": "Заметка сохранена",
+    "cancelDismiss": "Закрыть"
+  },
+  "status": {
+    "new": "Новый",
+    "contacted": "Связались",
+    "confirmed": "Подтверждён",
+    "preparing": "Собирается",
+    "shipped": "Отправлен",
+    "delivered": "Доставлен",
+    "cancelled": "Отменён"
+  },
+  "delivery": {
+    "courier": "Курьером",
+    "pickup": "Самовывоз из отделения"
+  },
+  "errors": {
+    "noteTooLong": "Заметка слишком длинная",
+    "invalidTransition": "Из этого статуса так перейти нельзя"
+  }
+}

@@ -35,6 +35,7 @@ export const namespaces = [
   "adminDashboard",
   "adminCatalog",
   "adminInventory",
+  "adminOrders",
   "adminContent",
   "adminSystem",
   "adminHighlights",

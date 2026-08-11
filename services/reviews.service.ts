@@ -129,6 +129,15 @@ export async function getReviewSummary(
 export type ReviewableItem = {
   productId: string;
   productName: string;
+  /**
+   * The product's slug in the requested language.
+   *
+   * Carried because `submitReview` revalidates the product page by path and a
+   * slug is per-locale (`product_translations.slug`). `null` when the product
+   * has no translation for that language — the review still saves, and only the
+   * cache hint is skipped.
+   */
+  productSlug: string | null;
   orderId: string;
   orderReference: string;
   deliveredAt: string;
@@ -148,12 +157,16 @@ export type ReviewableItem = {
  */
 export async function listReviewableProducts(
   supabase: Client,
+  locale: Database["public"]["Enums"]["locale"],
 ): Promise<ReviewableItem[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
       `id, reference, updated_at,
-       items:order_items ( product_id, product_name )`,
+       items:order_items (
+         product_id, product_name,
+         product:products ( translations:product_translations ( locale, slug ) )
+       )`,
     )
     .eq("status", "delivered")
     .order("updated_at", { ascending: false });
@@ -175,7 +188,13 @@ export async function listReviewableProducts(
       id: string;
       reference: string;
       updated_at: string;
-      items: { product_id: string | null; product_name: string }[];
+      items: {
+        product_id: string | null;
+        product_name: string;
+        product: {
+          translations: { locale: string; slug: string | null }[];
+        } | null;
+      }[];
     };
 
     for (const item of row.items) {
@@ -187,6 +206,10 @@ export async function listReviewableProducts(
       reviewable.push({
         productId: item.product_id,
         productName: item.product_name,
+        productSlug:
+          item.product?.translations.find(
+            (translation) => translation.locale === locale,
+          )?.slug ?? null,
         orderId: row.id,
         orderReference: row.reference,
         deliveredAt: row.updated_at,

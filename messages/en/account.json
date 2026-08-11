@@ -116,5 +116,18 @@
       "label": "Cancelled",
       "body": "This order was cancelled."
     }
+  },
+  "reviews": {
+    "title": "Rate what you bought",
+    "description": "Tell other shoppers how it worked out.",
+    "ratingLabel": "Your rating",
+    "stars": "{count} of 5",
+    "titleLabel": "Headline",
+    "bodyLabel": "Review",
+    "bodyPlaceholder": "How has it held up? What worked, what didn't?",
+    "submit": "Post review",
+    "thanks": "Thanks for the review.",
+    "ratingRequired": "Pick a rating first",
+    "allReviewed": "You have reviewed everything on this order."
   }
 }

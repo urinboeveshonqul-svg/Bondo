@@ -116,5 +116,18 @@
       "label": "Bekor qilindi",
       "body": "Bu buyurtma bekor qilingan."
     }
+  },
+  "reviews": {
+    "title": "Xaridni baholang",
+    "description": "Yetkazilgan mahsulotlar haqida fikringizni yozing — boshqa xaridorlarga yordam beradi.",
+    "ratingLabel": "Bahoyingiz",
+    "stars": "{count} yulduz",
+    "titleLabel": "Sarlavha",
+    "bodyLabel": "Fikringiz",
+    "bodyPlaceholder": "Mahsulot qanday ishlayapti? Nima yoqdi, nima yoqmadi?",
+    "submit": "Fikrni yuborish",
+    "thanks": "Fikringiz uchun rahmat!",
+    "ratingRequired": "Avval yulduzcha tanlang",
+    "allReviewed": "Bu buyurtmadagi barcha mahsulotlarni baholab bo'lgansiz."
   }
 }

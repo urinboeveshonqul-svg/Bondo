@@ -12,6 +12,78 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Added — order management
+
+`/admin/orders` and `/admin/orders/[id]`, over the schema, services and Server
+Actions that have existed and been verified since
+`20260809001000_orders_and_reviews.sql`. **No migration was needed**: the
+columns the brief asks for — two phone numbers, Telegram, a pickup location,
+first and last name, the claim token — were already there (**ADR-85**).
+
+The module was deliberately kept out of the registry until the routes existed,
+because a sidebar entry is a link and a link to a 404 is worse than an absent
+one. It is registered now, with `orders.read` to see the queue and
+`orders.update` to move an order along.
+
+**The queue** filters by status and searches reference or phone, both in the
+PostgREST query rather than in memory, and both in the URL so a filtered view
+survives opening an order and can be sent to a colleague. It renders as cards on
+a phone and a table from `lg`.
+
+**The detail screen** leads with contact details, because the operator's next
+move is a phone call: `tel:` and `https://t.me/` links, both phone numbers, the
+delivery method and either the address or the post office, then the lines, the
+totals, the customer's note and the status history.
+
+**The workflow is forward-only** — new → contacted → confirmed → preparing →
+shipped → delivered, or cancelled. The buttons come from `nextOrderStatuses`,
+which offers the next step and `cancelled` and nothing else. `delivered` is
+what unlocks the customer's right to review (ADR-66), so an undo button would
+strand reviews that already exist. Cancelling is the one irreversible move and
+the one behind a confirmation.
+
+Internal notes save through `updateOrderDetails`, separately from the status
+change, so a note typed before a refused transition is not lost.
+
+### Added — customers can review what they bought
+
+`reviews.service` and `submitReview` existed with no screen. The account's order
+detail now offers a rating form per product once the order is `delivered`,
+listing only what `listReviewableProducts` says is still reviewable.
+
+This replaces a button that linked to `/products?review=<id>` — a query
+parameter nothing handled, so the link went to the catalog and did nothing.
+
+The form enforces none of the rules: the gate is the RLS policy on
+`product_reviews`, which independently checks that the reviewer bought the
+product on a delivered order and has not already reviewed it.
+
+`listReviewableProducts` now takes a locale and returns each product's slug,
+because a slug is per-locale and the action revalidates the product page by path.
+
+### Verified live
+
+113 CRUD checks against the linked Supabase project, up from 94. The order
+section places a **real guest order through `place_order` as an anonymous
+client** — the path checkout uses, not a direct insert a guest has no privilege
+for — then walks all five transitions, re-reads to confirm persistence, checks
+the trigger wrote one history row per move, saves an internal note, and cleans
+up after itself.
+
+Security, all asserted rather than assumed:
+
+- an anonymous visitor sees **no** orders, and cannot read the row it just
+  created;
+- a signed-in customer sees none but their own, and cannot change a status;
+- a guest order **cannot be taken by another customer**, and **cannot be found
+  by guessing the phone number** — claiming works only with the token;
+- a review is refused from somebody who did not buy the product (42501), and a
+  second review of the same product is refused (23505).
+
+Route protection was checked over HTTP: `/uz/admin/orders` and the detail route
+answer **307** to an anonymous request, redirecting to sign-in with
+`redirectTo` preserved.
+
 ### Changed — the admin panel saves everything it shows
 
 The five modules still on fixtures — inventory, homepage, content pages, team

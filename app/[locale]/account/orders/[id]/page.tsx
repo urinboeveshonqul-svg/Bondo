@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
-import { Check, ChevronLeft, Circle, Star } from "lucide-react";
+import { Check, ChevronLeft, Circle } from "lucide-react";
 
 import { OrderStatusBadge } from "@/components/account/order-status-badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import type { Locale } from "@/lib/site-config";
 import { createClient } from "@/supabase/server";
 import * as ordersService from "@/services/orders.service";
+import * as reviewsService from "@/services/reviews.service";
+import { OrderReviewPanel } from "@/components/account/order-review-panel";
 import type { PageParams } from "@/types";
 import { formatDate, formatPrice } from "@/utils/format";
 
@@ -44,6 +46,7 @@ export default async function AccountOrderPage({
   await requireUser(routes.account.order(id));
   const activeLocale = (await getLocale()) as Locale;
   const t = await getTranslations("account.orderDetail");
+  const tReviews = await getTranslations("account.reviews");
   const tStatus = await getTranslations("account.orderStatus");
   const tList = await getTranslations("account.orders");
 
@@ -54,6 +57,26 @@ export default async function AccountOrderPage({
 
   const timeline = orderTimeline(order.status);
   const canReview = canReviewOrder(order.status);
+
+  /*
+    What is still reviewable on *this* order.
+
+    `listReviewableProducts` answers for every delivered order and already
+    excludes products this customer has reviewed, so filtering it by order id
+    gives the lines to offer here. It runs under the customer's own session, so
+    RLS decides what it can see — and the insert is gated independently by the
+    policy on `product_reviews` (ADR-66) whatever this returns.
+  */
+  const reviewable = canReview
+    ? (await reviewsService.listReviewableProducts(supabase, activeLocale))
+        .filter((item) => item.orderId === order.id)
+        .map((item) => ({
+          productId: item.productId,
+          productName: item.productName,
+          productSlug: item.productSlug,
+          orderId: item.orderId,
+        }))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -187,16 +210,6 @@ export default async function AccountOrderPage({
                 <span className="text-sm font-medium tabular-nums">
                   {formatPrice(item.line_total_cents, activeLocale)}
                 </span>
-                {canReview && item.product_id ? (
-                  <Button asChild size="sm" variant="outline">
-                    <Link
-                      href={`${routes.catalog.index}?review=${item.product_id}`}
-                    >
-                      <Star className="size-3.5" aria-hidden="true" />
-                      {t("leaveReview")}
-                    </Link>
-                  </Button>
-                ) : null}
               </div>
             </li>
           ))}
@@ -225,6 +238,23 @@ export default async function AccountOrderPage({
           </div>
         </dl>
       </section>
+
+      {canReview ? (
+        <section
+          aria-labelledby="order-reviews"
+          className="space-y-3 rounded-xl border bg-card p-5"
+        >
+          <div>
+            <h2 id="order-reviews" className="text-sm font-medium">
+              {tReviews("title")}
+            </h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {tReviews("description")}
+            </p>
+          </div>
+          <OrderReviewPanel lines={reviewable} />
+        </section>
+      ) : null}
 
       <section
         aria-labelledby="delivery-details"

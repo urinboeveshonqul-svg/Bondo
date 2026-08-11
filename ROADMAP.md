@@ -540,8 +540,9 @@ Built for 10+ concurrent admins.
 - [ ] Sign-in, so the redirect target exists (**K-2**)
 - [x] Services behind every screen; `mocks/admin.ts` deleted (**D-15**)
 - [ ] Product image upload — needs Supabase Storage (**D-12**)
-- [ ] Order management: status transitions, refunds, notes — **needs an `orders`
-      table, which arrives with Phase 4**
+- [x] Order management: the queue, status transitions and internal notes over the
+      real schema (**ADR-85**). Refunds are still out — Bondo settles at the door
+      and there is no payment to refund (ADR-63)
 - [ ] Customer lookup against real profiles
 - [ ] Move pagination and search into the query; the current in-memory filter
       does not survive 50k products (**D-2**)

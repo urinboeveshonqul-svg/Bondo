@@ -1,0 +1,98 @@
+{
+  "title": "Orders",
+  "subtitle": "Every order that has come in, and the work on it.",
+  "stats": {
+    "awaiting": "Waiting on a call",
+    "inProgress": "Being worked on",
+    "revenue": "Delivered order value",
+    "total": "All orders"
+  },
+  "filters": {
+    "search": "Order number or phone",
+    "status": "Status",
+    "allStatuses": "Any status",
+    "clear": "Clear filters"
+  },
+  "columns": {
+    "reference": "Number",
+    "customer": "Customer",
+    "contact": "Contact",
+    "items": "Items",
+    "total": "Total",
+    "status": "Status",
+    "placed": "Placed"
+  },
+  "itemCount": "{count} items",
+  "emptyTitle": "No orders yet",
+  "emptyDescription": "The moment a customer places one, it shows up here.",
+  "noResultsTitle": "Nothing matched",
+  "noResultsDescription": "Check the number or the phone and search again.",
+  "detail": {
+    "backToList": "Back to orders",
+    "placedAt": "Placed",
+    "customer": "Customer",
+    "contactTitle": "Contact",
+    "phonePrimary": "Main phone",
+    "phoneSecondary": "Backup phone",
+    "telegram": "Telegram",
+    "email": "Email",
+    "call": "Call",
+    "openTelegram": "Message on Telegram",
+    "deliveryTitle": "Delivery",
+    "method": "Method",
+    "address": "Address",
+    "pickupLocation": "Post office",
+    "region": "Region",
+    "city": "City",
+    "itemsTitle": "What was ordered",
+    "quantity": "Qty",
+    "unitPrice": "Price",
+    "lineTotal": "Line total",
+    "subtotal": "Items",
+    "deliveryFee": "Delivery",
+    "total": "Total",
+    "customerNote": "Customer note",
+    "noCustomerNote": "The customer left no note.",
+    "timelineTitle": "Status history",
+    "timelineEmpty": "The status has not changed yet.",
+    "internalNoteTitle": "Internal note",
+    "internalNoteHint": "Only the team sees this. The customer never does.",
+    "internalNotePlaceholder": "e.g. asked us to call back after 6pm",
+    "saveNote": "Save note",
+    "guestOrder": "Placed as a guest",
+    "linkedAccount": "Linked to an account"
+  },
+  "actions": {
+    "title": "Next step",
+    "contacted": "Mark as contacted",
+    "confirmed": "Confirm the order",
+    "preparing": "Start preparing",
+    "shipped": "Mark as shipped",
+    "delivered": "Mark as delivered",
+    "cancelled": "Cancel the order",
+    "cancelTitle": "Cancel this order?",
+    "cancelBody": "The order is cancelled and the customer sees it in their account. There is no way back from this.",
+    "cancelConfirm": "Yes, cancel it",
+    "noneLeft": "This order is finished.",
+    "statusChanged": "Status updated",
+    "noteSaved": "Note saved",
+    "cancelDismiss": "Keep the order"
+  },
+  "status": {
+    "new": "New",
+    "contacted": "Contacted",
+    "confirmed": "Confirmed",
+    "preparing": "Preparing",
+    "shipped": "Shipped",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled"
+  },
+  "delivery": {
+    "courier": "Courier",
+    "pickup": "Collect from a post office"
+  },
+  "errors": {
+    "noteTooLong": "That note is too long",
+    "invalidTransition": "You cannot move from this status to that one"
+  }
+}

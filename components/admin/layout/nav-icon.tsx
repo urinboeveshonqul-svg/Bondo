@@ -8,6 +8,7 @@ import {
   Package,
   ScrollText,
   Settings,
+  ShoppingBag,
   Tag,
   Users,
   type LucideIcon,
@@ -38,6 +39,7 @@ const ICONS: Record<string, LucideIcon> = {
   Users,
   ScrollText,
   Settings,
+  ShoppingBag,
 };
 
 export function NavIcon({
