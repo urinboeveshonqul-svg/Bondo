@@ -65,6 +65,7 @@
     "notePlaceholder": "Why this adjustment was made",
     "current": "Currently {count} on hand",
     "resulting": "Resulting stock: {count}",
-    "submit": "Record movement"
+    "submit": "Record movement",
+    "recorded": "Recorded — {quantity} now on hand"
   }
 }

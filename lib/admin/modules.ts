@@ -149,7 +149,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "inventory",
-    persistence: "fixtures",
+    persistence: "live",
     labelKey: "nav.inventory",
     href: routes.admin.inventory,
     icon: "Boxes",
@@ -174,7 +174,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "homepage",
-    persistence: "fixtures",
+    persistence: "live",
     labelKey: "nav.homepage",
     href: routes.admin.homepage,
     icon: "LayoutTemplate",
@@ -222,7 +222,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "content",
-    persistence: "fixtures",
+    persistence: "live",
     labelKey: "nav.content",
     href: routes.admin.content,
     icon: "FileText",
@@ -243,7 +243,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "users",
-    persistence: "fixtures",
+    persistence: "live",
     labelKey: "nav.users",
     href: routes.admin.users,
     icon: "Users",
@@ -292,7 +292,7 @@ export const ADMIN_MODULES: readonly AdminModule[] = [
   },
   {
     id: "settings",
-    persistence: "fixtures",
+    persistence: "live",
     labelKey: "nav.settings",
     href: routes.admin.settings,
     icon: "Settings",

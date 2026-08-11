@@ -23,6 +23,13 @@
  * it tells an operator what the store will do and what it cannot do yet, which
  * is information they otherwise have to ask a developer for.
  *
+ * **Six sections were marked `live` and were not.** Commerce, email, social,
+ * branding and hours rendered full forms over `settings` keys that do not
+ * exist — every field discarded what was typed into it, which is the exact
+ * failure `status` was introduced to make impossible. They are `planned` now,
+ * and the sections that replaced them (`store`, `catalog`, `orders`) are the
+ * three prefixes that have rows in the table.
+ *
  * Pure data, no React — `lib/` may be imported from anywhere (§ 4).
  */
 
@@ -39,9 +46,16 @@ export const SETTINGS_SECTIONS = [
     status: "live",
   },
   {
-    id: "commerce",
-    labelKey: "commerce",
-    prefix: "commerce",
+    id: "catalog",
+    labelKey: "catalog",
+    prefix: "catalog",
+    permission: "settings.read",
+    status: "live",
+  },
+  {
+    id: "orders",
+    labelKey: "orders",
+    prefix: "orders",
     permission: "settings.read",
     status: "live",
   },
@@ -67,28 +81,32 @@ export const SETTINGS_SECTIONS = [
     labelKey: "email",
     prefix: "email",
     permission: "settings.read",
-    status: "live",
+    status: "planned",
+    blockedBy: "needsMailProvider",
   },
   {
     id: "social",
     labelKey: "social",
     prefix: "social",
     permission: "settings.read",
-    status: "live",
+    status: "planned",
+    blockedBy: "needsSocialColumns",
   },
   {
     id: "branding",
     labelKey: "branding",
     prefix: "branding",
     permission: "settings.read",
-    status: "live",
+    status: "planned",
+    blockedBy: "needsBrandingAssets",
   },
   {
     id: "hours",
     labelKey: "hours",
     prefix: "hours",
     permission: "settings.read",
-    status: "live",
+    status: "planned",
+    blockedBy: "hoursAreOneSetting",
   },
   {
     id: "taxes",

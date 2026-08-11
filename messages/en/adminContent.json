@@ -38,11 +38,19 @@
         "ctaHref": "Button link",
         "startsAt": "Starts",
         "endsAt": "Ends",
-        "visible": "Visible"
+        "visible": "Visible",
+        "placement": "Where it appears"
       },
       "always": "Always on",
       "scheduled": "{from} → {to}",
-      "openEnded": "no end date"
+      "openEnded": "no end date",
+      "dialogHint": "Fill in all three languages. A banner without a translation is hidden from readers of that language."
+    },
+    "placements": {
+      "home_hero": "Home — main",
+      "home_secondary": "Home — secondary",
+      "category_top": "Above a category",
+      "site_wide_notice": "Site-wide notice"
     }
   },
   "pages": {
@@ -62,7 +70,7 @@
       "title": "Edit page",
       "sections": {
         "content": "Content",
-        "seo": "Search engine listing",
+        "seo": "Search engines",
         "publishing": "Publishing"
       },
       "fields": {
@@ -70,8 +78,17 @@
         "excerpt": "Summary",
         "body": "Body",
         "slug": "URL slug",
-        "published": "Published"
+        "published": "Published",
+        "seoTitle": "Search title",
+        "seoDescription": "Search description",
+        "slugHint": "The page address, fixed once the page exists."
       }
     }
+  },
+  "errors": {
+    "titleRequired": "Add a title",
+    "titleTooLong": "That title is too long",
+    "keyFormat": "Use lowercase letters and hyphens only",
+    "endBeforeStart": "The end date has to come after the start"
   }
 }

@@ -13,7 +13,9 @@
       "appearance": "Appearance",
       "taxes": "Taxes",
       "shipping": "Shipping",
-      "payments": "Payments"
+      "payments": "Payments",
+      "catalog": "Catalog",
+      "orders": "Orders"
     },
     "store": {
       "title": "Store information",
@@ -23,7 +25,12 @@
       "tagline": "Tagline",
       "supportEmail": "Support email",
       "supportPhone": "Support phone",
-      "address": "Address"
+      "address": "Address",
+      "telegram": "Telegram",
+      "hours": "Opening hours",
+      "hoursHint": "Write it the way you would say it, e.g. Mon–Sat 10:00–19:00, closed Sunday.",
+      "addressHint": "Write the address a first-time visitor could navigate to.",
+      "phoneHint": "Shoppers tap this to call you from the contact page."
     },
     "commerce": {
       "title": "Commerce",
@@ -86,8 +93,26 @@
         "needsCheckout": "checkout and payments; these settings do nothing until orders exist",
         "needsShippingTables": "delivery zones and rates",
         "perUserLocale": "a language saved on the account. Right now the interface language comes from the page address",
-        "themeIsPerVisitor": "a store-wide look. Light and dark are each visitor's own choice at the moment"
+        "themeIsPerVisitor": "a store-wide look. Light and dark are each visitor's own choice at the moment",
+        "needsMailProvider": "a mail provider. Nothing sends email from this shop yet",
+        "needsSocialColumns": "database columns for the social links",
+        "needsBrandingAssets": "logo and icon uploads, which need the file storage wired up",
+        "hoursAreOneSetting": "opening hours are a single line now, edited on the Store tab"
       }
+    },
+    "catalog": {
+      "title": "Catalog",
+      "description": "How many products a listing page shows at once.",
+      "productsPerPage": "Products per page",
+      "productsPerPageHint": "What loads when a shopper opens the catalog.",
+      "maxProductsPerPage": "Hard limit",
+      "maxProductsPerPageHint": "Stops a hand-edited page-size in the URL from pulling the whole catalog in one request."
+    },
+    "orders": {
+      "title": "Orders",
+      "description": "Notifications about orders and stock levels.",
+      "lowStockEmail": "Low-stock notification address",
+      "lowStockEmailHint": "Leave it empty and nothing is sent."
     }
   },
   "users": {
@@ -118,7 +143,9 @@
       "permissionCount": "{count, plural, one {# permission} other {# permissions}}",
       "permissions": "Permissions",
       "viewPermissions": "Show permissions",
-      "hidePermissions": "Hide permissions"
+      "hidePermissions": "Hide permissions",
+      "assign": "Assign roles",
+      "assignHint": "Choose the roles {name} works in."
     },
     "permissions": {
       "products": {
@@ -162,7 +189,12 @@
         "read": "Read the audit log"
       }
     },
-    "inviteUnavailable": "Inviting an administrator is not connected yet."
+    "inviteUnavailable": "Inviting an administrator is not connected yet.",
+    "unnamed": "No name yet",
+    "errors": {
+      "cannotDisableSelf": "You cannot disable your own account",
+      "cannotChangeOwnRoles": "You cannot change your own roles"
+    }
   },
   "audit": {
     "title": "Audit log",

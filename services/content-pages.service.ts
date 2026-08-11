@@ -85,6 +85,179 @@ export async function getContentPage(
   return fold(data as unknown as Record<string, unknown>);
 }
 
+/**
+ * Every page an editor may manage, published or not.
+ *
+ * The admin list needs the drafts — they are the ones that need work. The
+ * separate function rather than a flag on `listContentPages` is deliberate:
+ * a storefront caller that accidentally passed `includeDrafts: true` would put
+ * unfinished copy on a public URL, and a parameter is easier to pass by
+ * accident than an import is (ADR-4 still refuses it at the policy, but the
+ * shape of the API should not invite the attempt).
+ */
+export async function listAllContentPages(
+  supabase: Client,
+): Promise<ContentPage[]> {
+  const { data, error } = await supabase
+    .from("content_pages")
+    .select(COLUMNS)
+    .is("deleted_at", null)
+    .order("display_order", { ascending: true });
+
+  if (error) throw toAppError(error, "load the pages");
+
+  return (data ?? []).map((row) => fold(row as Record<string, unknown>));
+}
+
+/** One page by id, in any state. For the editor. */
+export async function getContentPageById(
+  supabase: Client,
+  id: string,
+): Promise<ContentPage> {
+  const { data, error } = await supabase
+    .from("content_pages")
+    .select(COLUMNS)
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error) throw toAppError(error, "load the page");
+  if (!data) throw notFoundOrForbidden("Page");
+
+  return fold(data as unknown as Record<string, unknown>);
+}
+
+/**
+ * Creates or updates a page and its three translations.
+ *
+ * The parent row and the translations are written in two statements rather than
+ * one RPC, and the order matters: the translations carry a foreign key to the
+ * page, so the page has to exist first. A failure between them leaves a page
+ * with stale translations rather than orphaned ones — recoverable by saving
+ * again, which is the better of the two failure modes available without a
+ * transaction.
+ *
+ * PostgREST has no interactive transaction, so a genuinely atomic save would
+ * need a `plpgsql` function. That is worth doing the day an editor loses work to
+ * this; it has not happened, and a stored procedure is a second place for the
+ * validation to drift out of step with the Zod schema.
+ */
+export async function saveContentPage(
+  supabase: Client,
+  input: {
+    id?: string;
+    key: string;
+    isPublished: boolean;
+    displayOrder: number;
+    translations: Record<
+      Locale,
+      {
+        title: string;
+        excerpt: string | null;
+        body: string | null;
+        seoTitle: string | null;
+        seoDescription: string | null;
+      }
+    >;
+  },
+): Promise<ContentPage> {
+  /*
+    `published_at` travels with `is_published`.
+
+    `content_pages_published_requires_date` refuses a published row with a null
+    date, so setting the flag alone fails the insert — silently, from the form's
+    point of view, because PostgREST reports it as a check violation the operator
+    cannot act on. Publishing stamps the date; unpublishing clears it, so a page
+    that goes back to draft does not keep claiming a publication date it no
+    longer has.
+  */
+  const parent = {
+    key: input.key,
+    is_published: input.isPublished,
+    published_at: input.isPublished ? new Date().toISOString() : null,
+    display_order: input.displayOrder,
+  };
+
+  const { data: page, error: pageError } = input.id
+    ? await supabase
+        .from("content_pages")
+        .update(parent)
+        .eq("id", input.id)
+        .select("id")
+        .maybeSingle()
+    : await supabase
+        .from("content_pages")
+        .insert(parent)
+        .select("id")
+        .maybeSingle();
+
+  if (pageError) throw toAppError(pageError, "save the page");
+  if (!page) throw notFoundOrForbidden("Page");
+
+  const rows = Object.entries(input.translations).map(([locale, value]) => ({
+    page_id: page.id,
+    locale: locale as Locale,
+    title: value.title,
+    excerpt: value.excerpt,
+    body: value.body,
+    seo_title: value.seoTitle,
+    seo_description: value.seoDescription,
+  }));
+
+  const { error: translationError } = await supabase
+    .from("content_page_translations")
+    .upsert(rows, { onConflict: "page_id,locale" });
+
+  if (translationError) throw toAppError(translationError, "save the page");
+
+  return getContentPageById(supabase, page.id);
+}
+
+/**
+ * Publishes or unpublishes a page.
+ *
+ * Separate from `saveContentPage` because it is the one operation an editor
+ * performs from the list without opening the form, and because the two have
+ * different stakes: a typo in the body is a typo, and an accidental publish puts
+ * unfinished copy on a public URL.
+ */
+export async function setContentPagePublished(
+  supabase: Client,
+  id: string,
+  isPublished: boolean,
+): Promise<void> {
+  const { error } = await supabase
+    .from("content_pages")
+    .update({
+      is_published: isPublished,
+      // Required by `content_pages_published_requires_date`; see saveContentPage.
+      published_at: isPublished ? new Date().toISOString() : null,
+    })
+    .eq("id", id);
+
+  if (error) throw toAppError(error, "update the page");
+}
+
+/**
+ * Soft-deletes a page.
+ *
+ * `deleted_at`, not a row removal: the storefront links to these pages from the
+ * footer, and a hard delete would turn a link somebody has bookmarked into a
+ * 404 with nothing left to explain what used to be there. Every read in this
+ * service already filters on `deleted_at is null`.
+ */
+export async function deleteContentPage(
+  supabase: Client,
+  id: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("content_pages")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw toAppError(error, "delete the page");
+}
+
 /** Every published page, in display order. */
 export async function listContentPages(
   supabase: Client,

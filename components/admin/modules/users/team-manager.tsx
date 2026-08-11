@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 import {
   ModuleTable,
@@ -15,6 +17,20 @@ import {
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { setAdminActive, setAdminRoles } from "@/actions/users.actions";
+import { useRouter } from "@/i18n/navigation";
+import type { RoleKey } from "@/lib/admin/permissions";
 import type { ModuleCapabilities } from "@/lib/admin/module";
 import { ROLE_PERMISSIONS } from "@/lib/admin/permissions";
 import type { Locale } from "@/lib/site-config";
@@ -46,6 +62,56 @@ export function TeamManager({
   // Managing the team is `admins.manage` — the registry maps it to `create`,
   // because adding a colleague is what the permission is for.
   const canManage = capabilities.create;
+  /*
+    Two capabilities, not one. `delete` maps to `admins.manage` in the registry
+    and is what revoking access needs; `settings` maps to `users.assign_roles`
+    and is what changing somebody's roles needs. Collapsing them would offer a
+    role editor to whoever can disable an account, which is the more dangerous
+    of the two permissions to widen.
+  */
+  const canDisable = capabilities.delete;
+  const canAssignRoles = capabilities.settings;
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [assigning, setAssigning] = useState<AdminUser | null>(null);
+  const [draftRoles, setDraftRoles] = useState<RoleKey[]>([]);
+
+  function toggleActive(member: AdminUser) {
+    startTransition(async () => {
+      const result = await setAdminActive({
+        userId: member.userId,
+        isActive: !member.isActive,
+      });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(tAdmin("actions.save"));
+      router.refresh();
+    });
+  }
+
+  function saveRoles() {
+    if (!assigning) return;
+
+    startTransition(async () => {
+      const result = await setAdminRoles({
+        userId: assigning.userId,
+        roleKeys: draftRoles,
+      });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(tAdmin("actions.save"));
+      setAssigning(null);
+      router.refresh();
+    });
+  }
   const t = useTranslations("adminSystem.users");
   const tAdmin = useTranslations("admin");
   const locale = useLocale() as Locale;
@@ -118,6 +184,42 @@ export function TeamManager({
       ),
     },
   ];
+
+  if (canDisable || canAssignRoles) {
+    columns.push({
+      id: "actions",
+      header: tAdmin("columns.actions"),
+      cell: (member) => (
+        <div className="flex items-center justify-end gap-1">
+          {canAssignRoles ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={pending}
+              onClick={() => {
+                setAssigning(member);
+                setDraftRoles([...member.roles]);
+              }}
+            >
+              {t("roles.assign")}
+            </Button>
+          ) : null}
+          {canDisable ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={pending}
+              onClick={() => toggleActive(member)}
+            >
+              {member.isActive
+                ? tAdmin("actions.disable")
+                : tAdmin("actions.enable")}
+            </Button>
+          ) : null}
+        </div>
+      ),
+    });
+  }
 
   return (
     <Tabs defaultValue="members">
@@ -202,6 +304,69 @@ export function TeamManager({
           })}
         </Accordion>
       </TabsContent>
+      <Dialog
+        open={assigning !== null}
+        onOpenChange={(open) => !open && setAssigning(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          {assigning ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>{t("roles.assign")}</DialogTitle>
+                <DialogDescription>
+                  {t("roles.assignHint", { name: assigning.fullName })}
+                </DialogDescription>
+              </DialogHeader>
+
+              <ul className="space-y-2">
+                {roles.map((role) => (
+                  <li
+                    key={role.key}
+                    className="flex items-start gap-3 rounded-lg border p-3"
+                  >
+                    <Checkbox
+                      id={`role-${role.key}`}
+                      checked={draftRoles.includes(role.key)}
+                      disabled={pending}
+                      onCheckedChange={(checked) =>
+                        setDraftRoles((current) =>
+                          checked
+                            ? [...current, role.key]
+                            : current.filter((key) => key !== role.key),
+                        )
+                      }
+                    />
+                    <div className="min-w-0 space-y-0.5">
+                      <Label
+                        htmlFor={`role-${role.key}`}
+                        className="font-medium"
+                      >
+                        {role.name[locale]}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {role.description[locale]}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAssigning(null)}
+                >
+                  {tAdmin("actions.cancel")}
+                </Button>
+                <Button type="button" disabled={pending} onClick={saveRoles}>
+                  {tAdmin("actions.save")}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </Tabs>
   );
 }

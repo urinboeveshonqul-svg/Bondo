@@ -20,10 +20,10 @@ import { ADMIN_MODULES } from "@/lib/admin/modules";
 import { requireAdmin } from "@/lib/auth/guards";
 import { touchAdminLastSeen } from "@/services/authorization.service";
 import { createClient } from "@/supabase/server";
+import * as contentService from "@/services/content-pages.service";
 import { navItems, visibleNav } from "@/lib/admin/navigation";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { contentPages } from "@/mocks/admin";
 import * as brandsService from "@/services/brands.service";
 import * as categoriesService from "@/services/categories.service";
 import * as productsService from "@/services/products.service";
@@ -90,6 +90,25 @@ export default async function AdminLayout({
   // Records that this administrator was seen, for the team screen. Deliberately
   // not awaited into the critical path, and unable to fail the render.
   void touchAdminLastSeen(supabase, authUser.id);
+
+  /*
+    The command palette's page entries.
+
+    Read here rather than in the palette because the palette is a Client
+    Component and this layout already holds a client. Failure degrades to an
+    empty list: a search box that cannot offer pages is a smaller problem than
+    an admin shell that will not render (**K-18**).
+  */
+  const contentPages = can(permissions, ["banners.read", "banners.manage"])
+    ? await contentService
+        .listAllContentPages(supabase)
+        .catch(
+          () =>
+            [] as Awaited<
+              ReturnType<typeof contentService.listAllContentPages>
+            >,
+        )
+    : [];
 
   const displayName = profile?.full_name?.trim() || (authUser.email ?? "");
   const user = {
@@ -191,10 +210,10 @@ export default async function AdminLayout({
     // that does not cover a resource yet; they come back when each is a query.
     ...(can(permissions, ["banners.read", "banners.manage"])
       ? contentPages.map((page) => ({
-          id: `page-${page.slug}`,
+          id: `page-${page.key}`,
           group: "pages",
           label: page.title[activeLocale],
-          href: routes.admin.contentPage(page.slug),
+          href: routes.admin.contentPage(page.key),
           icon: "FileText",
         }))
       : []),

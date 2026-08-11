@@ -13,7 +13,9 @@
       "appearance": "Ko'rinish",
       "taxes": "Soliqlar",
       "shipping": "Yetkazib berish",
-      "payments": "To'lovlar"
+      "payments": "To'lovlar",
+      "catalog": "Katalog",
+      "orders": "Buyurtmalar"
     },
     "store": {
       "title": "Do'kon ma'lumotlari",
@@ -23,7 +25,12 @@
       "tagline": "Shiori",
       "supportEmail": "Yordam pochtasi",
       "supportPhone": "Yordam telefoni",
-      "address": "Manzil"
+      "address": "Manzil",
+      "telegram": "Telegram",
+      "hours": "Ish vaqti",
+      "hoursHint": "Masalan: Dushanba–Shanba, 10:00–19:00. Yakshanba dam olish kuni.",
+      "addressHint": "Mijoz do'konni topishi uchun to'liq manzil yozing.",
+      "phoneHint": "Mijoz bosganda qo'ng'iroq qiladigan raqam."
     },
     "commerce": {
       "title": "Savdo",
@@ -86,8 +93,26 @@
         "needsCheckout": "buyurtma qabul qilish va to'lov bo'limi, bu sozlamalar shundan keyin ishlaydi",
         "needsShippingTables": "yetkazib berish hududlari va tariflari",
         "perUserLocale": "hisobga bog'langan til sozlamasi. Hozir interfeys tili sahifa manzili bo'yicha tanlanadi",
-        "themeIsPerVisitor": "do'kon bo'yicha umumiy ko'rinish. Hozir yorug' va tungi rejimni har bir tashrifchi o'zi tanlaydi"
+        "themeIsPerVisitor": "do'kon bo'yicha umumiy ko'rinish. Hozir yorug' va tungi rejimni har bir tashrifchi o'zi tanlaydi",
+        "needsMailProvider": "xat yuboradigan xizmat. Hozir do'kon hech kimga pochta jo'natmaydi",
+        "needsSocialColumns": "ijtimoiy tarmoq havolalari uchun ma'lumotlar bazasida joy yo'q",
+        "needsBrandingAssets": "logotip va nishoncha yuklash. Fayl saqlash qismi hali ulanmagan",
+        "hoursAreOneSetting": "ish vaqti endi “Do'kon” bo'limida bitta matn sifatida yoziladi"
       }
+    },
+    "catalog": {
+      "title": "Katalog",
+      "description": "Ro'yxatda bir sahifada nechta mahsulot ko'rinishini belgilaydi.",
+      "productsPerPage": "Sahifadagi mahsulotlar",
+      "productsPerPageHint": "Xaridor sahifani ochganda shuncha mahsulot yuklanadi.",
+      "maxProductsPerPage": "Eng ko'p mahsulot",
+      "maxProductsPerPageHint": "Manzilga qo'lda yozilgan katta sondan himoya. Bu chegaradan oshmaydi."
+    },
+    "orders": {
+      "title": "Buyurtmalar",
+      "description": "Buyurtma va ombor bo'yicha xabarnomalar.",
+      "lowStockEmail": "Kam qolgani haqida xabar boradigan pochta",
+      "lowStockEmailHint": "Bo'sh qoldirsangiz, xabar yuborilmaydi."
     }
   },
   "users": {
@@ -118,7 +143,9 @@
       "permissionCount": "{count, plural, one {# ta ruxsat} other {# ta ruxsat}}",
       "permissions": "Ruxsatlar",
       "viewPermissions": "Ruxsatlarni ko'rsatish",
-      "hidePermissions": "Ruxsatlarni yashirish"
+      "hidePermissions": "Ruxsatlarni yashirish",
+      "assign": "Rollarni belgilash",
+      "assignHint": "{name} qaysi rollarda ishlashini tanlang."
     },
     "permissions": {
       "products": {
@@ -162,7 +189,12 @@
         "read": "Audit jurnalini o'qish"
       }
     },
-    "inviteUnavailable": "Administrator taklif qilish hali ulanmagan."
+    "inviteUnavailable": "Administrator taklif qilish hali ulanmagan.",
+    "unnamed": "Ismi ko'rsatilmagan",
+    "errors": {
+      "cannotDisableSelf": "O'z hisobingizni o'chira olmaysiz",
+      "cannotChangeOwnRoles": "O'z rollaringizni o'zgartira olmaysiz"
+    }
   },
   "audit": {
     "title": "Audit jurnali",

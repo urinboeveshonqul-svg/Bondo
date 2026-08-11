@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+
+import { recordStockMovement } from "@/actions/inventory.actions";
+import { useRouter } from "@/i18n/navigation";
 import { SlidersHorizontal } from "lucide-react";
 
 import {
@@ -97,6 +100,39 @@ export function InventoryManager({
   const [delta, setDelta] = useState(0);
   const [reason, setReason] = useState<MovementReason>("purchase");
   const [note, setNote] = useState("");
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  /**
+   * Records the movement and lets the server tell us the new level.
+   *
+   * The dialog closes only on success. It used to close first and then say
+   * nothing was saved, which is the sequence that makes an operator believe a
+   * count was corrected when it was not.
+   */
+  function submitAdjustment(record: InventoryRecord) {
+    startTransition(async () => {
+      const result = await recordStockMovement({
+        productId: record.productId,
+        movementType: reason,
+        quantityDelta: delta,
+        ...(note.trim() ? { reason: note.trim() } : {}),
+      });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(
+        t("adjustDialog.recorded", { quantity: result.data.quantityAfter }),
+      );
+      setAdjusting(null);
+      setDelta(0);
+      setNote("");
+      router.refresh();
+    });
+  }
 
   const number = (value: number) => formatNumber(value, locale);
 
@@ -357,10 +393,7 @@ export function InventoryManager({
                 className="space-y-4"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  setAdjusting(null);
-                  toast(tAdmin("notSaved.title"), {
-                    description: tAdmin("notSaved.body"),
-                  });
+                  submitAdjustment(adjusting);
                 }}
               >
                 <div className="space-y-1.5">
@@ -441,7 +474,7 @@ export function InventoryManager({
                   >
                     {tAdmin("actions.cancel")}
                   </Button>
-                  <Button type="submit" disabled={delta === 0}>
+                  <Button type="submit" disabled={delta === 0 || pending}>
                     {t("adjustDialog.submit")}
                   </Button>
                 </div>

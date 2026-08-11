@@ -4,6 +4,7 @@ import { InfoPage, infoPageMetadata } from "@/app/[locale]/(info)/info-page";
 import { StoreContactCard } from "@/components/content/store-contact";
 import { routes } from "@/lib/routes";
 import { getStoreContact } from "@/services/catalog.reads";
+import type { Locale } from "@/lib/site-config";
 import type { PageParams } from "@/types";
 
 const KEY = "contact";
@@ -33,7 +34,7 @@ export default async function ContactPage({
   params: PageParams<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const contact = await getStoreContact();
+  const contact = await getStoreContact(locale as Locale);
 
   return (
     <InfoPage

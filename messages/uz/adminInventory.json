@@ -65,6 +65,7 @@
     "notePlaceholder": "Bu tuzatish nima uchun qilindi",
     "current": "Hozir omborda {count} ta",
     "resulting": "Natijaviy qoldiq: {count}",
-    "submit": "Harakatni qayd etish"
+    "submit": "Harakatni qayd etish",
+    "recorded": "Saqlandi. Yangi qoldiq: {quantity} dona"
   }
 }

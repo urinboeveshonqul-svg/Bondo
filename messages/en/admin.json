@@ -96,7 +96,9 @@
     "hide": "Hide",
     "show": "Show",
     "saving": "Saving…",
-    "restore": "Restore"
+    "restore": "Restore",
+    "disable": "Disable",
+    "enable": "Enable"
   },
   "status": {
     "draft": "Draft",
@@ -232,5 +234,8 @@
       "advanced": "Advanced",
       "publish": "Publish"
     }
+  },
+  "columns": {
+    "actions": "Actions"
   }
 }

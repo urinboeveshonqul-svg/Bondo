@@ -12,6 +12,78 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Changed — the admin panel saves everything it shows
+
+The five modules still on fixtures — inventory, homepage, content pages, team
+and settings — now persist to Supabase through the same path as products,
+categories and brands: UI → Server Action → Zod → `requirePermission` →
+service → Supabase → RLS → `revalidatePath` (**ADR-84**).
+
+Each had the same defect: a complete-looking form whose submit called
+`notSaved()`. The "partly connected" banner is gone, and was not removed by
+hand — it is derived from the module registry (ADR-80), so emptying the fixture
+list is what removed it.
+
+**Inventory** records real movements. Stock still moves only through
+`inventory_movements`, and the verification proves it: a direct write to
+`quantity_on_hand` is refused by the trigger (23001) while the ledger insert
+moves the level 0 → 7.
+
+**Content pages** create, translate into all three languages, publish and
+soft-delete. One bug surfaced only under live verification:
+`content_pages_published_requires_date` refuses a published row with a null
+`published_at`, so publishing silently failed until the service began stamping
+the date.
+
+**Banners** are fully editable — placement, schedule window, link, and title,
+subtitle and CTA per language. A banner with no row for a visitor's language is
+dropped rather than rendered with an empty heading.
+
+**Team** reads `admins` joined to `profiles` — the staff list, not the customer
+list — and can set a job title, grant and revoke roles, and disable an
+administrator. Three separate permissions, because the schema separates them:
+`users.update`, `users.assign_roles` and `admins.manage`. An operator cannot
+disable their own account or edit their own roles.
+
+**Settings** edits the ten keys the table actually holds, with `store.address`
+and `store.hours` localized into `setting_translations`. The contact page reads
+them: `getStoreContact()` was already asking for `store.phone`,
+`store.telegram`, `store.address` and `store.hours`, and only one of the four
+had ever been seeded, so the page rendered its "details not available" branch
+permanently.
+
+### Removed — controls with nothing behind them
+
+Two things were deleted rather than migrated, and the distinction is the point.
+
+- **The homepage section editor.** Eight reorderable bands with a type and a
+  target, over a fixture. The home page composes its rails from the category
+  tree (ADR-75), so a `homepage_sections` table would have been read by
+  nothing.
+- **Five settings tabs** — commerce, email, social, branding and hours — which
+  offered a tax rate, sender addresses, four social URLs and a per-day hours
+  grid over keys that do not exist. They are `planned` in the registry now,
+  which states the gap instead of discarding what an operator types.
+
+`mocks/admin.ts` is deleted; it had no importers left.
+
+### Migration
+
+`20260818001000_store_contact_settings.sql` adds `store.phone`,
+`store.telegram`, `store.address` and `store.hours`, flagging the last two
+`is_localized`. It upserts rather than `do nothing`: four of the keys already
+existed on the linked project with `is_localized` left at its default, so a
+`do nothing` migration would have applied cleanly and left the address reading
+from the wrong column — saved, and invisible.
+
+### Verified
+
+94 live CRUD checks against the linked Supabase project, up from 61, including
+per-module create/update/publish/delete, storefront visibility as an anonymous
+visitor, and refusals for both anonymous visitors and signed-in customers on
+settings, stock, pages, banners, roles and admin records. `npm run verify`
+passes (175 database assertions plus the production build).
+
 ### Changed — the storefront is designed for a phone first
 
 Measured on a production build at 390px, before and after (**ADR-83**).

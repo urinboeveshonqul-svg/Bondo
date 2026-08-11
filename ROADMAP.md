@@ -477,7 +477,7 @@ verified against RLS with a second account.
 
 ## Phase 6 — Admin: connecting the panel
 
-**Status:** 🟡 5 of 11 modules connected (+1 read-only) · **Target version:** v0.6.0
+**Status:** ✅ All 11 modules connected (+1 read-only) · **Target version:** v0.6.0
 
 - [x] Server Actions over the services for brands, categories and products
 - [x] **Brands** — read and write, verified live
@@ -485,17 +485,28 @@ verified against RLS with a second account.
       unlimited nesting, drag & drop with a keyboard equivalent, icons, image
       upload to Storage, three languages, SEO. 36/36 live CRUD checks
 - [x] **Audit** — real `audit_logs`
-- [x] Live CRUD harness (`npm run admin:verify`, 23 checks through RLS)
+- [x] Live CRUD harness (`npm run admin:verify`, through RLS)
 - [x] **Products** — form, table, images and specifications all write to the
       database; 61/61 live CRUD checks and a browser walk-through
 - [x] **Product images** — upload, delete, primary and reorder over Storage,
       wired into the product editor. `ModuleMediaManager` itself is still unused
-- [ ] **Settings** — `settings.service.ts` exists, the 518-line form does not use it
-- [ ] **Inventory** — `inventory.service.ts` exists, the 455-line manager does not
-- [ ] **Content pages** — `content_pages` exists, no service
-- [ ] **Homepage** — **needs a migration first**; homepage sections have no table
-- [ ] **Users** — **needs a service first**; nothing lists customer profiles
-- [ ] Remove the "partly connected" banner once the last module lands
+- [x] **Settings** — the form edits the ten keys `settings` actually holds, with
+      `store.address` and `store.hours` localized into `setting_translations`.
+      Five tabs with no columns behind them are `planned` rather than fake
+- [x] **Inventory** — adjustments record real `inventory_movements`; the trigger
+      moves the level and refuses a direct write to it, both asserted live
+- [x] **Content pages** — create, translate, publish and soft-delete. Publishing
+      stamps `published_at`, which the check constraint requires
+- [x] **Homepage** — banners are fully editable. The _section_ editor is removed
+      rather than given an invented table: the home page builds its rails from
+      the category tree (ADR-75)
+- [x] **Users** — `users.service.ts` over `admins` + `profiles` + `user_roles`.
+      Job title, role grant and revoke, and disable, on three separate
+      permissions. Email addresses are unavailable by design (**D-31**)
+- [x] The "partly connected" banner is gone — derived from the registry, so
+      emptying the fixture list removed it (ADR-80)
+- [x] Live CRUD harness extended to **94 checks**, covering every module and the
+      anonymous/customer refusals for each new table
 
 ---
 
@@ -527,7 +538,7 @@ Built for 10+ concurrent admins.
       reachable in production** (resolves **K-1**; deletes `isAdminPreview` in
       `supabase/session.ts`, ADR-45)
 - [ ] Sign-in, so the redirect target exists (**K-2**)
-- [ ] Services behind every screen; delete `mocks/admin.ts` (**D-15**, **D-16**)
+- [x] Services behind every screen; `mocks/admin.ts` deleted (**D-15**)
 - [ ] Product image upload — needs Supabase Storage (**D-12**)
 - [ ] Order management: status transitions, refunds, notes — **needs an `orders`
       table, which arrives with Phase 4**

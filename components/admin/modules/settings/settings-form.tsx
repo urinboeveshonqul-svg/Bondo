@@ -1,67 +1,112 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { ImageOff, Save } from "lucide-react";
+import { Save } from "lucide-react";
 
+import { saveSettings } from "@/actions/settings.actions";
 import {
   ModuleFormRow,
   ModuleFormSection,
 } from "@/components/admin/module/module-form";
 import { ModuleTabs } from "@/components/admin/module/module-tabs";
 import { LocalizedField } from "@/components/admin/module/module-localized-field";
+import { PlannedSection } from "@/components/admin/modules/settings/planned-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import type { ModuleCapabilities } from "@/lib/admin/module";
-import { PlannedSection } from "@/components/admin/modules/settings/planned-section";
 import {
   SETTINGS_SECTIONS,
   type SettingsSectionId,
 } from "@/lib/admin/settings-sections";
-import type { StoreSettings } from "@/types/admin";
+import type { ModuleCapabilities } from "@/lib/admin/module";
+import type { LocalizedText } from "@/types/catalog";
+import type { EditableSettings } from "@/types/admin";
 
 /**
  * Store settings.
  *
- * `public.settings` is a key/value table grouped by prefix, so the tabs here are
- * the prefixes rather than an invented taxonomy — `store.*`, `commerce.*`,
- * `email.*`. Saving becomes one upsert per changed key.
+ * ## What changed, and why it is smaller than it was
  *
- * Localized where the value is copy a customer reads (tagline, address) and
- * plain where it is configuration (currency code, tax rate, sender address).
- * Getting that split wrong in either direction is the mistake: a translated
- * currency code is nonsense, and an English-only tagline appears on the Russian
- * storefront.
+ * This form used to render seven tabs of fields over a `storeSettings` fixture
+ * and call `notSaved()` on submit — a tax rate, sender addresses, four social
+ * URLs and a per-day opening-hours grid, none of which had a row in `settings`
+ * and every one of which discarded what an operator typed into it.
+ *
+ * It now edits the keys the table actually holds, and each one has a reader:
+ * `getStoreContact()` renders the contact page from `store.*`, and the catalog
+ * takes its page size from `catalog.*`. The tabs that had nothing behind them
+ * are `planned` in the registry, which states the gap instead of faking it.
+ *
+ * ## Localized where a customer reads it
+ *
+ * `store.address` and `store.hours` are prose and go to `setting_translations`,
+ * one row per language. A phone number is not prose — it is the same digits in
+ * all three, and a translated one is a wrong number.
  */
 export function SettingsForm({
   settings,
   capabilities,
 }: {
-  settings: StoreSettings;
+  settings: EditableSettings;
   capabilities: ModuleCapabilities;
 }) {
-  const canUpdate = capabilities.update;
   const t = useTranslations("adminSystem.settings");
   const tAdmin = useTranslations("admin");
-  const [draft, setDraft] = useState<StoreSettings>(settings);
+  const [draft, setDraft] = useState<EditableSettings>(settings);
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
-  function notSaved() {
-    toast(tAdmin("notSaved.title"), { description: tAdmin("notSaved.body") });
+  const canUpdate = capabilities.update;
+  const disabled = !canUpdate || pending;
+
+  const setPlain = (key: keyof EditableSettings["plain"], value: string) =>
+    setDraft((current) => ({
+      ...current,
+      plain: { ...current.plain, [key]: value },
+    }));
+
+  const setNumeric = (key: keyof EditableSettings["numeric"], value: number) =>
+    setDraft((current) => ({
+      ...current,
+      numeric: { ...current.numeric, [key]: value },
+    }));
+
+  const setLocalized = (
+    key: keyof EditableSettings["localized"],
+    value: LocalizedText,
+  ) =>
+    setDraft((current) => ({
+      ...current,
+      localized: { ...current.localized, [key]: value },
+    }));
+
+  function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!canUpdate) return;
+
+    startTransition(async () => {
+      const result = await saveSettings({
+        plain: draft.plain,
+        numeric: draft.numeric,
+        localized: draft.localized,
+      });
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(tAdmin("actions.save"));
+      // Re-reads the row that was just written, so the form shows what the
+      // database now holds rather than what was typed at it.
+      router.refresh();
+    });
   }
 
-  const disabled = !canUpdate;
-
-  /**
-   * One panel per registry entry. The strip, its order and its labels come
-   * from `SETTINGS_SECTIONS`; this object only says what goes inside each one,
-   * so adding a section cannot mean forgetting to add its tab.
-   */
   const panels: Record<SettingsSectionId, React.ReactNode> = {
-    // The planned tabs, rendered from the registry rather than written out
-    // here — so promoting one to `live` is one edit in one file.
     ...(Object.fromEntries(
       SETTINGS_SECTIONS.filter((section) => section.status === "planned").map(
         (section) => [
@@ -81,392 +126,111 @@ export function SettingsForm({
         title={t("store.title")}
         description={t("store.description")}
       >
-        <div className="space-y-1.5">
-          <Label htmlFor="store-name">{t("store.name")}</Label>
-          <Input
-            id="store-name"
-            value={draft.store.name}
-            disabled={disabled}
-            onChange={(event) =>
-              setDraft({
-                ...draft,
-                store: { ...draft.store, name: event.target.value },
-              })
-            }
-          />
-          <p className="text-xs text-muted-foreground">{t("store.nameHint")}</p>
-        </div>
-
-        <LocalizedField
-          label={t("store.tagline")}
-          value={draft.store.tagline}
+        <TextField
+          id="store-name"
+          label={t("store.name")}
+          hint={t("store.nameHint")}
+          value={draft.plain["store.name"]}
           disabled={disabled}
-          onChange={(tagline) =>
-            setDraft({ ...draft, store: { ...draft.store, tagline } })
-          }
+          onChange={(value) => setPlain("store.name", value)}
         />
 
         <ModuleFormRow>
-          <div className="space-y-1.5">
-            <Label htmlFor="store-email">{t("store.supportEmail")}</Label>
-            <Input
-              id="store-email"
-              type="email"
-              value={draft.store.supportEmail}
-              disabled={disabled}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  store: {
-                    ...draft.store,
-                    supportEmail: event.target.value,
-                  },
-                })
-              }
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="store-phone">{t("store.supportPhone")}</Label>
-            <Input
-              id="store-phone"
-              type="tel"
-              value={draft.store.supportPhone}
-              disabled={disabled}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  store: {
-                    ...draft.store,
-                    supportPhone: event.target.value,
-                  },
-                })
-              }
-            />
-          </div>
+          <TextField
+            id="store-email"
+            type="email"
+            label={t("store.supportEmail")}
+            value={draft.plain["store.support_email"]}
+            disabled={disabled}
+            onChange={(value) => setPlain("store.support_email", value)}
+          />
+          <TextField
+            id="store-phone"
+            type="tel"
+            label={t("store.supportPhone")}
+            hint={t("store.phoneHint")}
+            value={draft.plain["store.phone"]}
+            disabled={disabled}
+            onChange={(value) => setPlain("store.phone", value)}
+          />
         </ModuleFormRow>
+
+        <TextField
+          id="store-telegram"
+          label={t("store.telegram")}
+          value={draft.plain["store.telegram"]}
+          disabled={disabled}
+          onChange={(value) => setPlain("store.telegram", value)}
+        />
 
         <LocalizedField
           label={t("store.address")}
-          value={draft.store.addressLine}
+          hint={t("store.addressHint")}
+          value={draft.localized["store.address"]}
           disabled={disabled}
-          onChange={(addressLine) =>
-            setDraft({ ...draft, store: { ...draft.store, addressLine } })
-          }
+          onChange={(value) => setLocalized("store.address", value)}
+        />
+
+        <LocalizedField
+          label={t("store.hours")}
+          hint={t("store.hoursHint")}
+          value={draft.localized["store.hours"]}
+          disabled={disabled}
+          onChange={(value) => setLocalized("store.hours", value)}
         />
       </ModuleFormSection>
     ),
-    commerce: (
+
+    catalog: (
       <ModuleFormSection
-        id="commerce"
-        title={t("commerce.title")}
-        description={t("commerce.description")}
+        id="catalog"
+        title={t("catalog.title")}
+        description={t("catalog.description")}
       >
         <ModuleFormRow>
-          <div className="space-y-1.5">
-            <Label htmlFor="commerce-currency">{t("commerce.currency")}</Label>
-            <Input
-              id="commerce-currency"
-              value={draft.commerce.currency}
-              maxLength={3}
-              disabled={disabled}
-              className="font-mono uppercase"
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  commerce: {
-                    ...draft.commerce,
-                    currency: event.target.value.toUpperCase(),
-                  },
-                })
-              }
-            />
-            <p className="text-xs text-muted-foreground">
-              {t("commerce.currencyHint")}
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="commerce-tax">{t("commerce.taxRate")}</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="commerce-tax"
-                type="number"
-                min={0}
-                max={100}
-                step="0.1"
-                value={draft.commerce.taxRatePercent}
-                disabled={disabled}
-                className="tabular-nums"
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    commerce: {
-                      ...draft.commerce,
-                      taxRatePercent: Number(event.target.value) || 0,
-                    },
-                  })
-                }
-              />
-              <span className="text-sm text-muted-foreground">%</span>
-            </div>
-          </div>
-        </ModuleFormRow>
-
-        <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-          <Label htmlFor="commerce-inclusive" className="font-normal">
-            {t("commerce.taxInclusive")}
-          </Label>
-          <Switch
-            id="commerce-inclusive"
-            checked={draft.commerce.taxInclusivePricing}
+          <NumberField
+            id="catalog-per-page"
+            label={t("catalog.productsPerPage")}
+            hint={t("catalog.productsPerPageHint")}
+            value={draft.numeric["catalog.products_per_page"]}
             disabled={disabled}
-            onCheckedChange={(taxInclusivePricing) =>
-              setDraft({
-                ...draft,
-                commerce: { ...draft.commerce, taxInclusivePricing },
-              })
-            }
+            onChange={(value) => setNumeric("catalog.products_per_page", value)}
           />
-        </div>
-
-        <ModuleFormRow>
-          <MoneyField
-            id="commerce-free-delivery"
-            label={t("commerce.freeDelivery")}
-            cents={draft.commerce.freeDeliveryThresholdCents}
+          <NumberField
+            id="catalog-max-per-page"
+            label={t("catalog.maxProductsPerPage")}
+            hint={t("catalog.maxProductsPerPageHint")}
+            value={draft.numeric["catalog.max_products_per_page"]}
             disabled={disabled}
-            onChange={(freeDeliveryThresholdCents) =>
-              setDraft({
-                ...draft,
-                commerce: { ...draft.commerce, freeDeliveryThresholdCents },
-              })
-            }
-          />
-          <MoneyField
-            id="commerce-flat-fee"
-            label={t("commerce.flatFee")}
-            cents={draft.commerce.flatDeliveryFeeCents}
-            disabled={disabled}
-            onChange={(flatDeliveryFeeCents) =>
-              setDraft({
-                ...draft,
-                commerce: { ...draft.commerce, flatDeliveryFeeCents },
-              })
+            onChange={(value) =>
+              setNumeric("catalog.max_products_per_page", value)
             }
           />
         </ModuleFormRow>
-
-        <p className="text-xs text-muted-foreground">
-          {t("commerce.shippingNote")}
-        </p>
       </ModuleFormSection>
     ),
-    email: (
-      <ModuleFormSection
-        id="email"
-        title={t("email.title")}
-        description={t("email.description")}
-      >
-        <ModuleFormRow>
-          <div className="space-y-1.5">
-            <Label htmlFor="email-sender-name">{t("email.senderName")}</Label>
-            <Input
-              id="email-sender-name"
-              value={draft.email.senderName}
-              disabled={disabled}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  email: { ...draft.email, senderName: event.target.value },
-                })
-              }
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="email-sender-address">
-              {t("email.senderAddress")}
-            </Label>
-            <Input
-              id="email-sender-address"
-              type="email"
-              value={draft.email.senderAddress}
-              disabled={disabled}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  email: {
-                    ...draft.email,
-                    senderAddress: event.target.value,
-                  },
-                })
-              }
-            />
-          </div>
-        </ModuleFormRow>
 
-        <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-          <Label htmlFor="email-low-stock" className="font-normal">
-            {t("email.lowStockAlerts")}
-          </Label>
-          <Switch
-            id="email-low-stock"
-            checked={draft.email.lowStockAlerts}
-            disabled={disabled}
-            onCheckedChange={(lowStockAlerts) =>
-              setDraft({
-                ...draft,
-                email: { ...draft.email, lowStockAlerts },
-              })
-            }
-          />
-        </div>
-
-        <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-          <Label htmlFor="email-orders" className="font-normal">
-            {t("email.orderNotifications")}
-          </Label>
-          <Switch
-            id="email-orders"
-            checked={draft.email.orderNotifications}
-            disabled={disabled}
-            onCheckedChange={(orderNotifications) =>
-              setDraft({
-                ...draft,
-                email: { ...draft.email, orderNotifications },
-              })
-            }
-          />
-        </div>
-
-        <p className="text-xs text-muted-foreground">{t("email.notWired")}</p>
-      </ModuleFormSection>
-    ),
-    social: (
+    orders: (
       <ModuleFormSection
-        id="social"
-        title={t("social.title")}
-        description={t("social.description")}
+        id="orders"
+        title={t("orders.title")}
+        description={t("orders.description")}
       >
-        <ModuleFormRow>
-          {(["x", "youtube", "linkedin", "github"] as const).map((channel) => (
-            <div key={channel} className="space-y-1.5">
-              <Label htmlFor={`social-${channel}`}>
-                {t(`social.${channel}`)}
-              </Label>
-              <Input
-                id={`social-${channel}`}
-                type="url"
-                value={draft.social[channel]}
-                disabled={disabled}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    social: {
-                      ...draft.social,
-                      [channel]: event.target.value,
-                    },
-                  })
-                }
-              />
-            </div>
-          ))}
-        </ModuleFormRow>
-      </ModuleFormSection>
-    ),
-    branding: (
-      <ModuleFormSection
-        id="branding"
-        title={t("branding.title")}
-        description={t("branding.description")}
-      >
-        <div className="rounded-lg border border-dashed px-4 py-8 text-center">
-          <ImageOff
-            className="mx-auto size-6 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <p className="mt-2 text-sm font-medium">{t("branding.noLogo")}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("branding.uploadsUnavailable")}
-          </p>
-        </div>
-      </ModuleFormSection>
-    ),
-    hours: (
-      <ModuleFormSection
-        id="hours"
-        title={t("hours.title")}
-        description={t("hours.description")}
-      >
-        <ul className="space-y-2">
-          {draft.businessHours.map((day) => (
-            <li
-              key={day.day}
-              className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center"
-            >
-              <span className="text-sm font-medium">
-                {t(`hours.days.${day.day}`)}
-              </span>
-
-              {day.opens === null ? (
-                <span className="text-sm text-muted-foreground sm:col-span-3 sm:text-end">
-                  {t("hours.closed")}
-                </span>
-              ) : (
-                <>
-                  <Input
-                    type="time"
-                    value={day.opens}
-                    disabled={disabled}
-                    aria-label={`${t("hours.opens")} — ${t(`hours.days.${day.day}`)}`}
-                    className="w-32"
-                    onChange={(event) =>
-                      setDraft({
-                        ...draft,
-                        businessHours: draft.businessHours.map((current) =>
-                          current.day === day.day
-                            ? { ...current, opens: event.target.value }
-                            : current,
-                        ),
-                      })
-                    }
-                  />
-                  <span aria-hidden="true" className="text-muted-foreground">
-                    –
-                  </span>
-                  <Input
-                    type="time"
-                    value={day.closes ?? ""}
-                    disabled={disabled}
-                    aria-label={`${t("hours.closes")} — ${t(`hours.days.${day.day}`)}`}
-                    className="w-32"
-                    onChange={(event) =>
-                      setDraft({
-                        ...draft,
-                        businessHours: draft.businessHours.map((current) =>
-                          current.day === day.day
-                            ? { ...current, closes: event.target.value }
-                            : current,
-                        ),
-                      })
-                    }
-                  />
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+        <TextField
+          id="orders-low-stock"
+          type="email"
+          label={t("orders.lowStockEmail")}
+          hint={t("orders.lowStockEmailHint")}
+          value={draft.plain["orders.low_stock_email"]}
+          disabled={disabled}
+          onChange={(value) => setPlain("orders.low_stock_email", value)}
+        />
       </ModuleFormSection>
     ),
   };
 
   return (
-    <form
-      className="space-y-6"
-      onSubmit={(event) => {
-        event.preventDefault();
-        notSaved();
-      }}
-    >
+    <form className="space-y-6" onSubmit={onSubmit}>
       <ModuleTabs
         tabs={SETTINGS_SECTIONS.map((section) => ({
           id: section.id,
@@ -476,7 +240,7 @@ export function SettingsForm({
       />
 
       {canUpdate ? (
-        <Button type="submit">
+        <Button type="submit" disabled={pending}>
           <Save aria-hidden="true" />
           {tAdmin("actions.saveChanges")}
         </Button>
@@ -485,18 +249,52 @@ export function SettingsForm({
   );
 }
 
-function MoneyField({
+function TextField({
   id,
   label,
-  cents,
-  onChange,
+  hint,
+  value,
   disabled,
+  onChange,
+  type = "text",
 }: {
   id: string;
   label: string;
-  cents: number;
-  onChange: (cents: number) => void;
+  hint?: string;
+  value: string;
   disabled: boolean;
+  onChange: (value: string) => void;
+  type?: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        type={type}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function NumberField({
+  id,
+  label,
+  hint,
+  value,
+  disabled,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  value: number;
+  disabled: boolean;
+  onChange: (value: number) => void;
 }) {
   return (
     <div className="space-y-1.5">
@@ -504,15 +302,14 @@ function MoneyField({
       <Input
         id={id}
         type="number"
-        min={0}
-        step="0.01"
-        value={(cents / 100).toFixed(2)}
+        min={1}
+        max={200}
+        value={value}
         disabled={disabled}
         className="tabular-nums"
-        onChange={(event) =>
-          onChange(Math.round(Number(event.target.value) * 100) || 0)
-        }
+        onChange={(event) => onChange(Number(event.target.value) || 1)}
       />
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

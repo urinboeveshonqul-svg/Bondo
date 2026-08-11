@@ -800,20 +800,23 @@ export async function getInfoPage(key: string): Promise<ContentPage> {
  * the settings table should still render its copy and say the details are not
  * available, because the copy is the part that tells the reader what to do.
  */
-export async function getStoreContact(): Promise<StoreContact> {
-  const text = (value: unknown): string | null =>
-    typeof value === "string" && value.trim() ? value.trim() : null;
-
+export async function getStoreContact(locale: Locale): Promise<StoreContact> {
   try {
     const supabase = await createClient();
-    const settings = await settingsService.getPublicSettings(supabase);
+    // Locale-aware: `store.address` and `store.hours` are prose and live in
+    // `setting_translations`, so reading `settings.value` alone reports them
+    // unset no matter how carefully an operator filled them in.
+    const settings = await settingsService.getPublicSettingsForLocale(
+      supabase,
+      locale,
+    );
 
     return {
-      phone: text(settings["store.phone"]),
-      telegram: text(settings["store.telegram"]),
-      email: text(settings["store.support_email"]),
-      address: text(settings["store.address"]),
-      hours: text(settings["store.hours"]),
+      phone: settings["store.phone"] ?? null,
+      telegram: settings["store.telegram"] ?? null,
+      email: settings["store.support_email"] ?? null,
+      address: settings["store.address"] ?? null,
+      hours: settings["store.hours"] ?? null,
     };
   } catch (error) {
     unstable_rethrow(error);

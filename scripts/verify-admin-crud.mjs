@@ -51,6 +51,10 @@ const PASSWORD = `Crud-${stamp}-Aa1!`;
 
 let userId = null;
 const made = {
+  banner: null,
+  contentPage: null,
+  mateUser: null,
+  settingsBefore: [],
   brand: null,
   category: null,
   childCategory: null,
@@ -948,6 +952,365 @@ try {
   check("BRAND soft delete", !brandDel.error, brandDel.error?.message);
 
   // ---------------------------------------------------------------------------
+  // SETTINGS — key/value plus localized text
+  // ---------------------------------------------------------------------------
+  // Every key touched here is one the storefront reads: getStoreContact()
+  // renders the contact page from store.*. The originals are captured and put
+  // back in the finally block, because these are live rows, not throwaways.
+  const settingsBefore = await asAdmin
+    .from("settings")
+    .select("key, value")
+    .in("key", ["store.phone", "store.name"]);
+  check(
+    "SETTINGS read (settings.read)",
+    !settingsBefore.error && (settingsBefore.data?.length ?? 0) === 2,
+    settingsBefore.error?.message ??
+      (settingsBefore.data?.length ?? 0) + " rows",
+  );
+  made.settingsBefore = settingsBefore.data ?? [];
+
+  const phoneValue = "+998 90 000 " + String(stamp).slice(-4);
+  const settingWrite = await asAdmin
+    .from("settings")
+    .upsert({ key: "store.phone", value: phoneValue }, { onConflict: "key" })
+    .select("key")
+    .single();
+  check(
+    "SETTINGS update (settings.update)",
+    !settingWrite.error,
+    settingWrite.error?.message,
+  );
+
+  const settingReadBack = await asAdmin
+    .from("settings")
+    .select("value")
+    .eq("key", "store.phone")
+    .single();
+  check(
+    "SETTINGS persisted after a re-read",
+    settingReadBack.data?.value === phoneValue,
+    JSON.stringify(settingReadBack.data?.value),
+  );
+
+  const trWrite = await asAdmin
+    .from("setting_translations")
+    .upsert(
+      {
+        setting_key: "store.address",
+        locale: "uz",
+        value: "Toshkent " + stamp,
+      },
+      { onConflict: "setting_key,locale" },
+    )
+    .select("value")
+    .single();
+  check(
+    "SETTINGS localized value written (setting_translations)",
+    !trWrite.error && trWrite.data?.value === "Toshkent " + stamp,
+    trWrite.error?.message ?? trWrite.data?.value,
+  );
+
+  const anonSetting = await anon
+    .from("settings")
+    .select("value")
+    .eq("key", "store.phone")
+    .maybeSingle();
+  check(
+    "STOREFRONT reads the public setting (anonymous)",
+    !anonSetting.error && anonSetting.data?.value === phoneValue,
+    anonSetting.error?.message ?? JSON.stringify(anonSetting.data?.value),
+  );
+
+  // ---------------------------------------------------------------------------
+  // INVENTORY — stock moves only through the ledger
+  // ---------------------------------------------------------------------------
+  const stockBefore = await asAdmin
+    .from("inventory")
+    .select("quantity_on_hand")
+    .eq("product_id", made.product)
+    .single();
+  check(
+    "INVENTORY read (inventory.read)",
+    !stockBefore.error,
+    stockBefore.error?.message,
+  );
+
+  const movement = await asAdmin
+    .from("inventory_movements")
+    .insert({
+      product_id: made.product,
+      movement_type: "purchase",
+      quantity_delta: 7,
+      quantity_after: 0,
+      reason: "crud check " + stamp,
+    })
+    .select("id, quantity_after")
+    .single();
+  check(
+    "INVENTORY movement recorded (inventory.adjust)",
+    !movement.error,
+    movement.error?.message,
+  );
+
+  const stockAfter = await asAdmin
+    .from("inventory")
+    .select("quantity_on_hand")
+    .eq("product_id", made.product)
+    .single();
+  check(
+    "INVENTORY level moved by the trigger, not by the client",
+    stockAfter.data?.quantity_on_hand ===
+      (stockBefore.data?.quantity_on_hand ?? 0) + 7,
+    stockBefore.data?.quantity_on_hand +
+      " -> " +
+      stockAfter.data?.quantity_on_hand,
+  );
+
+  const directStock = await asAdmin
+    .from("inventory")
+    .update({ quantity_on_hand: 9999 })
+    .eq("product_id", made.product)
+    .select("quantity_on_hand");
+  check(
+    "INVENTORY refuses a direct quantity write (ADR-24 trigger)",
+    directStock.error !== null,
+    directStock.error?.code ?? "UPDATE SUCCEEDED — LEDGER BYPASSED",
+  );
+
+  const threshold = await asAdmin
+    .from("inventory")
+    .update({ low_stock_threshold: 3 })
+    .eq("product_id", made.product)
+    .select("low_stock_threshold")
+    .single();
+  check(
+    "INVENTORY threshold update",
+    !threshold.error && threshold.data?.low_stock_threshold === 3,
+    threshold.error?.message,
+  );
+
+  // ---------------------------------------------------------------------------
+  // CONTENT PAGES — parent row plus three translations
+  // ---------------------------------------------------------------------------
+  const pageKey = "crud-page-" + stamp;
+  const pageIns = await asAdmin
+    .from("content_pages")
+    .insert({ key: pageKey, is_published: false, display_order: 900 })
+    .select("id")
+    .single();
+  check(
+    "CONTENT PAGE create (banners.manage)",
+    !pageIns.error,
+    pageIns.error?.message,
+  );
+  made.contentPage = pageIns.data?.id ?? null;
+
+  const pageTr = await asAdmin.from("content_page_translations").upsert(
+    ["uz", "ru", "en"].map((locale) => ({
+      page_id: made.contentPage,
+      locale,
+      title: "CRUD " + locale + " " + stamp,
+      body: "Body " + locale,
+    })),
+    { onConflict: "page_id,locale" },
+  );
+  check(
+    "CONTENT PAGE translations written in all three languages",
+    !pageTr.error,
+    pageTr.error?.message,
+  );
+
+  const anonDraftPage = await anon
+    .from("content_pages")
+    .select("id")
+    .eq("id", made.contentPage)
+    .maybeSingle();
+  check(
+    "STOREFRONT does not see an unpublished page",
+    !anonDraftPage.error && anonDraftPage.data === null,
+    anonDraftPage.data ? "visible" : "hidden",
+  );
+
+  const publishPage = await asAdmin
+    .from("content_pages")
+    .update({ is_published: true, published_at: new Date().toISOString() })
+    .eq("id", made.contentPage)
+    .select("is_published")
+    .single();
+  check(
+    "CONTENT PAGE publish (published_at required by check constraint)",
+    !publishPage.error && publishPage.data?.is_published === true,
+    publishPage.error?.message,
+  );
+  const anonLivePage = await anon
+    .from("content_pages")
+    .select("id, translations:content_page_translations(locale, title)")
+    .eq("id", made.contentPage)
+    .maybeSingle();
+  check(
+    "STOREFRONT sees the page once published (anonymous)",
+    !anonLivePage.error && anonLivePage.data?.translations?.length === 3,
+    anonLivePage.error?.message ??
+      (anonLivePage.data?.translations?.length ?? 0) + " translations",
+  );
+
+  const pageSoftDelete = await asAdmin
+    .from("content_pages")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", made.contentPage)
+    .select("deleted_at")
+    .single();
+  check(
+    "CONTENT PAGE soft delete",
+    !pageSoftDelete.error,
+    pageSoftDelete.error?.message,
+  );
+  await asAdmin
+    .from("content_pages")
+    .update({ deleted_at: null, is_published: false })
+    .eq("id", made.contentPage);
+
+  // ---------------------------------------------------------------------------
+  // BANNERS — the homepage module
+  // ---------------------------------------------------------------------------
+  const bannerIns = await asAdmin
+    .from("site_banners")
+    .insert({ placement: "home_hero", display_order: 900, is_active: false })
+    .select("id")
+    .single();
+  check(
+    "BANNER create (banners.manage)",
+    !bannerIns.error,
+    bannerIns.error?.message,
+  );
+  made.banner = bannerIns.data?.id ?? null;
+
+  const bannerTr = await asAdmin.from("banner_translations").upsert(
+    ["uz", "ru", "en"].map((locale) => ({
+      banner_id: made.banner,
+      locale,
+      title: "Banner " + locale + " " + stamp,
+    })),
+    { onConflict: "banner_id,locale" },
+  );
+  check(
+    "BANNER translations written in all three languages",
+    !bannerTr.error,
+    bannerTr.error?.message,
+  );
+
+  const bannerPublish = await asAdmin
+    .from("site_banners")
+    .update({ is_active: true })
+    .eq("id", made.banner)
+    .select("is_active")
+    .single();
+  check(
+    "BANNER activate",
+    !bannerPublish.error && bannerPublish.data?.is_active === true,
+    bannerPublish.error?.message,
+  );
+
+  const anonBanner = await anon
+    .from("site_banners")
+    .select("id")
+    .eq("id", made.banner)
+    .maybeSingle();
+  check(
+    "STOREFRONT sees the active banner (anonymous)",
+    !anonBanner.error && anonBanner.data?.id === made.banner,
+    anonBanner.error?.message ?? (anonBanner.data ? "visible" : "not visible"),
+  );
+
+  // ---------------------------------------------------------------------------
+  // TEAM — administrators, roles and grants
+  // ---------------------------------------------------------------------------
+  const teamRead = await asAdmin
+    .from("admins")
+    .select("id, user_id, is_active");
+  check(
+    "TEAM read (admins)",
+    !teamRead.error && (teamRead.data?.length ?? 0) >= 1,
+    teamRead.error?.message ?? (teamRead.data?.length ?? 0) + " admins",
+  );
+
+  const rolesRead = await asAdmin.from("roles").select("id, key");
+  check(
+    "TEAM roles read",
+    !rolesRead.error && (rolesRead.data?.length ?? 0) === 5,
+    rolesRead.error?.message ?? (rolesRead.data?.length ?? 0) + " roles",
+  );
+
+  const jobTitle = await asAdmin
+    .from("admins")
+    .update({ job_title: "CRUD tester " + stamp })
+    .eq("user_id", userId)
+    .select("job_title")
+    .single();
+  check(
+    "TEAM job title update (users.update)",
+    !jobTitle.error && jobTitle.data?.job_title === "CRUD tester " + stamp,
+    jobTitle.error?.message,
+  );
+
+  // A second administrator to grant a role to. Never the actor: the action
+  // refuses to touch its own grants, and this proves the grant path, not that.
+  const mateEmail = "mate-" + stamp + "@bondo.test";
+  const mate = await admin.auth.admin.createUser({
+    email: mateEmail,
+    password: PASSWORD,
+    email_confirm: true,
+  });
+  made.mateUser = mate.data?.user?.id ?? null;
+  await admin
+    .from("admins")
+    .insert({ user_id: made.mateUser, is_active: true });
+
+  const editorRole = (rolesRead.data ?? []).find(
+    (role) => role.key === "content_editor",
+  );
+  const grant = await asAdmin
+    .from("user_roles")
+    .insert({ user_id: made.mateUser, role_id: editorRole?.id })
+    .select("user_id")
+    .single();
+  check(
+    "TEAM role granted (users.assign_roles)",
+    !grant.error,
+    grant.error?.message,
+  );
+
+  const grantReadBack = await asAdmin
+    .from("user_roles")
+    .select("role:roles(key)")
+    .eq("user_id", made.mateUser);
+  check(
+    "TEAM grant persisted",
+    grantReadBack.data?.[0]?.role?.key === "content_editor",
+    grantReadBack.data?.[0]?.role?.key ?? "no grant",
+  );
+
+  const revoke = await asAdmin
+    .from("user_roles")
+    .delete()
+    .eq("user_id", made.mateUser)
+    .eq("role_id", editorRole?.id)
+    .select("user_id");
+  check("TEAM role revoked", !revoke.error, revoke.error?.message);
+
+  const disable = await asAdmin
+    .from("admins")
+    .update({ is_active: false })
+    .eq("user_id", made.mateUser)
+    .select("is_active")
+    .single();
+  check(
+    "TEAM administrator disabled (admins.manage)",
+    !disable.error && disable.data?.is_active === false,
+    disable.error?.message,
+  );
+
+  // ---------------------------------------------------------------------------
   // A customer must be refused every one of these
   // ---------------------------------------------------------------------------
   const custEmail = `cust-${stamp}@bondo.test`;
@@ -994,6 +1357,75 @@ try {
     "a signed-in customer cannot create a category (RLS)",
     custCategory.error !== null,
     custCategory.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const custSetting = await asCustomer
+    .from("settings")
+    .update({ value: "hacked" })
+    .eq("key", "store.name")
+    .select("key");
+  check(
+    "a signed-in customer cannot change a setting (RLS)",
+    custSetting.error !== null || custSetting.data?.length === 0,
+    custSetting.error?.code ??
+      (custSetting.data?.length ?? 0) + " row(s) updated",
+  );
+
+  const custMovement = await asCustomer
+    .from("inventory_movements")
+    .insert({
+      product_id: made.product,
+      movement_type: "purchase",
+      quantity_delta: 100,
+      quantity_after: 0,
+    })
+    .select("id");
+  check(
+    "a signed-in customer cannot move stock (RLS)",
+    custMovement.error !== null,
+    custMovement.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const custPage = await asCustomer
+    .from("content_pages")
+    .insert({ key: "nope-" + stamp, display_order: 1 })
+    .select("id");
+  check(
+    "a signed-in customer cannot create a content page (RLS)",
+    custPage.error !== null,
+    custPage.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const custBanner = await asCustomer
+    .from("site_banners")
+    .insert({ placement: "home_hero", display_order: 1 })
+    .select("id");
+  check(
+    "a signed-in customer cannot create a banner (RLS)",
+    custBanner.error !== null,
+    custBanner.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const custRole = await asCustomer
+    .from("user_roles")
+    .insert({ user_id: made.mateUser, role_id: null })
+    .select("user_id");
+  check(
+    "a signed-in customer cannot grant themselves a role (RLS)",
+    custRole.error !== null,
+    custRole.error?.code ?? "INSERT SUCCEEDED — RLS HOLE",
+  );
+
+  const custAdmins = await asCustomer
+    .from("admins")
+    .update({ is_active: true })
+    .eq("user_id", made.mateUser)
+    .select("user_id");
+  check(
+    "a signed-in customer cannot re-enable an administrator (RLS)",
+    custAdmins.error !== null || custAdmins.data?.length === 0,
+    custAdmins.error?.code ??
+      (custAdmins.data?.length ?? 0) + " row(s) updated",
   );
 
   const custPublish = await asCustomer
@@ -1061,6 +1493,36 @@ try {
   check("admin CRUD run", false, error.message ?? String(error));
 } finally {
   // Clean up whatever exists, in dependency order.
+  for (const row of made.settingsBefore ?? []) {
+    await admin
+      .from("settings")
+      .update({ value: row.value })
+      .eq("key", row.key);
+  }
+  await admin
+    .from("setting_translations")
+    .delete()
+    .eq("setting_key", "store.address")
+    .like("value", "Toshkent %");
+  if (made.banner) {
+    await admin
+      .from("banner_translations")
+      .delete()
+      .eq("banner_id", made.banner);
+    await admin.from("site_banners").delete().eq("id", made.banner);
+  }
+  if (made.contentPage) {
+    await admin
+      .from("content_page_translations")
+      .delete()
+      .eq("page_id", made.contentPage);
+    await admin.from("content_pages").delete().eq("id", made.contentPage);
+  }
+  if (made.mateUser) {
+    await admin.from("user_roles").delete().eq("user_id", made.mateUser);
+    await admin.from("admins").delete().eq("user_id", made.mateUser);
+    await admin.auth.admin.deleteUser(made.mateUser);
+  }
   if (made.upload) await admin.storage.from("products").remove([made.upload]);
   if (made.uploads.length > 0) {
     await admin.storage.from("products").remove(made.uploads);

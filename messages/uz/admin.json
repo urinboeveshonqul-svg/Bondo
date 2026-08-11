@@ -96,7 +96,9 @@
     "hide": "Yashirish",
     "show": "Ko'rsatish",
     "saving": "Saqlanmoqda…",
-    "restore": "Tiklash"
+    "restore": "Tiklash",
+    "disable": "O'chirish",
+    "enable": "Yoqish"
   },
   "status": {
     "draft": "Qoralama",
@@ -232,5 +234,8 @@
       "advanced": "Qo'shimcha",
       "publish": "Chop etish"
     }
+  },
+  "columns": {
+    "actions": "Amallar"
   }
 }

@@ -271,27 +271,55 @@ export type HomepageSection = {
 };
 
 /** Mirrors `public.site_banners`. */
-export type Banner = {
-  id: string;
-  title: LocalizedText;
-  subtitle: LocalizedText;
-  ctaLabel: LocalizedText;
-  ctaHref: string;
-  isVisible: boolean;
+/**
+ * A banner as the editor holds it.
+ *
+ * Mirrors `site_banners` plus `banner_translations` (§ 12). The shape it
+ * replaced had a `ctaHref` and an `isVisible` that matched no column —
+ * `link_url` and `is_active` are what the table calls them, and a rename in
+ * the type is a rename somebody has to undo before every write.
+ */
+export type EditableBanner = {
+  /** Absent while the banner is being created. */
+  id?: string;
+  placement:
+    "home_hero" | "home_secondary" | "category_top" | "site_wide_notice";
+  linkUrl: string;
+  displayOrder: number;
+  isActive: boolean;
   /** ISO 8601, or `null` for "live now" / "no end". */
   startsAt: string | null;
   endsAt: string | null;
+  title: LocalizedText;
+  subtitle: LocalizedText;
+  ctaLabel: LocalizedText;
 };
 
-export type ContentPage = {
-  slug: string;
+/**
+ * A business-information page as the editor holds it.
+ *
+ * Mirrors `content_pages` + `content_page_translations` column for column
+ * (§ 12). The shape it replaced had a `slug`, an `updatedBy` name and a full
+ * `SeoFields` block including a canonical URL and a keyword list — three fields
+ * with no column behind them, on a form whose submit handler discarded
+ * everything anyway.
+ *
+ * Every string is present for all three locales rather than optional: the editor
+ * renders controlled inputs, and `undefined` turns one uncontrolled on the
+ * first keystroke.
+ */
+export type EditableContentPage = {
+  /** Absent for a page being created. */
+  id?: string;
+  /** The storefront path segment and the lookup key. */
+  key: string;
+  isPublished: boolean;
+  displayOrder: number;
   title: LocalizedText;
   excerpt: LocalizedText;
   body: LocalizedText;
-  seo: SeoFields;
-  isPublished: boolean;
-  updatedAt: string;
-  updatedBy: string;
+  seoTitle: LocalizedText;
+  seoDescription: LocalizedText;
 };
 
 // -----------------------------------------------------------------------------
@@ -299,6 +327,35 @@ export type ContentPage = {
 // -----------------------------------------------------------------------------
 
 /** Mirrors `public.settings`, which is a key/value store grouped by prefix. */
+/**
+ * The settings the admin panel may edit, shaped for the form.
+ *
+ * Three buckets because the database has three storage shapes: a jsonb string,
+ * a jsonb number, and prose in `setting_translations`. Collapsing them would
+ * leave the form unable to tell which table a field writes to.
+ *
+ * The keys are the `settings` primary keys verbatim, not camelCase aliases —
+ * a rename here would have to be undone before the upsert, and the mapping
+ * layer is where a typo becomes a silently ignored save.
+ */
+export type EditableSettings = {
+  plain: {
+    "store.name": string;
+    "store.support_email": string;
+    "store.phone": string;
+    "store.telegram": string;
+    "orders.low_stock_email": string;
+  };
+  numeric: {
+    "catalog.products_per_page": number;
+    "catalog.max_products_per_page": number;
+  };
+  localized: {
+    "store.address": LocalizedText;
+    "store.hours": LocalizedText;
+  };
+};
+
 export type StoreSettings = {
   store: {
     name: string;

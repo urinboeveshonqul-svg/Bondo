@@ -38,11 +38,19 @@
         "ctaHref": "Tugma havolasi",
         "startsAt": "Boshlanishi",
         "endsAt": "Tugashi",
-        "visible": "Ko'rinadi"
+        "visible": "Ko'rinadi",
+        "placement": "Qayerda ko'rinadi"
       },
       "always": "Doim yoqilgan",
       "scheduled": "{from} → {to}",
-      "openEnded": "tugash sanasi yo'q"
+      "openEnded": "tugash sanasi yo'q",
+      "dialogHint": "Banner uch tilda ham to'ldirilishi kerak, aks holda u o'sha tildagi xaridorga ko'rinmaydi."
+    },
+    "placements": {
+      "home_hero": "Bosh sahifa — asosiy",
+      "home_secondary": "Bosh sahifa — qo'shimcha",
+      "category_top": "Kategoriya tepasi",
+      "site_wide_notice": "Sayt bo'ylab e'lon"
     }
   },
   "pages": {
@@ -62,7 +70,7 @@
       "title": "Sahifani tahrirlash",
       "sections": {
         "content": "Matn",
-        "seo": "Qidiruvdagi ko'rinish",
+        "seo": "Qidiruv tizimlari uchun",
         "publishing": "Chop etish"
       },
       "fields": {
@@ -70,8 +78,17 @@
         "excerpt": "Qisqacha",
         "body": "Matn",
         "slug": "URL manzili",
-        "published": "Chop etilgan"
+        "published": "Chop etilgan",
+        "seoTitle": "Sarlavha (qidiruv uchun)",
+        "seoDescription": "Qisqacha tavsif (qidiruv uchun)",
+        "slugHint": "Sahifa manzili. Yaratilgandan keyin o'zgartirilmaydi."
       }
     }
+  },
+  "errors": {
+    "titleRequired": "Sarlavhani yozing",
+    "titleTooLong": "Sarlavha juda uzun",
+    "keyFormat": "Manzilda faqat kichik lotin harflari va chiziqcha bo'ladi",
+    "endBeforeStart": "Tugash sanasi boshlanishidan keyin bo'lsin"
   }
 }

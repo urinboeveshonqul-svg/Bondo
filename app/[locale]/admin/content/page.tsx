@@ -14,7 +14,8 @@ import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/auth/guards";
 import { routes } from "@/lib/routes";
 import type { Locale } from "@/lib/site-config";
-import { contentPages } from "@/mocks/admin";
+import { createClient } from "@/supabase/server";
+import * as contentService from "@/services/content-pages.service";
 import type { PageParams } from "@/types";
 import { formatDate } from "@/utils/format";
 
@@ -36,6 +37,11 @@ export default async function AdminContentPage({
   const tAdmin = await getTranslations("admin");
   const activeLocale = (await getLocale()) as Locale;
 
+  // Drafts included: they are the pages that need an editor's attention, and
+  // the storefront reader is a different function for exactly that reason.
+  const supabase = await createClient();
+  const pages = await contentService.listAllContentPages(supabase);
+
   return (
     <>
       <ModuleHeader
@@ -46,21 +52,17 @@ export default async function AdminContentPage({
 
       <ModuleReadOnlyNotice id="content" permissions={permissions} />
 
-      <p className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
-        {t("notLinkedYet")}
-      </p>
-
       {/* Cards rather than a table: eight pages with a title, a path and a
           state are not rows, and `ModuleCard` keeps them on the same grid as
           every other module rather than making this the screen that looks
           different. */}
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {contentPages.map((page) => (
-          <li key={page.slug}>
+        {pages.map((page) => (
+          <li key={page.id}>
             <ModuleCard
               className="h-full"
               title={page.title[activeLocale]}
-              subtitle={`/${page.slug}`}
+              subtitle={`/${page.key}`}
               badge={
                 <ModuleStatusBadge
                   tone={page.isPublished ? "success" : "neutral"}
@@ -68,10 +70,13 @@ export default async function AdminContentPage({
                   {page.isPublished ? t("published") : t("draft")}
                 </ModuleStatusBadge>
               }
-              footer={`${tAdmin("updatedBy", { name: page.updatedBy })} · ${formatDate(page.updatedAt, activeLocale)}`}
+              // No "updated by": `content_pages` records `updated_by` as a
+              // uuid, and resolving it to a name needs a profiles join RLS may
+              // refuse. The audit log is where "who" is answered.
+              footer={formatDate(page.updatedAt, activeLocale)}
               actions={
                 <Button asChild size="sm" variant="outline">
-                  <Link href={routes.admin.contentPage(page.slug)}>
+                  <Link href={routes.admin.contentPage(page.key)}>
                     <Pencil aria-hidden="true" />
                     {tAdmin("actions.edit")}
                   </Link>
