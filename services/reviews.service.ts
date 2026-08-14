@@ -169,6 +169,8 @@ export async function listReviewableProducts(
        )`,
     )
     .eq("status", "delivered")
+    // A retired order is not a purchase somebody can review.
+    .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
   if (error) throw toAppError(error, "load what you can review");
@@ -235,6 +237,7 @@ export async function canReviewProduct(
     .from("orders")
     .select(`id, items:order_items!inner ( product_id )`)
     .eq("status", "delivered")
+    .is("deleted_at", null)
     .eq("order_items.product_id", productId)
     .order("updated_at", { ascending: false })
     .limit(1);

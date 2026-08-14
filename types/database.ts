@@ -718,6 +718,7 @@ export type Database = {
           created_at: string
           currency: string
           customer_name: string
+          deleted_at: string | null
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
           email: string | null
@@ -749,6 +750,7 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_name: string
+          deleted_at?: string | null
           delivery_fee_cents?: number
           delivery_method?: Database["public"]["Enums"]["delivery_method"]
           email?: string | null
@@ -780,6 +782,7 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_name?: string
+          deleted_at?: string | null
           delivery_fee_cents?: number
           delivery_method?: Database["public"]["Enums"]["delivery_method"]
           email?: string | null
@@ -1782,6 +1785,7 @@ export type Database = {
           created_at: string
           currency: string
           customer_name: string
+          deleted_at: string | null
           delivery_fee_cents: number
           delivery_method: Database["public"]["Enums"]["delivery_method"]
           email: string | null

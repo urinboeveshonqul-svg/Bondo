@@ -8,6 +8,25 @@ import type { Database, Enums, Tables, TablesUpdate } from "@/types/database";
 
 type Client = SupabaseClient<Database>;
 
+/**
+ * Every read in this file filters `deleted_at is null`.
+ *
+ * An order cannot be deleted — `order_status_history` is append-only and
+ * cascades from `orders`, so the delete aborts on the ledger's trigger. Retiring
+ * one therefore means setting `deleted_at`, exactly as `products` and `brands`
+ * already work.
+ *
+ * The filter is applied per query rather than centrally on purpose. There is no
+ * single chokepoint here: `applyFilters` only ever sees the operator's own
+ * filters, and hiding a visibility rule inside it would mean the two functions
+ * that skip it silently return retired rows. RLS is not the place either — the
+ * `orders.read` policy must keep returning retired orders so support can look
+ * one up by reference.
+ *
+ * The write paths (`updateOrderStatus`, `updateOrderDetails`) are deliberately
+ * not filtered: they are reached only from the detail screen, which `getOrder`
+ * already gates, and an admin correcting a retired order is not a bug.
+ */
 export type OrderStatus = Enums<"order_status">;
 
 /** A row of the admin list. Deliberately narrow — the table shows no more. */
@@ -117,6 +136,7 @@ export async function listOrders(
     supabase
       .from("orders")
       .select(LIST_COLUMNS, { count: "exact" })
+      .is("deleted_at", null)
       .order("placed_at", { ascending: false })
       .range(from, from + pagination.perPage - 1),
     filters,
@@ -161,6 +181,7 @@ export async function getOrder(
        timeline:order_status_history ( * )`,
     )
     .eq("id", id)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (error) throw toAppError(error, "load the order");
@@ -287,6 +308,7 @@ export async function listOrdersByPhone(
     .from("orders")
     .select(LIST_COLUMNS)
     .eq("phone", phone)
+    .is("deleted_at", null)
     .order("placed_at", { ascending: false })
     .limit(options.limit ?? 20);
 
@@ -304,6 +326,50 @@ export async function listOrdersByPhone(
 }
 
 /** A signed-in customer's own orders. RLS scopes this to them. */
+/**
+ * The contact and delivery details this customer last gave us.
+ *
+ * Its own read rather than a widened `listMyOrders`: the list projection is
+ * deliberately narrow because it renders a table, and widening it would ship a
+ * customer's address to a screen that shows a reference and a total.
+ *
+ * RLS is the scope. The `user_id` filter is legibility — the policy returns
+ * nothing for anyone else's rows whether or not this function asks (ADR-4).
+ */
+export async function getLatestOrderDetails(
+  supabase: Client,
+  userId: string,
+): Promise<Pick<
+  Tables<"orders">,
+  | "first_name"
+  | "last_name"
+  | "phone"
+  | "phone_secondary"
+  | "telegram"
+  | "email"
+  | "region"
+  | "city"
+  | "delivery_method"
+  | "address"
+  | "pickup_location"
+> | null> {
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      `first_name, last_name, phone, phone_secondary, telegram, email,
+       region, city, delivery_method, address, pickup_location`,
+    )
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .order("placed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw toAppError(error, "load your saved details");
+
+  return data ?? null;
+}
+
 export async function listMyOrders(
   supabase: Client,
   userId: string,
@@ -312,6 +378,7 @@ export async function listMyOrders(
     .from("orders")
     .select(LIST_COLUMNS)
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .order("placed_at", { ascending: false });
 
   if (error) throw toAppError(error, "load your orders");
@@ -362,6 +429,7 @@ export async function exportOrders(
          subtotal_cents, delivery_fee_cents, total_cents, currency,
          items:order_items ( product_name, sku, quantity )`,
       )
+      .is("deleted_at", null)
       .order("placed_at", { ascending: false })
       .limit(ORDER_EXPORT_LIMIT),
     filters,
@@ -487,7 +555,8 @@ export type OrderTotals = {
 export async function getOrderTotals(supabase: Client): Promise<OrderTotals> {
   const { data, error } = await supabase
     .from("orders")
-    .select("status, total_cents");
+    .select("status, total_cents")
+    .is("deleted_at", null);
 
   if (error) throw toAppError(error, "load the order figures");
 
@@ -509,7 +578,10 @@ export async function getOrderTotals(supabase: Client): Promise<OrderTotals> {
 export async function countOrdersByStatus(
   supabase: Client,
 ): Promise<Record<OrderStatus, number>> {
-  const { data, error } = await supabase.from("orders").select("status");
+  const { data, error } = await supabase
+    .from("orders")
+    .select("status")
+    .is("deleted_at", null);
 
   if (error) throw toAppError(error, "count the orders");
 
