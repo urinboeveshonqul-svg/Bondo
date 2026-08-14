@@ -17,18 +17,31 @@
  * covered by typecheck and the production build. The SQL below is deliberately
  * the same shape those services issue.
  */
-import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
-const env = Object.fromEntries(
-  readFileSync(".env.local", "utf8")
-    .split("\n")
-    .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
-    .map((l) => {
-      const i = l.indexOf("=");
-      return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
-    }),
-);
+import { harnessTarget } from "./harness-target.mjs";
+
+/*
+  The target is resolved, not assumed.
+
+  This script mints administrators, writes products, brands, orders and content,
+  and leaves `inventory_movements` rows that can never be deleted. It used to
+  read `.env.local` — production — because that was the only path it had. See
+  `scripts/harness-target.mjs` and **K-26**.
+
+  `needsAnonKey` because the whole point is to sign in as a real administrator
+  and write through RLS; the service role only mints the user.
+*/
+const target = harnessTarget({
+  name: "verify-admin-crud",
+  needsAnonKey: true,
+});
+
+const env = {
+  NEXT_PUBLIC_SUPABASE_URL: target.url,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: target.anonKey,
+  SUPABASE_SERVICE_ROLE_KEY: target.serviceRoleKey,
+};
 
 const admin = createClient(
   env.NEXT_PUBLIC_SUPABASE_URL,
@@ -66,6 +79,38 @@ const made = {
   uploads: [],
   upload: null,
 };
+
+/**
+ * Takes a throwaway product out of the shop for good.
+ *
+ * Hard delete first, because a product with no stock movement can be removed
+ * outright and leaving no row at all is tidier. When the ledger refuses it,
+ * fall back to the soft delete every storefront read already honours — and
+ * report a failure rather than swallowing it, which is how the residue built up.
+ */
+async function softDeleteProduct(id) {
+  await admin.from("product_reviews").delete().eq("product_id", id);
+  await admin.from("product_translations").delete().eq("product_id", id);
+
+  const hard = await admin.from("products").delete().eq("id", id).select("id");
+  if (!hard.error && (hard.data?.length ?? 0) > 0) return;
+
+  const soft = await admin
+    .from("products")
+    .update({
+      deleted_at: new Date().toISOString(),
+      status: "draft",
+      visibility: "hidden",
+    })
+    .eq("id", id)
+    .select("id");
+
+  if (soft.error) {
+    console.error(
+      `  ! could not remove throwaway product ${id}: ${soft.error.message}`,
+    );
+  }
+}
 
 try {
   // ---------------------------------------------------------------------------
@@ -1863,18 +1908,20 @@ try {
   if (made.uploads.length > 0) {
     await admin.storage.from("products").remove(made.uploads);
   }
+  /*
+    Soft delete, because a hard one silently fails.
+
+    `inventory_movements` is append-only (ADR-24), so a product that has ever
+    had a movement cannot be removed — PostgREST reports it, nothing here read
+    the result, and **nine throwaway products accumulated in the linked project
+    across runs, four of them active and visible on the real storefront.**
+    Every storefront read filters `deleted_at is null`, so this takes them out
+    of the shop while the ledger keeps the history it exists to keep.
+  */
   for (const id of made.catalogProducts) {
-    await admin.from("inventory").delete().eq("product_id", id);
-    await admin.from("products").delete().eq("id", id);
+    await softDeleteProduct(id);
   }
-  if (made.product) {
-    await admin
-      .from("product_translations")
-      .delete()
-      .eq("product_id", made.product);
-    await admin.from("inventory").delete().eq("product_id", made.product);
-    await admin.from("products").delete().eq("id", made.product);
-  }
+  if (made.product) await softDeleteProduct(made.product);
   // The child first: `categories.parent_id` is `on delete restrict`, so
   // removing the parent while it has one is refused.
   if (made.childCategory) {
