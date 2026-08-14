@@ -12,6 +12,97 @@ Phase 2, and so on. v1.0.0 is the production launch at the end of Phase 9.
 
 ## [Unreleased]
 
+### Removed — the test fixtures that had become the catalog
+
+Every product, brand and order in the hosted project was a test fixture. Not
+some of them: **all** of them. Eleven products with `CRUD-` and `E2E-` SKUs,
+twelve matching brands, and five orders whose customer was `Guest Tester` and
+whose notes read `crud check <stamp>`. The catalog a shopper saw was one E2E
+product, and the dashboard's revenue figure was the sum of five test orders.
+
+The figure was never fabricated — `getOrderTotals` has always been a real query.
+It was summing real rows that should not have existed. That distinction matters,
+because the fix is a data cleanup and not a code change, and reaching for the
+dashboard code would have found nothing wrong with it.
+
+Two of them had also reached the public storefront. `E2E sinov mahsuloti
+1786466553393` was live and purchasable on `bondo.uz`, and two `E2E` brands were
+rendering in the homepage brand strip.
+
+Removed, in the way each table permits:
+
+- **Products** — soft-deleted. A hard delete is impossible: `inventory_movements`
+  cascades from `products` and refuses `DELETE` through the append-only trigger,
+  so every one of the eleven is `deleted_at` + `draft` + `hidden`.
+- **Brands** — `is_visible = false`. `products.brand_id` is `ON DELETE RESTRICT`
+  and the soft-deleted products still reference them.
+- **Orders** — soft-deleted, using the column added below.
+- **Five `CRUD tester` Super Administrator accounts** — `is_active = false`.
+  They were live, active, and held full permissions on the production store. The
+  `auth.users` rows were left alone; deactivation is reversible and deletion
+  cascades further than anybody needs.
+
+Preserved deliberately: 112 categories, 5 content pages, 6 service highlights,
+10 settings, all RBAC, all 11 `inventory_movements` rows, all 30
+`order_status_history` rows, and all 7 audit entries. The profiles and the Owner
+admin account were never touched.
+
+### Added — an order can be retired without being deleted
+
+`orders` was the only customer-facing table with no way out. Everything else
+carries `deleted_at` and every read filters it; an order could only be deleted
+outright — and that turns out to be impossible.
+
+`order_status_history` is append-only. `reject_ledger_mutation()` fires
+`BEFORE DELETE` for every role including `service_role`, and the table's
+`order_id` references `orders` `ON DELETE CASCADE`. So `delete from orders`
+cascades into the ledger, the trigger raises `restrict_violation`, and the whole
+statement aborts. That is the right design — the timeline is the evidence the
+order happened — but it left no way to retire an order without claiming it never
+existed.
+
+`20260820001000_order_soft_delete.sql` adds `orders.deleted_at` and a partial
+index on `(placed_at desc) where deleted_at is null` for the admin list. No
+trigger, policy, foreign key or existing row is touched, and a retired order
+keeps its full timeline.
+
+Ten reads now filter `deleted_at is null`: the admin list and CSV export, the
+order detail, the dashboard totals and the status counts, customer order
+history, the checkout prefill, the customer-history panel, and both review
+eligibility checks. The filter is per query rather than central because there is
+no chokepoint — `applyFilters` only ever sees the operator's own filters and is
+skipped by eight of the ten — and RLS is the wrong place for it, because
+`orders.read` must keep returning retired orders so support can still find
+`BND-001003` when somebody phones about it.
+
+The write paths are deliberately unfiltered. They are reached only through the
+detail screen, which `getOrder` now gates.
+
+### Fixed — every product on the storefront read as out of stock
+
+`inventory` carried exactly two policies, both `to authenticated` and both gated
+on `inventory.read` — a staff permission. An anonymous visitor got an empty
+embed for every product, the catalog folded that to a stock of zero, and **every
+product rendered "out of stock" with its Add to basket button disabled**.
+Nothing could be bought by anybody. From the outside it looked like a data
+problem: the row said ten, the shop said none.
+
+`20260819001000_public_stock_visibility.sql` adds one `select` policy for `anon`
+and `authenticated`, scoped by `is_product_published(product_id)` — the same
+predicate the product and translation policies already use, so a stock row is
+readable exactly when the product it belongs to is. A draft or hidden product's
+inventory stays invisible. `inventory_movements` is deliberately not opened:
+that ledger names suppliers, corrections and write-offs, and stays staff-only.
+
+The trade is named rather than hidden: this exposes the exact quantity, not
+merely "in stock". A competitor can read how many units are on the shelf. The
+alternative needs a view or a generated column and a second read path
+(**ADR-88**).
+
+The migration had been applied to the hosted project but was **never committed**,
+so the only copy of a policy production depends on was one laptop. A `db reset`
+or a rebuilt staging project would have reintroduced the bug silently.
+
 ### Fixed — the homepage admin showed raw translation keys
 
 The screen rendered the literal strings `adminHomepage.title` and
